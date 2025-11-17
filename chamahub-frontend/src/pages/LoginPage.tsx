@@ -28,8 +28,8 @@ export function LoginPage() {
       localStorage.setItem('refresh_token', refresh);
       
       navigate('/dashboard');
-    } catch (err: any) {
-      setError(err.response?.data?.detail || 'Invalid credentials');
+    } catch (err: unknown) {
+      setError((err as { response?: { data?: { detail?: string } } })?.response?.data?.detail || 'Invalid credentials');
     } finally {
       setLoading(false);
     }
@@ -88,7 +88,12 @@ export function LoginPage() {
               </div>
 
               <div className="space-y-2">
-                <label className="text-sm font-medium">Password</label>
+                <div className="flex items-center justify-between">
+                  <label className="text-sm font-medium">Password</label>
+                  <a href="/forgot-password" className="text-xs text-primary hover:underline">
+                    Forgot password?
+                  </a>
+                </div>
                 <div className="relative">
                   <Lock className="absolute left-3 top-3 h-5 w-5 text-muted-foreground" />
                   <input
