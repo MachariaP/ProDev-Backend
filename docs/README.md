@@ -1,15 +1,15 @@
-# 📚 ProDev-Backend Learning Portal
+# 📚 ProDev-Backend Implementation Guides
 
 <div align="center">
 
-**Your Complete Journey from Beginner to Django REST Framework Expert**
+**Step-by-Step Guides to Build a Production-Ready Full-Stack Application**
 
-*Build production-ready APIs with confidence*
+*Django REST Framework Backend + TypeScript Frontend*
 
-[![Guides](https://img.shields.io/badge/Guides-13-blue?style=for-the-badge)](./)
-[![Beginner Friendly](https://img.shields.io/badge/Beginner-Friendly-green?style=for-the-badge)](./)
-[![Hands On](https://img.shields.io/badge/Hands--On-Practice-orange?style=for-the-badge)](./)
-[![Production Ready](https://img.shields.io/badge/Production-Ready-red?style=for-the-badge)](./)
+[![Implementation Guides](https://img.shields.io/badge/Implementation-7_Guides-blue?style=for-the-badge)](./)
+[![Learning Resources](https://img.shields.io/badge/Learning-10_Guides-green?style=for-the-badge)](../learn/)
+[![Beginner Friendly](https://img.shields.io/badge/Beginner-Friendly-orange?style=for-the-badge)](./)
+[![Full Stack](https://img.shields.io/badge/Full_Stack-Ready-red?style=for-the-badge)](./)
 
 </div>
 
@@ -17,301 +17,245 @@
 
 ## 🌟 Welcome!
 
-Welcome to the **most comprehensive**, **beginner-friendly** Django REST Framework tutorial series on the internet. This isn't just documentation—it's your personal mentor for backend mastery.
+Welcome to the **implementation guides** for building **ChamaHub**, a production-ready full-stack fintech platform. These guides take you from zero to a deployed application with both backend API and TypeScript frontend.
 
-### ✨ What Makes These Guides Special?
+### ✨ What's in This Folder?
 
-- 🎓 **Zero to Hero**: Start with no backend experience, end with production-ready skills
-- 📝 **Simple Language**: Complex concepts explained like you're talking to a friend
-- 🏗️ **Real Project**: Build ChamaHub, an actual fintech platform
-- 🔍 **Deep Understanding**: Not just "what" but "why" and "how it works"
-- 💡 **Practical Examples**: Every concept has working code you can run
-- 🎯 **No Repetition**: Each guide builds on previous ones without redundancy
-- ⚡ **Modern Stack**: Python 3.12, Django 5.1+, PostgreSQL 16, Redis 7
-- 🚀 **Production Focus**: Best practices, security, testing, deployment
+- 🏗️ **Step-by-Step Implementation**: Build a real application from scratch
+- 📝 **Practical Focus**: "How to build X" with working code you can deploy
+- 🎯 **Sequential Learning**: Follow guides 1-7 in order to build the complete app
+- 💻 **Full-Stack Coverage**: Backend API + TypeScript Frontend + Deployment
+- ⚡ **Modern Stack**: Python 3.12, Django 5.1+, PostgreSQL 16, Redis 7, TypeScript, React
+- 🚀 **Production Ready**: Best practices, security, testing, CI/CD, deployment
+
+### 📚 Need Conceptual Understanding?
+
+For **deep-dive explanations** of Django and DRF concepts, visit the [**`/learn`**](../learn/) folder:
+- 📖 PostgreSQL Deep Dive
+- 🔐 Authentication Explained  
+- 📝 Serializers Explained
+- 🔄 Requests & Responses
+- 🔒 Permissions & Pagination
+- ⚠️ Exceptions & Status Codes
+- 🎓 Complete Django terminology reference
 
 ---
 
 ## 🎯 Learning Paths
 
-Choose your path based on your experience level:
+### 🌱 Complete Beginner → Full-Stack Developer (60-80 hours)
+*Never built a web app before? Follow this path!*
 
-### 🌱 Complete Beginner Path (50-70 hours)
-*Never coded before? Start here!*
+**Goal**: Build and deploy a complete full-stack application from scratch
 
-**Goal**: Learn backend development from scratch and build real APIs
+**Phase 1: Backend Foundation** (20-25 hours)
+1. [Guide 1: Initial Setup](./01-initial-setup.md) - Install tools and configure environment
+2. [Guide 2: First API Endpoint](./02-first-endpoint.md) - Create your first working API
+3. [📚 Learn: Email Integration](../learn/08-email-integration.md) - Understand how email works
+4. [📚 Learn: PostgreSQL Deep Dive](../learn/09-postgresql-deep-dive.md) - Master databases
 
-1. **Foundation** (Setup & Basics)
-   - Guide 1: Initial Setup
-   - Guide 2: First API Endpoint
-   - Guide 8: Email Integration
-   
-2. **Core Skills** (Database & Authentication)
-   - Guide 9: PostgreSQL Deep Dive
-   - Guide 4: Models & Database Design
-   - Guide 10: Authentication Explained
-   
-3. **Advanced Features**
-   - Guide 5: Advanced DRF
-   - Guide 11: Serializers & Validation
-   - Guide 12: Python Generators
-   
-4. **Production Ready**
-   - Guide 6: Production Features
-   - Guide 13: Best Practices
-   - Guide 3: Deployment
+**Phase 2: Build the Backend** (20-25 hours)
+5. [Guide 4: Models & Database](./04-models-database.md) - Design your database schema
+6. [📚 Learn: Authentication](../learn/10-authentication-explained.md) - Understand security
+7. [Guide 5: Advanced DRF](./05-advanced-drf.md) - Build secure, scalable APIs
+8. [📚 Learn: Serializers](../learn/11-serializers-explained.md) - Master data transformation
+9. [📚 Learn: Requests/Responses](../learn/12-requests-explained.md) - Handle HTTP properly
 
-**Outcome**: Job-ready backend developer skills ✨
+**Phase 3: Production & Full-Stack** (20-30 hours)
+10. [Guide 6: Production Features](./06-production-features.md) - Add background tasks, caching, WebSockets
+11. [Guide 7: Django + TypeScript Full-Stack](./07-django-typescript-fullstack-mastery.md) - Build the frontend
+12. [Guide 3: Deployment](./03-deployment.md) - Deploy both backend and frontend to production
 
-### 🚀 Web Developer Path (25-35 hours)
-*Already know HTML/CSS/JavaScript? Level up with backend!*
+**Outcome**: Complete full-stack application live on the internet ✨
 
-**Goal**: Add backend expertise to your frontend skills
+### 🚀 Frontend Developer → Full-Stack (30-40 hours)
+*Already know React/TypeScript? Add backend skills!*
 
-1. Quick Start: Guides 1-2 (skim if familiar)
-2. Database: Guides 4, 9
-3. APIs: Guides 5, 10, 11
-4. Production: Guides 6, 13
-5. Full-Stack: Guide 7
+**Goal**: Connect your frontend skills to a powerful backend
 
-**Outcome**: Full-stack mastery 🏆
+1. **Quick Backend Setup** (8-10 hours)
+   - Skim Guides 1-2 (setup and basics)
+   - Focus on Guide 4 (database design)
+   - Deep dive Guide 5 (building APIs)
 
-### ⚡ Experienced Developer Path (12-20 hours)
-*Know another backend framework? Learn Django!*
+2. **Full-Stack Integration** (15-20 hours)
+   - [Guide 7: Django + TypeScript Full-Stack](./07-django-typescript-fullstack-mastery.md)
+   - Learn type-safe API integration
+   - Auto-generate TypeScript types from Django
+   - Build React components consuming your API
 
-**Goal**: Master Django/DRF patterns and best practices
+3. **Production Deployment** (7-10 hours)
+   - Guide 6 (production features)
+   - Guide 3 (deploy backend and frontend)
 
-1. Skim: Guides 1-3 (setup & basics)
-2. Focus: Guides 4-6 (Django patterns)
-3. Deep Dive: Guides 9-11 (advanced concepts)
-4. Integration: Guide 7 (if doing full-stack)
+**Outcome**: Full-stack mastery with type-safe API integration 🏆
 
-**Outcome**: Production Django expertise 🎯
+### ⚡ Backend Developer → Django Expert (15-25 hours)
+*Know another backend framework? Master Django patterns!*
+
+**Goal**: Learn Django/DRF best practices and full-stack integration
+
+1. **Django Essentials** (5-8 hours)
+   - Skim Guides 1-2 (Django project structure)
+   - Focus Guide 4 (Django ORM and models)
+   - Study Guide 5 (DRF patterns and serializers)
+
+2. **Advanced Patterns** (7-12 hours)
+   - Guide 6 (Celery, WebSockets, Redis, testing)
+   - [📚 Learn folder](../learn/) (deep dives on specific topics)
+
+3. **Full-Stack** (3-5 hours)
+   - Guide 7 (TypeScript integration with Django)
+   - Guide 3 (deployment strategies)
+
+**Outcome**: Production Django expertise + TypeScript integration skills 🎯
 
 ---
 
-## 📚 Complete Guide Index
+## 📚 Implementation Guide Index
 
-### 🎓 Foundation Track
+These guides build the **ChamaHub** application step-by-step. Follow them in order for the best experience.
+
+### 🏗️ Core Implementation Guides (Build the App)
 
 <table>
 <tr>
 <td width="50%">
 
 #### [📦 Guide 1: Initial Setup](./01-initial-setup.md)
-⏱️ **30-45 minutes** | 🎯 **Beginner**
+⏱️ **30-45 minutes** | 🎯 **Beginner** | 🔧 **Setup**
 
-Your first step into backend development!
+**Your first step into full-stack development!**
 
-**Learn**:
-- Install Python, PostgreSQL, Redis
-- Understand development environment
-- Virtual environments & dependencies
-- Environment variables
-- Troubleshooting
+**What You'll Do**:
+- Install Python 3.12, PostgreSQL 16, Redis 7
+- Set up virtual environment and dependencies
+- Configure environment variables
+- Install and test all required tools
+- Troubleshoot common installation issues
 
-**New Concepts**: Terminal, package managers, databases, caching systems
+**Outcome**: Development environment ready to build ChamaHub
 
 </td>
 <td width="50%">
 
 #### [🎯 Guide 2: First API Endpoint](./02-first-endpoint.md)
-⏱️ **45-60 minutes** | 🎯 **Beginner**
+⏱️ **45-60 minutes** | 🎯 **Beginner** | 🏗️ **Backend**
 
-Build your very first working API!
+**Build and test your first API!**
 
-**Learn**:
-- Django project structure
-- Create API endpoints
-- Test with cURL
-- Automatic documentation
-- API versioning
+**What You'll Do**:
+- Create Django project with proper structure
+- Build a health check API endpoint
+- Implement API versioning (`/api/v1/`)
+- Set up automatic API documentation (Swagger)
+- Test your API with cURL and browser
 
-**New Concepts**: REST APIs, HTTP methods, MVC pattern, routing
+**Outcome**: Working API with documentation at `http://localhost:8000/api/docs/`
 
 </td>
 </tr>
 <tr>
-<td width="50%">
-
-#### [🌐 Guide 3: Deployment](./03-deployment.md)
-⏱️ **60-90 minutes** | 🎯 **Intermediate**
-
-Get your app live on the internet!
-
-**Learn**:
-- Development vs production
-- Deploy to Railway/DigitalOcean
-- Environment configuration
-- CI/CD automation
-- Monitoring
-
-**New Concepts**: Production settings, deployment, DevOps
-
-</td>
 <td width="50%">
 
 #### [🗄️ Guide 4: Database Design](./04-models-database.md)
-⏱️ **90-120 minutes** | 🎯 **Intermediate**
+⏱️ **90-120 minutes** | 🎯 **Intermediate** | 🗄️ **Database**
 
-Master data modeling!
+**Design and build your database schema!**
 
-**Learn**:
-- Database design principles
-- Django ORM models
-- Relationships (ForeignKey, M2M)
-- Migrations
-- Database testing
+**What You'll Do**:
+- Create custom User model (email/phone authentication)
+- Design Chama, Contribution, Expense, Loan models
+- Set up database relationships (ForeignKey, ManyToMany)
+- Create migrations and apply them
+- Add indexes and constraints for performance
+- Write model tests
 
-**New Concepts**: ORM, migrations, normalization, indexes
+**Outcome**: Complete database schema for ChamaHub fintech platform
 
 </td>
-</tr>
-</table>
-
-### 🚀 Advanced Track
-
-<table>
-<tr>
 <td width="50%">
 
 #### [🔐 Guide 5: Authentication & APIs](./05-advanced-drf.md)
-⏱️ **120-150 minutes** | 🎯 **Intermediate**
+⏱️ **120-150 minutes** | 🎯 **Intermediate** | 🔐 **Security**
 
-Secure your APIs professionally!
+**Build secure, production-ready APIs!**
 
-**Learn**:
-- JWT authentication
-- User registration/login
-- Serializers & ViewSets
-- Permissions & throttling
-- Pagination & filtering
+**What You'll Do**:
+- Implement JWT authentication with refresh tokens
+- Create user registration and login endpoints
+- Build serializers for data validation
+- Add custom permissions (chair, treasurer, member)
+- Implement throttling and rate limiting
+- Add pagination and filtering to list endpoints
 
-**New Concepts**: JWT, serializers, viewsets, permissions
+**Outcome**: Secure API with authentication, permissions, and best practices
+
+</td>
+</tr>
+<tr>
+<td width="50%">
+
+#### [⚡ Guide 6: Production Features](./06-production-features.md)
+⏱️ **120-180 minutes** | 🎯 **Advanced** | 🚀 **Production**
+
+**Make your application production-ready!**
+
+**What You'll Do**:
+- Set up Celery for background tasks
+- Add Celery Beat for periodic tasks (automated jobs)
+- Implement Django Channels for real-time WebSocket updates
+- Configure Redis caching for performance
+- Write comprehensive tests (unit, integration, e2e)
+- Set up GitHub Actions CI/CD pipeline
+- Add monitoring and logging
+
+**Outcome**: Production-grade backend with async tasks, real-time features, and testing
 
 </td>
 <td width="50%">
 
-#### [⚡ Guide 6: Production Features](./06-production-features.md)
-⏱️ **120-180 minutes** | 🎯 **Advanced**
+#### [🌐 Guide 3: Deployment](./03-deployment.md)
+⏱️ **60-90 minutes** | 🎯 **Intermediate** | 🌐 **DevOps**
 
-Make your app production-ready!
+**Deploy your application to the internet!**
 
-**Learn**:
-- Background tasks (Celery)
-- Real-time (WebSockets)
-- Caching (Redis)
-- Testing strategies
-- Monitoring & logging
+**What You'll Do**:
+- Configure production settings (security, CORS, etc.)
+- Deploy to Railway (PaaS - easiest option)
+- Alternative: Deploy to DigitalOcean (VPS - more control)
+- Set up environment variables for production
+- Configure SSL with Let's Encrypt
+- Set up automated deployment with GitHub Actions
 
-**New Concepts**: Celery, WebSockets, caching, testing
+**Outcome**: Live application accessible from anywhere on the internet
+
+**Note**: Do this after Guide 6 or Guide 7 depending on whether you want to deploy backend-only or full-stack
 
 </td>
 </tr>
 <tr>
 <td colspan="2">
 
-#### [🎨 Guide 7: Django + TypeScript Full-Stack](./07-django-typescript-fullstack-mastery.md)
-⏱️ **180-300 minutes** | 🎯 **Advanced**
+#### [🎨 Guide 7: Django + TypeScript Full-Stack Mastery](./07-django-typescript-fullstack-mastery.md)
+⏱️ **180-300 minutes** | 🎯 **Advanced** | 💻 **Full-Stack**
 
-Build complete web applications!
+**Build the complete frontend and connect it to your Django backend!**
 
-**Learn**: Type-safe API integration • React + Django • Auto-generate TypeScript types • State management • PWA • React Native • Production deployment
+**What You'll Do**:
+- Set up React + Vite + TypeScript project
+- Auto-generate TypeScript types from Django REST API (type-safe!)
+- Build type-safe API client with full autocomplete
+- Create React components for dashboard, auth, contributions
+- Implement state management (Zustand/Redux)
+- Add React Query for efficient data fetching and caching
+- Build Progressive Web App (PWA) with offline support
+- Create React Native mobile app (bonus)
+- Deploy frontend to production (Vercel/Netlify)
 
-**New Concepts**: TypeScript, React, type safety, mobile development
+**Outcome**: Complete full-stack application with type-safe frontend ↔ backend communication
 
-</td>
-</tr>
-</table>
-
-### 🎓 Concept Deep-Dives
-
-<table>
-<tr>
-<td width="33%">
-
-#### [📧 Guide 8: Email Integration](./08-email-integration.md)
-⏱️ **60-90 min** | 🎯 **Beginner**
-
-Send emails from your app!
-
-- Email basics (SMTP explained)
-- SendGrid & Mailgun
-- HTML templates
-- Verification flows
-- Best practices
-
-</td>
-<td width="33%">
-
-#### [🐘 Guide 9: PostgreSQL Mastery](./09-postgresql-deep-dive.md)
-⏱️ **90-120 min** | 🎯 **Intermediate**
-
-Become a database expert!
-
-- PostgreSQL architecture
-- Indexes & optimization
-- Query performance
-- Connection pooling
-- Backup & recovery
-
-</td>
-<td width="33%">
-
-#### [🔑 Guide 10: Authentication Explained](./10-authentication-explained.md)
-⏱️ **90-120 min** | 🎯 **Intermediate**
-
-Security made simple!
-
-- How JWT works
-- Sessions vs tokens
-- Security best practices
-- OAuth integration
-- Common vulnerabilities
-
-</td>
-</tr>
-<tr>
-<td width="33%">
-
-#### [📝 Guide 11: Serializers](./11-serializers-explained.md)
-⏱️ **60-90 min** | 🎯 **Intermediate**
-
-Data transformation mastery!
-
-- What serializers do
-- Nested relationships
-- Custom validation
-- Performance tips
-- Real-world examples
-
-</td>
-<td width="33%">
-
-#### [🔄 Guide 12: Python Generators](./12-generators-explained.md)
-⏱️ **45-60 min** | 🎯 **Intermediate**
-
-Efficient data processing!
-
-- What generators are
-- When to use them
-- Memory efficiency
-- Yield vs return
-- Django use cases
-
-</td>
-<td width="33%">
-
-#### [⭐ Guide 13: Best Practices](./13-best-practices.md)
-⏱️ **60-90 min** | 🎯 **All Levels**
-
-Write professional code!
-
-- Code organization
-- Security checklist
-- Testing strategies
-- Documentation
-- Performance
+**Important**: This is the **flagship guide** for full-stack development. It ensures seamless integration between Django and TypeScript.
 
 </td>
 </tr>
@@ -319,26 +263,53 @@ Write professional code!
 
 ---
 
+## 🎓 Conceptual Deep-Dives (Understand the Concepts)
+
+These guides are now in the **[`/learn`](../learn/)** folder for better organization:
+
+### Available Learning Guides
+
+| Guide | Topic | Link |
+|-------|-------|------|
+| 📧 **Email Integration** | How email works, SendGrid, Mailgun, templates | [08-email-integration.md](../learn/08-email-integration.md) |
+| 🐘 **PostgreSQL Deep Dive** | Database optimization, indexes, query performance | [09-postgresql-deep-dive.md](../learn/09-postgresql-deep-dive.md) |
+| 🔐 **Authentication Explained** | JWT, sessions, OAuth, security best practices | [10-authentication-explained.md](../learn/10-authentication-explained.md) |
+| 📝 **Serializers Explained** | Data transformation, validation, nested relationships | [11-serializers-explained.md](../learn/11-serializers-explained.md) |
+| 🔄 **Requests Explained** | DRF Request handling, parsers, file uploads | [12-requests-explained.md](../learn/12-requests-explained.md) |
+| 📤 **Responses Explained** | Response formatting, renderers, status codes | [13-responses-explained.md](../learn/13-responses-explained.md) |
+| 🔒 **Permissions Explained** | Access control, custom permissions, object-level | [23-permissions-explained.md](../learn/23-permissions-explained.md) |
+| 📄 **Pagination Explained** | PageNumber, Cursor, LimitOffset pagination | [26-pagination-explained.md](../learn/26-pagination-explained.md) |
+| ⚠️ **Exceptions Explained** | Error handling, custom exceptions, validation | [33-exceptions-explained.md](../learn/33-exceptions-explained.md) |
+| 🔢 **Status Codes Explained** | HTTP status codes reference and best practices | [34-status-codes-explained.md](../learn/34-status-codes-explained.md) |
+
+**Plus**: [📖 DRF API Guides Index](../learn/DRF-API-GUIDES-INDEX.md) - Track progress on all 24 DRF topics
+
+**And**: [🎓 Django Terminology Reference](../learn/README.md#-must-know-django--drf-terms) - Complete glossary of Django & DRF terms
+
+---
+
 ## 🎯 How to Use These Guides
 
-### 📖 Reading Tips
+### 📖 Implementation vs Learning
 
-1. **Follow the Order**: Guides build on each other progressively
-2. **Code Along**: Don't just read—type the code yourself
-3. **Take Breaks**: These are dense guides. One guide per day is great!
-4. **Use Checkpoints**: Self-assess at the end of each guide
-5. **Ask Questions**: Open an issue if something's unclear
+**Implementation Guides (this folder)**:
+- Follow sequentially (1 → 2 → 4 → 5 → 6 → 7 → 3)
+- Build the ChamaHub application step-by-step
+- Focus on "how to build" with working code
 
-### 💻 Hands-On Approach
+**Learning Guides ([`/learn`](../learn/) folder)**:
+- Reference when you need concept clarification
+- Deep dives into Django and DRF features
+- Focus on "why it works this way"
 
-Each guide includes:
-- ✅ **Clear objectives**: Know what you'll learn
-- 📝 **Step-by-step instructions**: Follow along easily
-- 💡 **Real-world analogies**: Understand the "why"
-- 🔍 **Code examples**: See concepts in action
-- 🧪 **Testing**: Verify everything works
-- ⚠️ **Troubleshooting**: Fix common issues
-- ✅ **Learning checkpoint**: Self-assessment quiz
+### 💻 Best Approach
+
+1. **Start with Guide 1**: Set up your development environment
+2. **Follow each guide**: Build the app incrementally
+3. **Reference `/learn`**: When you want deeper understanding
+4. **Code along**: Type the code yourself, don't just copy/paste
+5. **Test frequently**: Verify each feature works before moving on
+6. **Deploy**: Share your live application with the world!
 
 ---
 
@@ -348,36 +319,50 @@ Throughout these guides, you'll build **ChamaHub**, a real fintech platform for 
 
 ### ✨ Core Features You'll Implement
 
-**User Management**
-- Custom user model with email/phone auth
-- JWT authentication with refresh
-- Password reset via email
-- Email verification
+**Backend API** (Guides 1-6)
+- Custom user model with email/phone authentication
+- JWT authentication with refresh token rotation
+- Contribution, expense, and loan tracking
+- Background task processing (Celery)
+- Real-time updates (WebSockets)
+- Redis caching for performance
+- Comprehensive test suite
+- CI/CD pipeline with GitHub Actions
 
-**Financial Features**
-- Contribution tracking
-- Expense management  
-- Loan calculations
-- Real-time balance updates
+**Frontend Application** (Guide 7)
+- React + TypeScript + Vite project
+- Type-safe API integration (auto-generated types!)
+- Dashboard with real-time updates
+- Authentication flow (login, register, password reset)
+- Contribution management UI
+- Progressive Web App (PWA) with offline support
+- React Native mobile app (bonus)
+
+**Production Deployment** (Guide 3)
+- Backend deployed to Railway/DigitalOcean
+- Frontend deployed to Vercel/Netlify
+- SSL certificates and custom domain
+- Automated deployments with GitHub Actions
+- Monitoring and logging
 
 **Advanced Features**
-- Background task processing
-- Real-time notifications
-- PDF report generation
+- Background task processing (Celery)
+- Real-time updates (WebSockets)
+- Redis caching
 - Email notifications
-- Database optimization
+- PDF report generation
 
 **Production Essentials**
-- Comprehensive tests
-- CI/CD pipeline
+- Comprehensive test suite
+- CI/CD with GitHub Actions
 - Production deployment
-- Monitoring & logging
+- Monitoring and logging
 
 ---
 
-## 🎓 Prerequisites
+## 🚀 Quick Start
 
-### Required Knowledge
+### Prerequisites
 
 **Absolutely Required**:
 - Basic computer skills (copy/paste, file navigation)
@@ -386,29 +371,58 @@ Throughout these guides, you'll build **ChamaHub**, a real fintech platform for 
 **Helpful but NOT Required**:
 - Python basics (variables, functions, classes)
 - Command line familiarity
-- Basic understanding of web concepts
+- TypeScript/React knowledge (for Guide 7)
 
 ### Don't Worry If You're New!
 
 These guides are designed for complete beginners. We explain:
-- What terminal commands do
-- Why we run each command
+- What each command does and why
 - What happens behind the scenes
-- How to fix common mistakes
+- How to troubleshoot common issues
+- Django terminology as you encounter it
+
+**💡 Tip**: Keep the [**`/learn`**](../learn/) folder bookmarked for when you need concept clarification!
+
+---
+
+## 🔄 Recommended Order
+
+### Backend-Only Path
+1. Guide 1 → 2 → 4 → 5 → 6 → 3 (Deploy backend)
+
+### Full-Stack Path  
+1. Guide 1 → 2 → 4 → 5 → 6 → 7 → 3 (Deploy backend + frontend)
+
+### Fast Track (Experienced Developers)
+1. Skim Guide 1-2 → Focus Guide 4-5 → Guide 7 (Full-Stack) → Guide 3 (Deploy)
+
+---
+
+## 📖 Additional Resources
+
+- **[Learning Center (`/learn`)](../learn/)** - Conceptual deep-dives and Django terminology
+- **[Main README](../README.md)** - Project overview and features
+- **[ChamaHub README](../my_chama/README.md)** - Full project architecture and roadmap
 
 ---
 
 <div align="center">
 
-## 🌟 Ready to Start?
+## 🌟 Ready to Build?
 
-### [📦 Begin with Guide 1: Initial Setup →](./01-initial-setup.md)
+### [📦 Start with Guide 1: Initial Setup →](./01-initial-setup.md)
+
+Or explore conceptual guides: [📚 Learning Center →](../learn/)
 
 ---
 
-**Built with ❤️ for developers who want to truly understand Django**
+**Build a production-ready full-stack application with type-safe integration**
 
-[⬅️ Back to Main README](../README.md)
+*Django REST Framework + TypeScript + React*
+
+---
+
+[⬅️ Back to Main README](../README.md) | [📚 Learning Center](../learn/)
 
 ---
 
