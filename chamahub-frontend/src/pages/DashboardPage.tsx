@@ -1,4 +1,5 @@
 import { motion } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
 import {
   Wallet,
   TrendingUp,
@@ -6,6 +7,8 @@ import {
   PiggyBank,
   ArrowUpRight,
   ArrowDownRight,
+  UserCircle,
+  LogOut,
 } from 'lucide-react';
 import { StatsCard } from '../components/StatsCard';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
@@ -62,6 +65,14 @@ const itemVariants = {
 };
 
 export function DashboardPage() {
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    localStorage.removeItem('access_token');
+    localStorage.removeItem('refresh_token');
+    navigate('/login');
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-background to-muted/20 p-6">
       <motion.div
@@ -70,14 +81,36 @@ export function DashboardPage() {
         variants={containerVariants}
         className="max-w-7xl mx-auto space-y-6"
       >
-        {/* Header */}
-        <motion.div variants={itemVariants}>
-          <h1 className="text-4xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
-            Dashboard
-          </h1>
-          <p className="text-muted-foreground mt-2">
-            Welcome back! Here's what's happening with your Chama.
-          </p>
+        {/* Header with Navigation */}
+        <motion.div variants={itemVariants} className="flex items-center justify-between">
+          <div>
+            <h1 className="text-4xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
+              Dashboard
+            </h1>
+            <p className="text-muted-foreground mt-2">
+              Welcome back! Here's what's happening with your Chama.
+            </p>
+          </div>
+          <div className="flex items-center gap-3">
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => navigate('/profile')}
+              className="flex items-center gap-2 px-4 py-2 rounded-lg border border-border bg-background hover:bg-accent transition-colors"
+            >
+              <UserCircle className="h-5 w-5" />
+              <span className="hidden sm:inline">Profile</span>
+            </motion.button>
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={handleLogout}
+              className="flex items-center gap-2 px-4 py-2 rounded-lg border border-destructive/20 text-destructive hover:bg-destructive/10 transition-colors"
+            >
+              <LogOut className="h-5 w-5" />
+              <span className="hidden sm:inline">Logout</span>
+            </motion.button>
+          </div>
         </motion.div>
 
         {/* Stats Grid */}

@@ -86,3 +86,25 @@ class UserProfileUpdateSerializer(serializers.ModelSerializer):
             'first_name', 'last_name', 'phone_number',
             'profile_picture', 'date_of_birth', 'address'
         ]
+
+
+class PasswordResetRequestSerializer(serializers.Serializer):
+    """Serializer for requesting password reset."""
+    
+    email = serializers.EmailField()
+
+
+class PasswordResetConfirmSerializer(serializers.Serializer):
+    """Serializer for confirming password reset."""
+    
+    uid = serializers.CharField()
+    token = serializers.CharField()
+    new_password = serializers.CharField(min_length=8, write_only=True)
+    new_password_confirm = serializers.CharField(min_length=8, write_only=True)
+    
+    def validate(self, attrs):
+        """Validate that passwords match."""
+        if attrs['new_password'] != attrs['new_password_confirm']:
+            raise serializers.ValidationError({"new_password": "Passwords do not match."})
+        return attrs
+
