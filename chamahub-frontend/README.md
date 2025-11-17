@@ -1,73 +1,145 @@
-# React + TypeScript + Vite
+# ChamaHub Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A modern, eye-catching React + TypeScript frontend for the ChamaHub savings group management platform.
 
-Currently, two official plugins are available:
+## 🎨 Features
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- **Beautiful, Modern UI** - Clean design with smooth animations and transitions
+- **Type-Safe** - Full TypeScript support with type definitions for all API models
+- **Responsive** - Mobile-first design that works on all devices
+- **Animated Components** - Framer Motion animations for delightful user experience
+- **Interactive Charts** - Beautiful data visualizations with Recharts
+- **Dark Mode Ready** - CSS variables configured for easy theme switching
 
-## React Compiler
+## 🚀 Tech Stack
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+- **React 18** - Modern React with hooks
+- **TypeScript 5** - Type-safe development
+- **Vite** - Lightning-fast build tool
+- **Tailwind CSS 3** - Utility-first CSS framework
+- **Framer Motion** - Smooth animations and transitions
+- **Recharts** - Composable charting library
+- **Axios** - HTTP client with JWT interceptors
+- **React Router** - Client-side routing
+- **Lucide React** - Beautiful icon library
 
-## Expanding the ESLint configuration
+## 📦 Installation
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+```bash
+# Install dependencies
+npm install
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+# Start development server
+npm run dev
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+# Build for production
+npm run build
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+# Preview production build
+npm run preview
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## 🔧 Configuration
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+### Environment Variables
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+Create a `.env` file in the root directory:
+
+```env
+VITE_API_URL=http://localhost:8000/api/v1
 ```
+
+### API Configuration
+
+The API service is configured in `src/services/api.ts` with:
+- Automatic JWT token management
+- Token refresh on 401 errors
+- Request/response interceptors
+
+## 📁 Project Structure
+
+```
+src/
+├── components/          # Reusable UI components
+│   ├── ui/             # Base UI components (Card, Button, etc.)
+│   └── StatsCard.tsx   # Animated statistics card
+├── pages/              # Page components
+│   ├── LoginPage.tsx   # Authentication page
+│   └── DashboardPage.tsx # Main dashboard
+├── services/           # API and external services
+│   └── api.ts         # Axios instance with JWT
+├── types/             # TypeScript type definitions
+│   └── index.ts       # API model types
+├── lib/               # Utility functions
+│   └── utils.ts       # Helper functions
+├── App.tsx            # Main app component with routing
+└── main.tsx           # App entry point
+```
+
+## 🎯 Key Components
+
+### StatsCard
+Animated card component showing key metrics with trend indicators
+
+### Dashboard
+Main dashboard with:
+- 4 animated stat cards
+- Contribution trend chart (Area chart)
+- Weekly activity chart (Bar chart)
+- Recent transactions feed
+
+### Login Page
+Clean, centered login form with:
+- Gradient background
+- Animated icon
+- Form validation
+- JWT authentication
+
+## 🔐 Authentication
+
+The app uses JWT tokens stored in localStorage:
+- Access token for API requests
+- Refresh token for renewing expired access tokens
+- Automatic redirect to login on authentication failure
+
+## 🎨 Styling
+
+### Tailwind CSS
+Custom configuration with design tokens:
+- Custom color palette (primary green, secondary, muted, etc.)
+- CSS variables for easy theming
+- Custom animations (slide-in, fade-in, bounce-in)
+
+## 📊 Charts
+
+Recharts is used for data visualization with custom tooltips and styling.
+
+## 🚀 Deployment
+
+### Build
+```bash
+npm run build
+```
+
+The build output will be in the `dist/` directory.
+
+### Deploy to Vercel
+```bash
+vercel --prod
+```
+
+### Deploy to Netlify
+```bash
+netlify deploy --prod --dir=dist
+```
+
+## 📚 Learn More
+
+- [React Documentation](https://react.dev)
+- [Vite Documentation](https://vitejs.dev)
+- [Tailwind CSS](https://tailwindcss.com)
+- [Framer Motion](https://www.framer.com/motion/)
+
+---
+
+Built with ❤️ for the ChamaHub community
