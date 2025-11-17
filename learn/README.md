@@ -6,8 +6,9 @@
 
 *Master the concepts behind Django and DRF before or during implementation*
 
-[![Learning Guides](https://img.shields.io/badge/Learning_Guides-10-blue?style=for-the-badge)](./)
+[![Learning Guides](https://img.shields.io/badge/Learning_Guides-11-blue?style=for-the-badge)](./)
 [![DRF Topics](https://img.shields.io/badge/DRF_Topics-7%2F24-orange?style=for-the-badge)](./)
+[![Comprehensive](https://img.shields.io/badge/Terminology_Guide-45_Terms-purple?style=for-the-badge)](./00-django-drf-terminology-in-depth.md)
 [![Beginner Friendly](https://img.shields.io/badge/Beginner-Friendly-green?style=for-the-badge)](./)
 
 </div>
@@ -40,6 +41,32 @@ This folder contains **conceptual learning materials** that explain Django and D
 ---
 
 ## 📚 Learning Guides Index
+
+### 🎓 Complete Terminology Reference
+
+<table>
+<tr>
+<td width="100%">
+
+#### [📖 Django & DRF Terminology: In-Depth Guide](./00-django-drf-terminology-in-depth.md)
+⏱️ **3-4 hours** | 🎯 **All Levels** | ⭐ **Comprehensive**
+
+**Master ALL 45 essential Django & DRF terms with in-depth explanations**:
+- **Django Core Terms** (10): ORM, Migration, QuerySet, Manager, Model, Signal, Middleware, Template, View, URL Pattern
+- **Django REST Framework Terms** (10): Serializer, ViewSet, Router, Permission, Throttle, Parser, Renderer, Pagination, Filter, Action
+- **Authentication & Security Terms** (8): JWT, Access Token, Refresh Token, CORS, CSRF, XSS, HTTPS, HSTS
+- **Database Terms** (9): Index, Foreign Key, Many-to-Many, Transaction, ACID, Normalization, Query Optimization, N+1 Problem, Connection Pool
+- **API & Web Terms** (8): REST, Endpoint, HTTP Methods, Status Code, JSON, API Versioning, Rate Limiting, WebSocket
+
+Each term includes: detailed explanations, practical code examples, real-world analogies, common pitfalls, and best practices.
+
+**Perfect for**: Deep understanding of Django/DRF concepts, interview preparation, reference guide
+
+</td>
+</tr>
+</table>
+
+---
 
 ### 🔑 Core Django Concepts
 
@@ -430,7 +457,8 @@ Complete reference tracking all 24 DRF API topics with:
 ## 📊 Progress Tracking
 
 **Current Status**:
-- ✅ **10 Learning Guides** covering essential Django and DRF concepts
+- ✅ **11 Learning Guides** covering essential Django and DRF concepts
+- ✅ **Comprehensive Terminology Guide** with 45 in-depth term explanations
 - ✅ **7/24 DRF API Topics** completed (29% of comprehensive DRF reference)
 - 🚧 **17 Additional Topics** planned in DRF API Guides Index
 
