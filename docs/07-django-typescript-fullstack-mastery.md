@@ -1,8 +1,8 @@
 # 🏗️ Guide 7: The Django/TypeScript Full-Stack Mastery Guide - A Technical Blueprint
 
-> **Duration:** 180-240 minutes  
-> **Prerequisites:** Completed Guides 1-6, Basic TypeScript knowledge  
-> **Outcome:** Production-grade full-stack architecture with seamless Django-TypeScript integration
+> **Duration:** 360-480 minutes (6-8 hours)  
+> **Prerequisites:** Completed Guides 1-6, Basic TypeScript knowledge, Docker basics  
+> **Outcome:** Enterprise-grade full-stack architecture with security hardening, performance optimization, caching, microservices readiness, and comprehensive monitoring
 
 ---
 
@@ -14,6 +14,13 @@
 - Eliminate N+1 queries and optimize database operations
 - Automate TypeScript interface generation from Django serializers
 - Build component-driven React architecture with strict TypeScript
+- Harden Django security with CSRF, XSS, and clickjacking protection
+- Implement Redis caching strategies for high-performance applications
+- Set up Celery for asynchronous task processing and scheduled jobs
+- Containerize applications with Docker and Docker Compose
+- Transition to microservices architecture with data sovereignty
+- Integrate comprehensive monitoring with Sentry and security logging
+- Deploy production-ready applications with complete DevOps workflows
 
 ---
 
@@ -42,6 +49,19 @@
 
 ### Part V: Security, Authentication, and Threat Mitigation
 14. [Secure User Authentication](#14-secure-user-authentication)
+15. [Django Security Hardening Best Practices](#15-django-security-hardening-best-practices)
+
+### Part VI: Performance, Caching, and Background Processes
+16. [Database and Query Optimization](#16-database-and-query-optimization)
+17. [Comprehensive Caching Strategy](#17-comprehensive-caching-strategy)
+18. [Scheduled Tasks (Crons) and Asynchronous Workloads](#18-scheduled-tasks-crons-and-asynchronous-workloads)
+
+### Part VII: Operational Maturity: DevOps, Microservices, and Observability
+19. [DevOps and Containerization (Docker)](#19-devops-and-containerization-docker)
+20. [Advanced Shell Commands for DevOps](#20-advanced-shell-commands-for-devops)
+21. [Microservices Architecture Transition](#21-microservices-architecture-transition)
+22. [Monitoring, Analysis, and Third-Party Services](#22-monitoring-analysis-and-third-party-services)
+23. [Final Project: Synthesis and Comprehensive Deployment Checklist](#23-final-project-synthesis-and-comprehensive-deployment-checklist)
 
 ---
 
@@ -3360,6 +3380,3306 @@ export const Login: React.FC = () => {
 ✅ **Automatic Management:** Browser handles cookie storage and transmission  
 ✅ **Secure Transport:** Secure flag ensures cookies only sent over HTTPS  
 ✅ **Seamless Refresh:** Silent token refresh without client-side token handling
+
+---
+
+## 15. Django Security Hardening Best Practices
+
+General system hardening complements authentication security and is critical for production-grade applications.
+
+### 15.1 Version Maintenance
+
+**Critical Requirement:** The Django framework must be regularly updated. The development team frequently releases security patches, and running outdated versions introduces known vulnerabilities.
+
+**Best Practices:**
+
+```bash
+# Check current Django version
+python -c "import django; print(django.get_version())"
+
+# Update Django to latest stable version
+pip install --upgrade django
+
+# Check for security updates
+pip list --outdated | grep -i django
+```
+
+**Automated Update Monitoring:**
+
+```python
+# config/settings/base.py
+import django
+import sys
+
+# Log Django version on startup
+print(f"Django version: {django.get_version()}")
+
+# Optional: Warning for outdated versions
+DJANGO_VERSION = tuple(map(int, django.get_version().split('.')[:2]))
+if DJANGO_VERSION < (4, 2):  # Example: warn if below 4.2
+    print("WARNING: Django version is outdated. Please upgrade!", file=sys.stderr)
+```
+
+**Dependency Management:**
+
+```bash
+# requirements/base.txt
+Django>=4.2,<5.0  # Pin major version, allow minor updates
+djangorestframework>=3.14,<4.0
+psycopg2-binary>=2.9,<3.0
+
+# Regularly check security advisories
+pip-audit  # Install: pip install pip-audit
+```
+
+### 15.2 Secret Key Management
+
+**CRITICAL:** The Django `SECRET_KEY` is crucial for cryptographic signing. It must be generated strongly (e.g., using `os.urandom()`) and stored exclusively in environment variables or a secrets manager, never hardcoded in the codebase.
+
+**Generate Strong Secret Key:**
+
+```python
+# generate_secret_key.py
+import secrets
+
+def generate_secret_key():
+    """Generate a cryptographically strong secret key."""
+    return secrets.token_urlsafe(50)
+
+if __name__ == '__main__':
+    print(f"SECRET_KEY={generate_secret_key()}")
+```
+
+```bash
+# Generate and save to .env
+python generate_secret_key.py >> .env
+```
+
+**Secure Configuration:**
+
+```python
+# config/settings/base.py
+from decouple import config
+import os
+
+# SECURITY WARNING: keep the secret key used in production secret!
+SECRET_KEY = config('SECRET_KEY')
+
+# Validation: Ensure SECRET_KEY is set and strong
+if not SECRET_KEY:
+    raise ValueError("SECRET_KEY must be set in environment variables")
+
+if len(SECRET_KEY) < 50:
+    raise ValueError("SECRET_KEY must be at least 50 characters long")
+
+# Never log the secret key
+# BAD: print(f"Secret key: {SECRET_KEY}")
+```
+
+**Production Secrets Management:**
+
+```python
+# For AWS Secrets Manager
+import boto3
+import json
+
+def get_secret(secret_name):
+    """Retrieve secret from AWS Secrets Manager."""
+    session = boto3.session.Session()
+    client = session.client(
+        service_name='secretsmanager',
+        region_name='us-east-1'
+    )
+    
+    try:
+        get_secret_value_response = client.get_secret_value(
+            SecretId=secret_name
+        )
+        secret = json.loads(get_secret_value_response['SecretString'])
+        return secret
+    except Exception as e:
+        raise e
+
+# config/settings/production.py
+if not os.getenv('DJANGO_ENV') == 'development':
+    secrets = get_secret('chamahub-production-secrets')
+    SECRET_KEY = secrets['SECRET_KEY']
+    DATABASES['default']['PASSWORD'] = secrets['DB_PASSWORD']
+```
+
+### 15.3 Injection Prevention
+
+**Standard Practice:** Rely on the Django ORM for query construction, which handles necessary escaping and sanitization, preventing most SQL injection attacks.
+
+**Safe Query Patterns:**
+
+```python
+# ✅ SAFE: Using Django ORM
+users = User.objects.filter(email=user_input)
+
+# ✅ SAFE: Parameterized raw SQL
+users = User.objects.raw(
+    "SELECT * FROM users WHERE email = %s",
+    [user_input]
+)
+
+# ❌ DANGEROUS: String formatting
+# users = User.objects.raw(f"SELECT * FROM users WHERE email = '{user_input}'")
+
+# ❌ DANGEROUS: String concatenation
+# query = "SELECT * FROM users WHERE email = '" + user_input + "'"
+```
+
+**ORM Query Security:**
+
+```python
+# apps/chamas/views.py
+from django.db.models import Q
+from rest_framework import viewsets
+from rest_framework.decorators import action
+
+class ChamaViewSet(viewsets.ModelViewSet):
+    """
+    Secure ViewSet with proper input validation.
+    """
+    def get_queryset(self):
+        queryset = Chama.objects.all()
+        
+        # ✅ SAFE: Using ORM filters
+        search_term = self.request.query_params.get('search', '')
+        if search_term:
+            queryset = queryset.filter(
+                Q(name__icontains=search_term) |
+                Q(description__icontains=search_term)
+            )
+        
+        return queryset
+    
+    @action(detail=False, methods=['get'])
+    def search(self, request):
+        """Search chamas with validated input."""
+        query = request.query_params.get('q', '').strip()
+        
+        # Input validation
+        if len(query) > 100:
+            return Response(
+                {'error': 'Search query too long'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # ✅ SAFE: ORM handles escaping
+        results = Chama.objects.filter(
+            Q(name__icontains=query) |
+            Q(description__icontains=query)
+        )
+        
+        serializer = self.get_serializer(results, many=True)
+        return Response(serializer.data)
+```
+
+### 15.4 Cross-Site Vulnerability Mitigation
+
+#### 15.4.1 XSS Protection
+
+Django's template system automatically escapes output by default, which is the primary defense against XSS. For scenarios requiring raw HTML, rigorous sanitization libraries (like bleach) must be used.
+
+**Template Auto-Escaping:**
+
+```python
+# Django templates automatically escape by default
+# template.html
+<div>{{ user_input }}</div>  <!-- ✅ Automatically escaped -->
+
+# To render raw HTML (USE WITH CAUTION)
+<div>{{ user_input|safe }}</div>  <!-- ⚠️ Marks as safe, no escaping -->
+```
+
+**Sanitizing User HTML Input:**
+
+```bash
+pip install bleach
+```
+
+```python
+# apps/core/utils.py
+import bleach
+
+ALLOWED_TAGS = [
+    'p', 'br', 'strong', 'em', 'u', 'a', 'ul', 'ol', 'li',
+    'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'blockquote', 'code', 'pre'
+]
+
+ALLOWED_ATTRIBUTES = {
+    'a': ['href', 'title', 'rel'],
+    'img': ['src', 'alt', 'title'],
+}
+
+def sanitize_html(html_content):
+    """
+    Sanitize HTML content to prevent XSS attacks.
+    Only allows safe HTML tags and attributes.
+    """
+    cleaned = bleach.clean(
+        html_content,
+        tags=ALLOWED_TAGS,
+        attributes=ALLOWED_ATTRIBUTES,
+        strip=True
+    )
+    return cleaned
+
+def sanitize_url(url):
+    """Sanitize URLs to prevent JavaScript injection."""
+    cleaned = bleach.linkify(url, parse_email=False)
+    return cleaned
+```
+
+**Using in Serializers:**
+
+```python
+# apps/chamas/serializers.py
+from apps.core.utils import sanitize_html
+
+class ChamaSerializer(serializers.ModelSerializer):
+    description = serializers.CharField(max_length=5000)
+    
+    def validate_description(self, value):
+        """Sanitize description HTML."""
+        # Sanitize HTML content
+        cleaned = sanitize_html(value)
+        return cleaned
+    
+    class Meta:
+        model = Chama
+        fields = ['id', 'name', 'description', 'created_at']
+```
+
+**DRF Response Security:**
+
+```python
+# config/settings/base.py
+
+# Ensure proper content-type headers
+REST_FRAMEWORK = {
+    # ...
+    'DEFAULT_RENDERER_CLASSES': [
+        'rest_framework.renderers.JSONRenderer',
+    ],
+}
+
+# Security headers
+SECURE_CONTENT_TYPE_NOSNIFF = True
+SECURE_BROWSER_XSS_FILTER = True
+X_FRAME_OPTIONS = 'DENY'
+```
+
+#### 15.4.2 CSRF Protection
+
+Django's built-in Cross-Site Request Forgery (CSRF) middleware must be enabled. The decoupled frontend must be configured to retrieve the CSRF token (usually via a separate cookie) and include it in all unsafe requests (POST, PUT, DELETE) to protect against malicious external sites exploiting user sessions.
+
+**Django CSRF Configuration:**
+
+```python
+# config/settings/base.py
+
+MIDDLEWARE = [
+    'django.middleware.security.SecurityMiddleware',
+    'django.contrib.sessions.middleware.SessionMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
+    'django.middleware.common.CommonMiddleware',
+    'django.middleware.csrf.CsrfViewMiddleware',  # ✅ CSRF protection
+    'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'django.contrib.messages.middleware.MessageMiddleware',
+    'django.middleware.clickjacking.XFrameOptionsMiddleware',
+]
+
+# CSRF settings for API
+CSRF_COOKIE_NAME = 'csrftoken'
+CSRF_HEADER_NAME = 'HTTP_X_CSRFTOKEN'
+CSRF_COOKIE_HTTPONLY = False  # Must be False for JavaScript to read
+CSRF_COOKIE_SAMESITE = 'Strict'
+CSRF_COOKIE_SECURE = not DEBUG  # HTTPS only in production
+CSRF_USE_SESSIONS = False
+CSRF_COOKIE_AGE = 31449600  # 1 year
+
+# CORS settings that work with CSRF
+CORS_ALLOW_CREDENTIALS = True
+```
+
+**CSRF Token Endpoint:**
+
+```python
+# apps/users/views.py
+from django.middleware.csrf import get_token
+from django.http import JsonResponse
+from django.views.decorators.http import require_http_methods
+
+@require_http_methods(["GET"])
+def csrf_token_view(request):
+    """
+    Return CSRF token for frontend to use.
+    """
+    token = get_token(request)
+    return JsonResponse({'csrfToken': token})
+```
+
+```python
+# apps/users/urls.py
+urlpatterns = [
+    path('csrf/', csrf_token_view, name='csrf-token'),
+    # ... other patterns
+]
+```
+
+**Frontend CSRF Integration:**
+
+```typescript
+// src/api/client.ts
+import Axios from 'axios';
+
+export const axios = Axios.create({
+  baseURL: import.meta.env.VITE_API_BASE_URL,
+  withCredentials: true, // Include cookies
+});
+
+// Fetch CSRF token on app initialization
+export const initializeCSRF = async () => {
+  try {
+    const response = await axios.get('/api/v1/auth/csrf/');
+    const csrfToken = response.data.csrfToken;
+    
+    // Add CSRF token to all non-GET requests
+    axios.interceptors.request.use((config) => {
+      if (config.method !== 'get') {
+        config.headers['X-CSRFToken'] = csrfToken;
+      }
+      return config;
+    });
+  } catch (error) {
+    console.error('Failed to fetch CSRF token:', error);
+  }
+};
+```
+
+```typescript
+// src/main.tsx
+import { initializeCSRF } from './api/client';
+
+// Initialize CSRF before rendering app
+initializeCSRF().then(() => {
+  ReactDOM.createRoot(document.getElementById('root')!).render(
+    <React.StrictMode>
+      <App />
+    </React.StrictMode>
+  );
+});
+```
+
+**Alternative: CSRF Token from Cookie:**
+
+```typescript
+// src/utils/csrf.ts
+export const getCSRFToken = (): string | null => {
+  const name = 'csrftoken';
+  let cookieValue = null;
+  
+  if (document.cookie && document.cookie !== '') {
+    const cookies = document.cookie.split(';');
+    for (let i = 0; i < cookies.length; i++) {
+      const cookie = cookies[i].trim();
+      if (cookie.substring(0, name.length + 1) === (name + '=')) {
+        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+        break;
+      }
+    }
+  }
+  
+  return cookieValue;
+};
+
+// src/api/client.ts
+import { getCSRFToken } from '@/utils/csrf';
+
+axios.interceptors.request.use((config) => {
+  if (config.method !== 'get') {
+    const csrfToken = getCSRFToken();
+    if (csrfToken) {
+      config.headers['X-CSRFToken'] = csrfToken;
+    }
+  }
+  return config;
+});
+```
+
+#### 15.4.3 Clickjacking Prevention
+
+To mitigate clickjacking (where a malicious site embeds the application in an iframe to trick the user), the setting `X_FRAME_OPTIONS = 'DENY'` must be enabled in settings.py.
+
+**Django Configuration:**
+
+```python
+# config/settings/base.py
+
+# Prevent site from being framed
+X_FRAME_OPTIONS = 'DENY'
+
+# Or allow only same origin
+# X_FRAME_OPTIONS = 'SAMEORIGIN'
+
+# For more granular control, use Content-Security-Policy
+SECURE_CONTENT_SECURITY_POLICY = {
+    'frame-ancestors': ["'none'"],  # Equivalent to DENY
+    # Or specific domains
+    # 'frame-ancestors': ["'self'", "https://trusted-domain.com"],
+}
+```
+
+**Middleware Configuration:**
+
+```python
+# config/settings/base.py
+
+MIDDLEWARE = [
+    'django.middleware.security.SecurityMiddleware',
+    # ...
+    'django.middleware.clickjacking.XFrameOptionsMiddleware',  # ✅ Clickjacking protection
+]
+```
+
+**Testing Clickjacking Protection:**
+
+```python
+# apps/core/tests/test_security.py
+from django.test import TestCase, Client
+
+class SecurityHeadersTest(TestCase):
+    def setUp(self):
+        self.client = Client()
+    
+    def test_x_frame_options_header(self):
+        """Test that X-Frame-Options header is set."""
+        response = self.client.get('/api/v1/chamas/')
+        self.assertEqual(response.get('X-Frame-Options'), 'DENY')
+    
+    def test_content_security_policy(self):
+        """Test CSP headers are present."""
+        response = self.client.get('/')
+        self.assertIn('Content-Security-Policy', response.headers)
+```
+
+### 15.5 Additional Security Headers
+
+**Comprehensive Security Headers:**
+
+```python
+# config/settings/production.py
+
+# Security Headers
+SECURE_SSL_REDIRECT = True  # Redirect HTTP to HTTPS
+SECURE_HSTS_SECONDS = 31536000  # 1 year
+SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+SECURE_HSTS_PRELOAD = True
+
+SECURE_CONTENT_TYPE_NOSNIFF = True
+SECURE_BROWSER_XSS_FILTER = True
+SECURE_REFERRER_POLICY = 'same-origin'
+
+# Session security
+SESSION_COOKIE_SECURE = True
+SESSION_COOKIE_HTTPONLY = True
+SESSION_COOKIE_SAMESITE = 'Strict'
+SESSION_COOKIE_AGE = 1209600  # 2 weeks
+
+# CSRF security
+CSRF_COOKIE_SECURE = True
+CSRF_COOKIE_SAMESITE = 'Strict'
+
+# Content Security Policy
+CSP_DEFAULT_SRC = ("'self'",)
+CSP_SCRIPT_SRC = ("'self'", "'unsafe-inline'")
+CSP_STYLE_SRC = ("'self'", "'unsafe-inline'")
+CSP_IMG_SRC = ("'self'", "data:", "https:")
+CSP_FONT_SRC = ("'self'", "data:")
+CSP_CONNECT_SRC = ("'self'", "https://api.chamahub.com")
+CSP_FRAME_ANCESTORS = ("'none'",)
+```
+
+**Security Middleware:**
+
+```python
+# apps/core/middleware.py
+class SecurityHeadersMiddleware:
+    """Add additional security headers to all responses."""
+    
+    def __init__(self, get_response):
+        self.get_response = get_response
+    
+    def __call__(self, request):
+        response = self.get_response(request)
+        
+        # Additional security headers
+        response['X-Content-Type-Options'] = 'nosniff'
+        response['X-XSS-Protection'] = '1; mode=block'
+        response['Referrer-Policy'] = 'same-origin'
+        response['Permissions-Policy'] = 'geolocation=(), microphone=(), camera=()'
+        
+        return response
+
+# config/settings/base.py
+MIDDLEWARE = [
+    # ...
+    'apps.core.middleware.SecurityHeadersMiddleware',
+]
+```
+
+---
+
+## Part VI: Performance, Caching, and Background Processes
+
+High performance requires optimizing the data path, from the database query execution to the network response.
+
+## 16. Database and Query Optimization
+
+Optimization begins by profiling the application to identify slow database queries, which are often the primary performance bottleneck.
+
+### 16.1 QuerySet Pruning
+
+Limit query results (`.only()`, `.values()`) to retrieve only the fields strictly necessary for the current task. Similarly, use slicing (e.g., `queryset[:10]`) to restrict the number of results fetched if the full set is not needed.
+
+**Field Selection:**
+
+```python
+# ❌ BAD: Fetch all fields
+users = User.objects.all()
+
+# ✅ GOOD: Fetch only needed fields
+users = User.objects.only('id', 'email', 'full_name')
+
+# ✅ GOOD: Return dict instead of model instances
+users = User.objects.values('id', 'email', 'full_name')
+
+# ✅ GOOD: For serialization, values_list can be faster
+user_emails = User.objects.values_list('email', flat=True)
+```
+
+**Deferring Heavy Fields:**
+
+```python
+# Defer loading of heavy text fields
+chamas = Chama.objects.defer('description', 'terms_and_conditions', 'rules')
+
+# Only load them when accessed
+for chama in chamas:
+    print(chama.name)  # No extra query
+    print(chama.description)  # Triggers query only if accessed
+```
+
+**Result Limiting:**
+
+```python
+# ✅ Limit results at database level
+recent_contributions = Contribution.objects.order_by('-created_at')[:10]
+
+# ❌ DON'T: Fetch all then slice in Python
+# all_contributions = list(Contribution.objects.all())
+# recent = all_contributions[:10]  # Wasteful memory usage
+```
+
+**Conditional Field Loading:**
+
+```python
+# apps/chamas/serializers.py
+class ChamaSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Chama
+        fields = ['id', 'name', 'created_at']
+    
+    def get_fields(self):
+        """Dynamically include fields based on request."""
+        fields = super().get_fields()
+        
+        # Check if detailed view
+        request = self.context.get('request')
+        if request and request.query_params.get('detailed'):
+            # Add heavy fields only when requested
+            fields['description'] = serializers.CharField()
+            fields['rules'] = serializers.CharField()
+        
+        return fields
+```
+
+### 16.2 Bulk Transaction Efficiency
+
+Ensure that bulk creation, updates, and deletions are wrapped within database transactions to maintain atomic operations, guaranteeing data integrity and preventing partial commits.
+
+**Using Transactions:**
+
+```python
+from django.db import transaction
+
+# ✅ Atomic bulk create
+@transaction.atomic
+def create_contributions(contribution_data):
+    """Create multiple contributions atomically."""
+    contributions = [
+        Contribution(**data)
+        for data in contribution_data
+    ]
+    return Contribution.objects.bulk_create(contributions)
+
+# ✅ Atomic updates
+@transaction.atomic
+def approve_pending_contributions(chama):
+    """Approve all pending contributions for a chama."""
+    updated_count = Contribution.objects.filter(
+        chama=chama,
+        status='pending'
+    ).update(
+        status='approved',
+        approved_at=timezone.now()
+    )
+    
+    # Update chama total in same transaction
+    chama.total_contributions = chama.contributions.aggregate(
+        total=models.Sum('amount')
+    )['total']
+    chama.save()
+    
+    return updated_count
+```
+
+**Transaction Rollback on Error:**
+
+```python
+from django.db import transaction, IntegrityError
+
+def process_loan_application(loan_data):
+    """Process loan with automatic rollback on error."""
+    try:
+        with transaction.atomic():
+            # Create loan
+            loan = Loan.objects.create(**loan_data)
+            
+            # Deduct from chama balance
+            chama = loan.chama
+            chama.available_balance -= loan.amount
+            chama.save()
+            
+            # Create disbursement record
+            Disbursement.objects.create(
+                loan=loan,
+                amount=loan.amount,
+                disbursed_at=timezone.now()
+            )
+            
+            # Send notification
+            send_loan_approval_notification(loan)
+            
+            return loan
+    except IntegrityError as e:
+        # Transaction automatically rolled back
+        logger.error(f"Loan processing failed: {e}")
+        raise ValueError("Insufficient chama balance")
+```
+
+**Nested Transactions with Savepoints:**
+
+```python
+def complex_operation():
+    """Use savepoints for nested transaction control."""
+    with transaction.atomic():
+        # Outer transaction
+        user = User.objects.create(email='test@example.com')
+        
+        try:
+            # Inner savepoint
+            with transaction.atomic():
+                # This might fail
+                risky_operation()
+        except Exception:
+            # Inner transaction rolled back, outer continues
+            logger.warning("Risky operation failed, continuing")
+        
+        # Outer transaction continues
+        user.profile.setup_complete = True
+        user.profile.save()
+```
+
+### 16.3 Loop Refactoring
+
+Any pattern where a database query is executed inside a loop (the N+1 pattern) must be identified and refactored using `select_related` or `prefetch_related`.
+
+**Identifying N+1 Queries:**
+
+```python
+# ❌ BAD: N+1 query problem
+chamas = Chama.objects.all()  # 1 query
+for chama in chamas:
+    creator_email = chama.created_by.email  # N queries (one per chama)
+    print(f"{chama.name} created by {creator_email}")
+
+# ✅ GOOD: Use select_related
+chamas = Chama.objects.select_related('created_by').all()  # 1 query with JOIN
+for chama in chamas:
+    creator_email = chama.created_by.email  # No additional queries
+    print(f"{chama.name} created by {creator_email}")
+```
+
+**Monitoring Query Count:**
+
+```python
+# Use Django Debug Toolbar or manual logging
+from django.db import connection
+from django.test.utils import override_settings
+
+@override_settings(DEBUG=True)
+def test_query_performance():
+    from django.db import reset_queries
+    
+    reset_queries()
+    
+    # Your code here
+    chamas = Chama.objects.select_related('created_by').all()
+    list(chamas)  # Force evaluation
+    
+    query_count = len(connection.queries)
+    print(f"Queries executed: {query_count}")
+    
+    # Print all queries for debugging
+    for query in connection.queries:
+        print(query['sql'])
+```
+
+**Complex Prefetching:**
+
+```python
+# Prefetch with custom QuerySet
+from django.db.models import Prefetch
+
+# Get chamas with only active members
+chamas = Chama.objects.prefetch_related(
+    Prefetch(
+        'members',
+        queryset=Member.objects.filter(is_active=True).select_related('user'),
+        to_attr='active_members'
+    )
+).all()
+
+for chama in chamas:
+    # Use prefetched active members (no extra queries)
+    for member in chama.active_members:
+        print(f"{member.user.full_name} is an active member")
+```
+
+### 16.4 Query Performance Profiling
+
+**Using Django Debug Toolbar:**
+
+```bash
+pip install django-debug-toolbar
+```
+
+```python
+# config/settings/development.py
+INSTALLED_APPS = [
+    # ...
+    'debug_toolbar',
+]
+
+MIDDLEWARE = [
+    'debug_toolbar.middleware.DebugToolbarMiddleware',
+    # ...
+]
+
+INTERNAL_IPS = [
+    '127.0.0.1',
+]
+
+# config/urls.py
+if settings.DEBUG:
+    import debug_toolbar
+    urlpatterns = [
+        path('__debug__/', include(debug_toolbar.urls)),
+    ] + urlpatterns
+```
+
+**Using django-silk for Production Profiling:**
+
+```bash
+pip install django-silk
+```
+
+```python
+# config/settings/base.py
+INSTALLED_APPS = [
+    # ...
+    'silk',
+]
+
+MIDDLEWARE = [
+    'silk.middleware.SilkyMiddleware',
+    # ...
+]
+
+# config/urls.py
+urlpatterns = [
+    path('silk/', include('silk.urls', namespace='silk')),
+    # ...
+]
+```
+
+**Custom Query Logging:**
+
+```python
+# apps/core/middleware.py
+import logging
+from django.db import connection
+
+logger = logging.getLogger(__name__)
+
+class QueryCountDebugMiddleware:
+    """Log query count for each request."""
+    
+    def __init__(self, get_response):
+        self.get_response = get_response
+    
+    def __call__(self, request):
+        # Reset query count
+        from django.db import reset_queries
+        reset_queries()
+        
+        response = self.get_response(request)
+        
+        # Log query statistics
+        query_count = len(connection.queries)
+        if query_count > 10:
+            logger.warning(
+                f"High query count: {query_count} queries for {request.path}"
+            )
+        
+        # Add header for debugging
+        response['X-Query-Count'] = str(query_count)
+        
+        return response
+```
+
+---
+
+## 17. Comprehensive Caching Strategy
+
+Caching is an advanced performance accelerator, not a fix for poorly written code. It must be applied strategically after core code optimization.
+
+### 17.1 Redis Implementation
+
+Redis is the prescribed caching solution due to its high performance as an in-memory database. It should be configured as the cache backend using `django-redis` or the native Django Redis backend.
+
+**Installation:**
+
+```bash
+pip install django-redis redis
+```
+
+**Settings Configuration:**
+
+```python
+# config/settings/base.py
+
+CACHES = {
+    "default": {
+        "BACKEND": "django.core.cache.backends.redis.RedisCache",
+        "LOCATION": "redis://127.0.0.1:6379",
+        "OPTIONS": {
+            "CLIENT_CLASS": "django_redis.client.DefaultClient",
+        }
+    }
+}
+
+# For multiple Redis servers (replication mode)
+CACHES = {
+    "default": {
+        "BACKEND": "django_redis.cache.RedisCache",
+        "LOCATION": [
+            "redis://127.0.0.1:6379/1",  # Primary
+            "redis://127.0.0.1:6380/1",  # Replica 1
+            "redis://127.0.0.1:6381/1",  # Replica 2
+        ],
+        "OPTIONS": {
+            "CLIENT_CLASS": "django_redis.client.DefaultClient",
+            "CONNECTION_POOL_KWARGS": {
+                "max_connections": 50,
+                "retry_on_timeout": True,
+            },
+            "SOCKET_CONNECT_TIMEOUT": 5,
+            "SOCKET_TIMEOUT": 5,
+            "COMPRESSOR": "django_redis.compressors.zlib.ZlibCompressor",
+            "IGNORE_EXCEPTIONS": True,  # Don't crash if Redis is down
+        }
+    }
+}
+```
+
+**Docker Compose Redis Setup:**
+
+```yaml
+# docker-compose.yml
+version: '3.8'
+
+services:
+  redis:
+    image: redis:7-alpine
+    container_name: chamahub_redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+  
+  django:
+    build: .
+    depends_on:
+      - redis
+      - db
+    environment:
+      - REDIS_URL=redis://redis:6379/0
+
+volumes:
+  redis_data:
+```
+
+### 17.2 Granular Caching Levels
+
+Django's caching framework offers multiple levels of granularity.
+
+#### 17.2.1 View Caching
+
+For API endpoints that infrequently change, the entire response output can be cached using the `@cache_page` decorator.
+
+```python
+# apps/chamas/views.py
+from django.views.decorators.cache import cache_page
+from django.utils.decorators import method_decorator
+from rest_framework import viewsets
+
+class PublicChamaViewSet(viewsets.ReadOnlyModelViewSet):
+    """Public chama data with caching."""
+    
+    @method_decorator(cache_page(60 * 15))  # Cache for 15 minutes
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
+    
+    @method_decorator(cache_page(60 * 30))  # Cache for 30 minutes
+    def retrieve(self, request, *args, **kwargs):
+        return super().retrieve(request, *args, **kwargs)
+```
+
+**Cache Key Variation:**
+
+```python
+from django.views.decorators.cache import cache_page
+from django.views.decorators.vary import vary_on_headers
+
+# Vary cache by Authorization header (different cache per user)
+@method_decorator(vary_on_headers('Authorization'))
+@method_decorator(cache_page(60 * 10))
+def list(self, request, *args, **kwargs):
+    return super().list(request, *args, **kwargs)
+```
+
+#### 17.2.2 Low-Level API Caching
+
+Highly complex or computationally expensive internal functions should utilize `cache.set()` and `cache.get()` directly to store and retrieve specific data points.
+
+```python
+# apps/chamas/utils.py
+from django.core.cache import cache
+from django.db.models import Sum, Count, Avg
+import hashlib
+
+def get_chama_statistics(chama_id):
+    """Get chama statistics with caching."""
+    cache_key = f'chama_stats_{chama_id}'
+    
+    # Try to get from cache
+    stats = cache.get(cache_key)
+    
+    if stats is None:
+        # Cache miss - compute statistics
+        from apps.chamas.models import Chama
+        
+        chama = Chama.objects.get(id=chama_id)
+        stats = {
+            'total_members': chama.members.filter(is_active=True).count(),
+            'total_contributions': chama.contributions.aggregate(
+                total=Sum('amount')
+            )['total'] or 0,
+            'average_contribution': chama.contributions.aggregate(
+                avg=Avg('amount')
+            )['avg'] or 0,
+            'total_loans': chama.loans.aggregate(
+                total=Sum('amount')
+            )['total'] or 0,
+        }
+        
+        # Store in cache for 10 minutes
+        cache.set(cache_key, stats, timeout=60 * 10)
+    
+    return stats
+
+def invalidate_chama_statistics(chama_id):
+    """Invalidate cached statistics when data changes."""
+    cache_key = f'chama_stats_{chama_id}'
+    cache.delete(cache_key)
+```
+
+**Using in Views:**
+
+```python
+# apps/chamas/views.py
+from rest_framework.decorators import action
+from rest_framework.response import Response
+from .utils import get_chama_statistics, invalidate_chama_statistics
+
+class ChamaViewSet(viewsets.ModelViewSet):
+    @action(detail=True, methods=['get'])
+    def statistics(self, request, pk=None):
+        """Get chama statistics (cached)."""
+        stats = get_chama_statistics(pk)
+        return Response(stats)
+    
+    def perform_update(self, serializer):
+        """Invalidate cache on update."""
+        instance = serializer.save()
+        invalidate_chama_statistics(instance.id)
+```
+
+**Cache Patterns:**
+
+```python
+# apps/core/cache.py
+from django.core.cache import cache
+import functools
+import hashlib
+import json
+
+def cache_result(timeout=300, key_prefix=''):
+    """Decorator to cache function results."""
+    def decorator(func):
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):
+            # Generate cache key from function name and arguments
+            key_data = {
+                'func': func.__name__,
+                'args': args,
+                'kwargs': kwargs,
+            }
+            key_hash = hashlib.md5(
+                json.dumps(key_data, sort_keys=True, default=str).encode()
+            ).hexdigest()
+            cache_key = f'{key_prefix}{func.__name__}_{key_hash}'
+            
+            # Try to get from cache
+            result = cache.get(cache_key)
+            
+            if result is None:
+                # Cache miss - execute function
+                result = func(*args, **kwargs)
+                cache.set(cache_key, result, timeout=timeout)
+            
+            return result
+        
+        return wrapper
+    return decorator
+
+# Usage
+@cache_result(timeout=600, key_prefix='chama_')
+def get_chama_analytics(chama_id, date_range):
+    """Expensive analytics calculation."""
+    # Complex calculation here
+    return analytics_data
+```
+
+#### 17.2.3 Session Caching
+
+To prevent database latency from slowing down session lookups, sessions should be configured to use Redis.
+
+```python
+# config/settings/base.py
+
+# Use Redis for session storage
+SESSION_ENGINE = 'django.contrib.sessions.backends.cache'
+SESSION_CACHE_ALIAS = 'default'
+
+# Session settings
+SESSION_COOKIE_AGE = 1209600  # 2 weeks
+SESSION_COOKIE_SECURE = not DEBUG
+SESSION_COOKIE_HTTPONLY = True
+SESSION_COOKIE_SAMESITE = 'Strict'
+```
+
+**Alternative: Cached DB Sessions:**
+
+```python
+# config/settings/base.py
+
+# Use database with cache for sessions (best of both worlds)
+SESSION_ENGINE = 'django.contrib.sessions.backends.cached_db'
+```
+
+### 17.3 Cache Invalidation Strategies
+
+**CRITICAL:** Memory-based caching solutions, including Redis, are temporary storage solutions and should never be relied upon for permanent data persistence.
+
+**Time-Based Invalidation:**
+
+```python
+# Set explicit timeout
+cache.set('key', value, timeout=60 * 5)  # 5 minutes
+
+# Use default timeout from settings
+cache.set('key', value)  # Uses CACHES['default']['TIMEOUT']
+
+# Cache forever (until manually deleted or Redis restart)
+cache.set('key', value, timeout=None)
+```
+
+**Event-Based Invalidation:**
+
+```python
+# apps/chamas/signals.py
+from django.db.models.signals import post_save, post_delete
+from django.dispatch import receiver
+from django.core.cache import cache
+from .models import Contribution
+
+@receiver(post_save, sender=Contribution)
+def invalidate_contribution_cache(sender, instance, **kwargs):
+    """Invalidate caches when contribution is saved."""
+    # Invalidate chama statistics
+    cache.delete(f'chama_stats_{instance.chama_id}')
+    
+    # Invalidate contribution list for this chama
+    cache.delete(f'chama_contributions_{instance.chama_id}')
+
+@receiver(post_delete, sender=Contribution)
+def invalidate_contribution_cache_on_delete(sender, instance, **kwargs):
+    """Invalidate caches when contribution is deleted."""
+    cache.delete(f'chama_stats_{instance.chama_id}')
+    cache.delete(f'chama_contributions_{instance.chama_id}')
+```
+
+**Pattern-Based Invalidation:**
+
+```python
+# Invalidate all keys matching a pattern
+from django_redis import get_redis_connection
+
+def invalidate_chama_caches(chama_id):
+    """Invalidate all caches related to a chama."""
+    redis_client = get_redis_connection("default")
+    
+    # Find all keys matching pattern
+    pattern = f'*chama_{chama_id}*'
+    keys = redis_client.keys(pattern)
+    
+    if keys:
+        redis_client.delete(*keys)
+```
+
+### 17.4 Cache Monitoring
+
+```python
+# apps/core/management/commands/cache_stats.py
+from django.core.management.base import BaseCommand
+from django_redis import get_redis_connection
+
+class Command(BaseCommand):
+    help = 'Display Redis cache statistics'
+    
+    def handle(self, *args, **options):
+        redis_client = get_redis_connection("default")
+        
+        # Get Redis info
+        info = redis_client.info()
+        
+        self.stdout.write(f"Redis Version: {info['redis_version']}")
+        self.stdout.write(f"Used Memory: {info['used_memory_human']}")
+        self.stdout.write(f"Connected Clients: {info['connected_clients']}")
+        self.stdout.write(f"Total Keys: {redis_client.dbsize()}")
+        
+        # Get cache hit/miss stats
+        stats = cache.get_stats()
+        self.stdout.write(f"Cache Stats: {stats}")
+```
+
+---
+
+## 18. Scheduled Tasks (Crons) and Asynchronous Workloads
+
+Handling tasks that are too long-running or should be executed outside the synchronous request-response cycle requires robust task queuing.
+
+### 18.1 Celery vs. Management Commands/Crons
+
+The choice between a simple system cron executing Django management commands and a full Celery setup depends on complexity and fault tolerance requirements.
+
+#### 18.1.1 Simple Crons
+
+Suitable for low-criticality, periodic maintenance tasks (e.g., rotating logs, simple cleanup scripts).
+
+**Create Management Command:**
+
+```python
+# apps/core/management/commands/cleanup_old_sessions.py
+from django.core.management.base import BaseCommand
+from django.contrib.sessions.models import Session
+from django.utils import timezone
+
+class Command(BaseCommand):
+    help = 'Clean up expired sessions'
+    
+    def handle(self, *args, **options):
+        deleted_count, _ = Session.objects.filter(
+            expire_date__lt=timezone.now()
+        ).delete()
+        
+        self.stdout.write(
+            self.style.SUCCESS(f'Deleted {deleted_count} expired sessions')
+        )
+```
+
+**Crontab Setup:**
+
+```bash
+# Create shell script
+# scripts/run_cleanup.sh
+#!/bin/bash
+cd /path/to/project
+source venv/bin/activate
+python manage.py cleanup_old_sessions
+```
+
+```bash
+# Add to crontab (crontab -e)
+# Run cleanup every day at 2 AM
+0 2 * * * /path/to/project/scripts/run_cleanup.sh >> /var/log/cleanup.log 2>&1
+```
+
+#### 18.1.2 Celery (Recommended for High Traffic)
+
+Celery is the industry standard for high-volume Django task management. It handles long-running tasks, ensures guaranteed execution with retry mechanisms, manages worker processes, and offers high infrastructure integration.
+
+**Installation:**
+
+```bash
+pip install celery redis
+```
+
+**Celery Configuration:**
+
+```python
+# config/celery.py
+import os
+from celery import Celery
+
+# Set default Django settings
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings.development')
+
+app = Celery('chamahub')
+
+# Load config from Django settings with CELERY_ prefix
+app.config_from_object('django.conf:settings', namespace='CELERY')
+
+# Auto-discover tasks from all installed apps
+app.autodiscover_tasks()
+
+@app.task(bind=True, ignore_result=True)
+def debug_task(self):
+    print(f'Request: {self.request!r}')
+```
+
+```python
+# config/__init__.py
+from .celery import app as celery_app
+
+__all__ = ('celery_app',)
+```
+
+**Settings Configuration:**
+
+```python
+# config/settings/base.py
+
+# Celery Configuration
+CELERY_BROKER_URL = config('REDIS_URL', default='redis://localhost:6379/0')
+CELERY_RESULT_BACKEND = config('REDIS_URL', default='redis://localhost:6379/0')
+
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
+CELERY_TIMEZONE = 'Africa/Nairobi'
+
+# Task execution settings
+CELERY_TASK_TRACK_STARTED = True
+CELERY_TASK_TIME_LIMIT = 30 * 60  # 30 minutes
+CELERY_TASK_SOFT_TIME_LIMIT = 25 * 60  # 25 minutes
+
+# Retry settings
+CELERY_TASK_AUTORETRY_FOR = (Exception,)
+CELERY_TASK_RETRY_KWARGS = {'max_retries': 3}
+CELERY_TASK_RETRY_BACKOFF = True
+CELERY_TASK_RETRY_BACKOFF_MAX = 600  # 10 minutes
+CELERY_TASK_RETRY_JITTER = True
+
+# Result backend settings
+CELERY_RESULT_EXPIRES = 60 * 60 * 24  # 24 hours
+
+# Worker settings
+CELERY_WORKER_PREFETCH_MULTIPLIER = 4
+CELERY_WORKER_MAX_TASKS_PER_CHILD = 1000  # Restart worker after 1000 tasks
+```
+
+**Create Tasks:**
+
+```python
+# apps/chamas/tasks.py
+from celery import shared_task
+from django.core.mail import send_mail
+from django.utils import timezone
+from .models import Contribution, Chama
+import logging
+
+logger = logging.getLogger(__name__)
+
+@shared_task(bind=True, max_retries=3)
+def send_contribution_reminder(self, chama_id):
+    """Send contribution reminders to chama members."""
+    try:
+        chama = Chama.objects.get(id=chama_id)
+        members = chama.members.filter(is_active=True)
+        
+        for member in members:
+            send_mail(
+                subject=f'Contribution Reminder - {chama.name}',
+                message=f'Dear {member.user.full_name}, your contribution is due.',
+                from_email='noreply@chamahub.com',
+                recipient_list=[member.user.email],
+                fail_silently=False,
+            )
+        
+        logger.info(f'Sent reminders to {members.count()} members of {chama.name}')
+        return f'Sent {members.count()} reminders'
+        
+    except Chama.DoesNotExist:
+        logger.error(f'Chama {chama_id} not found')
+        raise
+    except Exception as exc:
+        logger.error(f'Failed to send reminders: {exc}')
+        raise self.retry(exc=exc, countdown=60)  # Retry after 1 minute
+
+@shared_task
+def calculate_monthly_interest():
+    """Calculate and apply monthly interest to savings."""
+    chamas = Chama.objects.filter(is_active=True)
+    
+    for chama in chamas:
+        interest_rate = chama.interest_rate / 100 / 12  # Monthly rate
+        
+        contributions = chama.contributions.filter(
+            status='approved',
+            interest_applied_date__lt=timezone.now() - timezone.timedelta(days=30)
+        )
+        
+        for contribution in contributions:
+            interest = contribution.amount * interest_rate
+            contribution.interest_earned += interest
+            contribution.interest_applied_date = timezone.now()
+            contribution.save()
+    
+    return f'Processed {chamas.count()} chamas'
+
+@shared_task(bind=True)
+def process_bulk_contributions(self, contribution_data):
+    """Process bulk contribution uploads."""
+    from django.db import transaction
+    
+    total = len(contribution_data)
+    processed = 0
+    
+    try:
+        with transaction.atomic():
+            for data in contribution_data:
+                Contribution.objects.create(**data)
+                processed += 1
+                
+                # Update progress
+                self.update_state(
+                    state='PROGRESS',
+                    meta={'processed': processed, 'total': total}
+                )
+        
+        return {'status': 'success', 'processed': processed, 'total': total}
+        
+    except Exception as exc:
+        return {'status': 'error', 'error': str(exc)}
+```
+
+**Using Tasks:**
+
+```python
+# apps/chamas/views.py
+from .tasks import send_contribution_reminder, process_bulk_contributions
+
+class ChamaViewSet(viewsets.ModelViewSet):
+    @action(detail=True, methods=['post'])
+    def send_reminders(self, request, pk=None):
+        """Trigger contribution reminders asynchronously."""
+        # Queue task for background processing
+        task = send_contribution_reminder.delay(pk)
+        
+        return Response({
+            'status': 'Task queued',
+            'task_id': task.id
+        })
+    
+    @action(detail=False, methods=['post'])
+    def bulk_upload(self, request):
+        """Handle bulk contribution upload."""
+        contribution_data = request.data.get('contributions', [])
+        
+        # Process asynchronously
+        task = process_bulk_contributions.delay(contribution_data)
+        
+        return Response({
+            'status': 'Processing',
+            'task_id': task.id
+        })
+```
+
+**Running Celery Workers:**
+
+```bash
+# Start Celery worker
+celery -A config worker --loglevel=info
+
+# Start multiple workers
+celery -A config worker --loglevel=info --concurrency=4
+
+# Start worker with specific queue
+celery -A config worker --loglevel=info --queue=emails,default
+
+# Run in background (production)
+celery -A config worker --loglevel=info --detach --pidfile=/var/run/celery/worker.pid
+```
+
+### 18.2 Robust Scheduling with Celery Beat
+
+For scheduling periodic tasks, the use of `django-celery-beat` is mandatory for centralized management.
+
+**Installation:**
+
+```bash
+pip install django-celery-beat
+```
+
+**Configuration:**
+
+```python
+# config/settings/base.py
+
+INSTALLED_APPS = [
+    # ...
+    'django_celery_beat',
+]
+
+# Celery Beat settings
+CELERY_BEAT_SCHEDULER = 'django_celery_beat.schedulers:DatabaseScheduler'
+```
+
+**Run Migrations:**
+
+```bash
+python manage.py migrate django_celery_beat
+```
+
+**Define Periodic Tasks in Code:**
+
+```python
+# config/celery.py
+from celery.schedules import crontab
+
+app.conf.beat_schedule = {
+    'send-monthly-reports': {
+        'task': 'apps.chamas.tasks.send_monthly_reports',
+        'schedule': crontab(day_of_month='1', hour='9', minute='0'),  # 1st of month at 9 AM
+    },
+    'calculate-interest': {
+        'task': 'apps.chamas.tasks.calculate_monthly_interest',
+        'schedule': crontab(day_of_month='1', hour='0', minute='0'),  # 1st of month at midnight
+    },
+    'cleanup-old-data': {
+        'task': 'apps.core.tasks.cleanup_old_data',
+        'schedule': crontab(hour='2', minute='0'),  # Every day at 2 AM
+    },
+    'send-contribution-reminders': {
+        'task': 'apps.chamas.tasks.send_all_contribution_reminders',
+        'schedule': crontab(day_of_week='1', hour='8', minute='0'),  # Every Monday at 8 AM
+    },
+}
+```
+
+**Managing via Django Admin:**
+
+```python
+# apps/core/admin.py (django-celery-beat provides admin automatically)
+# Navigate to /admin/django_celery_beat/ to manage schedules
+```
+
+**Start Celery Beat:**
+
+```bash
+# Start beat scheduler
+celery -A config beat --loglevel=info
+
+# Use database scheduler (with django-celery-beat)
+celery -A config beat -l INFO --scheduler django_celery_beat.schedulers:DatabaseScheduler
+
+# Run in background (production)
+celery -A config beat --loglevel=info --detach --pidfile=/var/run/celery/beat.pid
+```
+
+**Docker Compose with Celery:**
+
+```yaml
+# docker-compose.yml
+version: '3.8'
+
+services:
+  django:
+    build: .
+    command: gunicorn config.wsgi:application --bind 0.0.0.0:8000
+    depends_on:
+      - db
+      - redis
+  
+  celery_worker:
+    build: .
+    command: celery -A config worker --loglevel=info
+    depends_on:
+      - db
+      - redis
+    environment:
+      - CELERY_BROKER_URL=redis://redis:6379/0
+  
+  celery_beat:
+    build: .
+    command: celery -A config beat --loglevel=info --scheduler django_celery_beat.schedulers:DatabaseScheduler
+    depends_on:
+      - db
+      - redis
+    environment:
+      - CELERY_BROKER_URL=redis://redis:6379/0
+  
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+  
+  db:
+    image: postgres:15
+    environment:
+      - POSTGRES_DB=chamahub
+```
+
+**Monitoring Celery:**
+
+```bash
+# Monitor tasks in real-time
+celery -A config events
+
+# Flower - Web-based monitoring
+pip install flower
+celery -A config flower
+# Access at http://localhost:5555
+```
+
+---
+
+## Part VII: Operational Maturity: DevOps, Microservices, and Observability
+
+Moving to operational maturity requires standardizing environments, enabling horizontal scaling, and establishing comprehensive monitoring capabilities.
+
+## 19. DevOps and Containerization (Docker)
+
+Docker and Docker Compose ensure that the development, staging, and production environments are functionally identical, eliminating "works on my machine" issues.
+
+### 19.1 Full-Stack Dockerization
+
+#### 19.1.1 Django Backend
+
+The backend Dockerfile uses a Python base image. It must specify dependencies (requirements.txt) and utilize Gunicorn or uWSGI as the production application server to host the Django application.
+
+**Backend Dockerfile:**
+
+```dockerfile
+# Dockerfile
+FROM python:3.11-slim
+
+# Set environment variables
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PIP_NO_CACHE_DIR=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1
+
+# Set work directory
+WORKDIR /app
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    postgresql-client \
+    build-essential \
+    libpq-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Python dependencies
+COPY requirements/production.txt requirements.txt
+RUN pip install --upgrade pip && \
+    pip install -r requirements.txt
+
+# Copy project
+COPY . .
+
+# Collect static files
+RUN python manage.py collectstatic --noinput
+
+# Create non-root user
+RUN useradd -m -u 1000 django && \
+    chown -R django:django /app
+USER django
+
+# Run gunicorn
+CMD ["gunicorn", "--bind", "0.0.0.0:8000", "--workers", "4", "config.wsgi:application"]
+```
+
+**Multi-Stage Build for Smaller Images:**
+
+```dockerfile
+# Dockerfile (multi-stage)
+# Stage 1: Build dependencies
+FROM python:3.11-slim AS builder
+
+WORKDIR /app
+
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    libpq-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY requirements/production.txt requirements.txt
+RUN pip install --user --no-cache-dir -r requirements.txt
+
+# Stage 2: Runtime
+FROM python:3.11-slim
+
+ENV PYTHONUNBUFFERED=1 \
+    PATH=/root/.local/bin:$PATH
+
+WORKDIR /app
+
+# Install runtime dependencies only
+RUN apt-get update && apt-get install -y \
+    postgresql-client \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy installed packages from builder
+COPY --from=builder /root/.local /root/.local
+
+# Copy application
+COPY . .
+
+# Collect static files
+RUN python manage.py collectstatic --noinput
+
+# Create non-root user
+RUN useradd -m -u 1000 django && \
+    chown -R django:django /app
+USER django
+
+EXPOSE 8000
+
+CMD ["gunicorn", "--bind", "0.0.0.0:8000", "--workers", "4", "config.wsgi:application"]
+```
+
+#### 19.1.2 React Frontend
+
+The frontend Dockerfile should use a Node base image for building the static assets. Critically, a multi-stage build is required: the final stage uses a lightweight HTTP server (like Nginx) to serve the static bundle.
+
+**Frontend Dockerfile:**
+
+```dockerfile
+# chamahub-frontend/Dockerfile
+# Stage 1: Build React app
+FROM node:18-alpine AS builder
+
+WORKDIR /app
+
+# Copy package files
+COPY package*.json ./
+
+# Install dependencies
+RUN npm ci --only=production
+
+# Copy source code
+COPY . .
+
+# Build production bundle
+RUN npm run build
+
+# Stage 2: Serve with Nginx
+FROM nginx:alpine
+
+# Copy built assets from builder
+COPY --from=builder /app/dist /usr/share/nginx/html
+
+# Copy custom nginx configuration
+COPY nginx.conf /etc/nginx/conf.d/default.conf
+
+# Expose port
+EXPOSE 80
+
+CMD ["nginx", "-g", "daemon off;"]
+```
+
+**Nginx Configuration:**
+
+```nginx
+# nginx.conf
+server {
+    listen 80;
+    server_name localhost;
+    
+    root /usr/share/nginx/html;
+    index index.html;
+    
+    # Gzip compression
+    gzip on;
+    gzip_types text/plain text/css application/json application/javascript text/xml application/xml application/xml+rss text/javascript;
+    
+    # SPA routing - redirect all requests to index.html
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+    
+    # Cache static assets
+    location ~* \.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)$ {
+        expires 1y;
+        add_header Cache-Control "public, immutable";
+    }
+    
+    # Security headers
+    add_header X-Frame-Options "DENY" always;
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header X-XSS-Protection "1; mode=block" always;
+    add_header Referrer-Policy "no-referrer-when-downgrade" always;
+}
+```
+
+### 19.2 Local Development with Docker Compose
+
+The docker-compose.yml file defines the entire ecosystem. It must orchestrate the deployment of all necessary services.
+
+**Comprehensive Docker Compose:**
+
+```yaml
+# docker-compose.yml
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  db:
+    image: postgres:15-alpine
+    container_name: chamahub_db
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_DB=chamahub
+      - POSTGRES_USER=chamahub_user
+      - POSTGRES_PASSWORD=chamahub_pass
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U chamahub_user"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+  
+  # Redis Cache & Message Broker
+  redis:
+    image: redis:7-alpine
+    container_name: chamahub_redis
+    volumes:
+      - redis_data:/data
+    ports:
+      - "6379:6379"
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+  
+  # Django Backend
+  django:
+    build: .
+    container_name: chamahub_backend
+    command: python manage.py runserver 0.0.0.0:8000
+    volumes:
+      - .:/app
+      - static_volume:/app/staticfiles
+      - media_volume:/app/media
+    ports:
+      - "8000:8000"
+    environment:
+      - DEBUG=True
+      - DATABASE_URL=postgresql://chamahub_user:chamahub_pass@db:5432/chamahub
+      - REDIS_URL=redis://redis:6379/0
+      - CELERY_BROKER_URL=redis://redis:6379/0
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+  
+  # Celery Worker
+  celery_worker:
+    build: .
+    container_name: chamahub_celery_worker
+    command: celery -A config worker --loglevel=info
+    volumes:
+      - .:/app
+    environment:
+      - DATABASE_URL=postgresql://chamahub_user:chamahub_pass@db:5432/chamahub
+      - REDIS_URL=redis://redis:6379/0
+      - CELERY_BROKER_URL=redis://redis:6379/0
+    depends_on:
+      - db
+      - redis
+  
+  # Celery Beat Scheduler
+  celery_beat:
+    build: .
+    container_name: chamahub_celery_beat
+    command: celery -A config beat --loglevel=info --scheduler django_celery_beat.schedulers:DatabaseScheduler
+    volumes:
+      - .:/app
+    environment:
+      - DATABASE_URL=postgresql://chamahub_user:chamahub_pass@db:5432/chamahub
+      - REDIS_URL=redis://redis:6379/0
+      - CELERY_BROKER_URL=redis://redis:6379/0
+    depends_on:
+      - db
+      - redis
+  
+  # React Frontend
+  frontend:
+    build: ./chamahub-frontend
+    container_name: chamahub_frontend
+    volumes:
+      - ./chamahub-frontend:/app
+      - /app/node_modules
+    ports:
+      - "3000:3000"
+    environment:
+      - VITE_API_BASE_URL=http://localhost:8000
+    command: npm run dev -- --host
+    depends_on:
+      - django
+
+volumes:
+  postgres_data:
+  redis_data:
+  static_volume:
+  media_volume:
+
+networks:
+  default:
+    name: chamahub_network
+```
+
+**Running the Stack:**
+
+```bash
+# Build and start all services
+docker-compose up --build
+
+# Run in detached mode
+docker-compose up -d
+
+# View logs
+docker-compose logs -f
+
+# Stop all services
+docker-compose down
+
+# Stop and remove volumes
+docker-compose down -v
+
+# Run specific service
+docker-compose up django
+
+# Execute commands in running container
+docker-compose exec django python manage.py migrate
+docker-compose exec django python manage.py createsuperuser
+docker-compose exec django python manage.py shell
+```
+
+**Production Docker Compose:**
+
+```yaml
+# docker-compose.prod.yml
+version: '3.8'
+
+services:
+  django:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: gunicorn config.wsgi:application --bind 0.0.0.0:8000 --workers 4
+    environment:
+      - DEBUG=False
+      - SECRET_KEY=${SECRET_KEY}
+      - DATABASE_URL=${DATABASE_URL}
+      - REDIS_URL=${REDIS_URL}
+      - ALLOWED_HOSTS=${ALLOWED_HOSTS}
+    restart: always
+  
+  nginx:
+    image: nginx:alpine
+    volumes:
+      - ./nginx/prod.conf:/etc/nginx/conf.d/default.conf
+      - static_volume:/app/staticfiles
+      - media_volume:/app/media
+    ports:
+      - "80:80"
+      - "443:443"
+    depends_on:
+      - django
+    restart: always
+
+# ... other services
+```
+
+---
+
+## 20. Advanced Shell Commands for DevOps
+
+Mastery of the underlying operating system is non-negotiable for effective deployment and troubleshooting. These advanced shell commands are essential for managing processes and diagnosing issues in a live server environment.
+
+### 20.1 Essential DevOps Commands
+
+| Command | Purpose | Operational Necessity |
+|---------|---------|----------------------|
+| `top` / `htop` / `free` | Real-time memory and CPU monitoring | Identifying resource-intensive processes (e.g., misbehaving Celery workers or database queries) |
+| `ps aux` / `pidof` / `kill` | Process management | Listing running processes, finding PID by name, and terminating unresponsive services (e.g., restarting Gunicorn or Celery workers) |
+| `systemctl` | Service status management | Checking the status of systemd-managed services like Docker, Nginx, or the Celery worker daemon |
+| `ls -ld` / `chmod` / `chown` | File permissions audit | Ensuring that sensitive configuration files and directories have appropriate permissions to prevent security exposures |
+| `curl` / `wget` / `nslookup` / `dig` | Network diagnostics | Testing connectivity between services and diagnosing DNS resolution problems |
+
+### 20.2 System Monitoring
+
+**Memory and CPU Monitoring:**
+
+```bash
+# Real-time process monitoring
+top
+
+# Enhanced process viewer
+htop
+
+# Memory usage summary
+free -h
+
+# Detailed memory info
+cat /proc/meminfo
+
+# CPU information
+lscpu
+
+# System load average
+uptime
+```
+
+**Disk Usage:**
+
+```bash
+# Disk space usage
+df -h
+
+# Directory size
+du -sh /var/log/*
+
+# Find large files
+find / -type f -size +100M -exec ls -lh {} \;
+
+# Check inode usage
+df -i
+```
+
+### 20.3 Process Management
+
+**Viewing Processes:**
+
+```bash
+# All running processes
+ps aux
+
+# Filter Django processes
+ps aux | grep python
+
+# Filter Celery workers
+ps aux | grep celery
+
+# Process tree
+pstree
+
+# Find process by name
+pidof gunicorn
+
+# Process details
+ps -p <PID> -f
+```
+
+**Killing Processes:**
+
+```bash
+# Graceful termination
+kill <PID>
+
+# Force kill
+kill -9 <PID>
+
+# Kill all processes by name
+pkill -f gunicorn
+
+# Kill all Celery workers
+pkill -f celery
+
+# Kill with signal
+kill -SIGHUP <PID>  # Reload configuration
+```
+
+**Managing Gunicorn:**
+
+```bash
+# Start Gunicorn
+gunicorn config.wsgi:application --bind 0.0.0.0:8000 --daemon
+
+# Reload Gunicorn gracefully (zero downtime)
+kill -HUP $(cat /var/run/gunicorn.pid)
+
+# Stop Gunicorn
+kill $(cat /var/run/gunicorn.pid)
+
+# Check if Gunicorn is running
+pgrep -f gunicorn
+```
+
+### 20.4 Service Management (systemd)
+
+**Systemd Service File:**
+
+```ini
+# /etc/systemd/system/chamahub.service
+[Unit]
+Description=ChamaHub Django Application
+After=network.target postgresql.service redis.service
+
+[Service]
+Type=notify
+User=django
+Group=django
+WorkingDirectory=/opt/chamahub
+Environment="PATH=/opt/chamahub/venv/bin"
+Environment="DJANGO_SETTINGS_MODULE=config.settings.production"
+ExecStart=/opt/chamahub/venv/bin/gunicorn \
+    --workers 4 \
+    --bind unix:/run/chamahub/gunicorn.sock \
+    --pid /run/chamahub/gunicorn.pid \
+    config.wsgi:application
+ExecReload=/bin/kill -s HUP $MAINPID
+KillMode=mixed
+TimeoutStopSec=5
+PrivateTmp=true
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
+```
+
+**Systemd Commands:**
+
+```bash
+# Reload systemd daemon
+sudo systemctl daemon-reload
+
+# Start service
+sudo systemctl start chamahub
+
+# Stop service
+sudo systemctl stop chamahub
+
+# Restart service
+sudo systemctl restart chamahub
+
+# Reload configuration
+sudo systemctl reload chamahub
+
+# Enable service on boot
+sudo systemctl enable chamahub
+
+# Check service status
+sudo systemctl status chamahub
+
+# View service logs
+sudo journalctl -u chamahub -f
+
+# View logs since last boot
+sudo journalctl -u chamahub -b
+```
+
+### 20.5 File Permissions and Security
+
+**Permission Management:**
+
+```bash
+# Check file permissions
+ls -la /etc/chamahub/
+
+# Change permissions (numeric)
+chmod 600 /etc/chamahub/.env  # Owner read/write only
+chmod 644 /etc/chamahub/settings.py  # Owner rw, group/others r
+chmod 755 /opt/chamahub/manage.py  # Owner rwx, group/others rx
+
+# Change permissions (symbolic)
+chmod u+x script.sh  # Add execute for owner
+chmod go-w file.txt  # Remove write for group and others
+
+# Change ownership
+chown django:django /opt/chamahub/
+chown -R django:django /opt/chamahub/  # Recursive
+
+# Set default permissions for new files
+umask 022
+```
+
+**Secure File Permissions:**
+
+```bash
+# Secure .env file (production)
+chmod 600 /opt/chamahub/.env
+chown django:django /opt/chamahub/.env
+
+# Secure static files
+chmod -R 755 /opt/chamahub/staticfiles
+
+# Secure log files
+chmod 640 /var/log/chamahub/*.log
+chown django:adm /var/log/chamahub/*.log
+
+# Find files with wrong permissions
+find /opt/chamahub -type f -perm 777
+```
+
+### 20.6 Network Diagnostics
+
+**Testing Connectivity:**
+
+```bash
+# Test HTTP endpoint
+curl -I http://localhost:8000/api/v1/chamas/
+
+# Test with headers
+curl -H "Authorization: Bearer TOKEN" http://localhost:8000/api/v1/chamas/
+
+# Test POST request
+curl -X POST -H "Content-Type: application/json" \
+    -d '{"email":"test@example.com"}' \
+    http://localhost:8000/api/v1/auth/login/
+
+# Follow redirects
+curl -L http://chamahub.com
+
+# Save response
+curl -o response.json http://localhost:8000/api/v1/chamas/
+```
+
+**DNS and Network Tools:**
+
+```bash
+# DNS lookup
+nslookup chamahub.com
+
+# Detailed DNS info
+dig chamahub.com
+
+# Trace route
+traceroute chamahub.com
+
+# Check open ports
+netstat -tulpn | grep LISTEN
+
+# Check specific port
+lsof -i :8000
+
+# Test port connectivity
+telnet localhost 5432
+```
+
+**Network Monitoring:**
+
+```bash
+# Active connections
+ss -tuln
+
+# Established connections
+ss -tn state established
+
+# Monitor network traffic
+iftop
+
+# Network statistics
+netstat -s
+
+# Bandwidth usage
+vnstat
+```
+
+### 20.7 Log Management
+
+**Viewing Logs:**
+
+```bash
+# View Django logs
+tail -f /var/log/chamahub/django.log
+
+# View last 100 lines
+tail -n 100 /var/log/chamahub/django.log
+
+# Follow multiple logs
+tail -f /var/log/chamahub/*.log
+
+# Search logs
+grep "ERROR" /var/log/chamahub/django.log
+
+# Search with context
+grep -C 5 "ERROR" /var/log/chamahub/django.log
+
+# Real-time search
+tail -f /var/log/chamahub/django.log | grep "ERROR"
+```
+
+**Log Rotation:**
+
+```bash
+# /etc/logrotate.d/chamahub
+/var/log/chamahub/*.log {
+    daily
+    rotate 14
+    compress
+    delaycompress
+    notifempty
+    create 0640 django adm
+    sharedscripts
+    postrotate
+        systemctl reload chamahub
+    endscript
+}
+```
+
+### 20.8 Docker Commands
+
+**Container Management:**
+
+```bash
+# List running containers
+docker ps
+
+# List all containers
+docker ps -a
+
+# View container logs
+docker logs -f chamahub_backend
+
+# Execute command in container
+docker exec -it chamahub_backend python manage.py shell
+
+# Enter container shell
+docker exec -it chamahub_backend /bin/bash
+
+# Copy files from container
+docker cp chamahub_backend:/app/logs ./logs
+
+# Inspect container
+docker inspect chamahub_backend
+
+# Container resource usage
+docker stats
+```
+
+**Image Management:**
+
+```bash
+# List images
+docker images
+
+# Remove unused images
+docker image prune
+
+# Build image
+docker build -t chamahub:latest .
+
+# Tag image
+docker tag chamahub:latest registry.example.com/chamahub:v1.0
+
+# Push to registry
+docker push registry.example.com/chamahub:v1.0
+```
+
+---
+
+## 21. Microservices Architecture Transition
+
+The plan anticipates a future transition to microservices, utilizing Django as a base for individual service components.
+
+### 21.1 Strategic Blueprint for Isolation
+
+Microservices are adopted to achieve greater horizontal scalability and allow independent deployment cycles. This decomposition requires the refactoring of a monolithic Django application into separate, independent Django projects (or services) for core functions.
+
+**Service Decomposition Strategy:**
+
+```
+Monolithic Structure:
+ProDev-Backend/
+├── apps/
+│   ├── users/
+│   ├── chamas/
+│   ├── contributions/
+│   ├── loans/
+│   └── notifications/
+
+↓ REFACTOR TO ↓
+
+Microservices Structure:
+├── user-service/
+│   └── Django project managing users, authentication
+├── chama-service/
+│   └── Django project managing chamas, members
+├── contribution-service/
+│   └── Django project managing contributions, payments
+├── loan-service/
+│   └── Django project managing loans, disbursements
+└── notification-service/
+    └── Django project managing emails, SMS, push notifications
+```
+
+**Service Boundaries:**
+
+Each service should have:
+- **Clear domain responsibility:** Single Responsibility Principle
+- **Independent database:** Data sovereignty
+- **API contracts:** Well-defined REST APIs
+- **Autonomous deployment:** Can be deployed independently
+- **Fault isolation:** Failure in one service doesn't crash others
+
+### 21.2 Data Sovereignty and Service Independence
+
+**CRITICAL PRINCIPLE:** Each service must own its own, independent database instance. Sharing a single database reintroduces tight coupling, negating the architectural benefits of decomposition.
+
+#### 21.2.1 Separate Databases
+
+```python
+# user-service/config/settings.py
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'user_service_db',
+        'USER': 'user_service_user',
+        'PASSWORD': config('DB_PASSWORD'),
+        'HOST': 'user-db.example.com',
+        'PORT': '5432',
+    }
+}
+
+# chama-service/config/settings.py
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'chama_service_db',
+        'USER': 'chama_service_user',
+        'PASSWORD': config('DB_PASSWORD'),
+        'HOST': 'chama-db.example.com',
+        'PORT': '5432',
+    }
+}
+```
+
+**Docker Compose for Microservices:**
+
+```yaml
+# docker-compose.microservices.yml
+version: '3.8'
+
+services:
+  # User Service
+  user-service:
+    build: ./user-service
+    environment:
+      - DATABASE_URL=postgresql://user_user:pass@user-db:5432/user_db
+    depends_on:
+      - user-db
+    ports:
+      - "8001:8000"
+  
+  user-db:
+    image: postgres:15-alpine
+    environment:
+      - POSTGRES_DB=user_db
+      - POSTGRES_USER=user_user
+      - POSTGRES_PASSWORD=pass
+    volumes:
+      - user_db_data:/var/lib/postgresql/data
+  
+  # Chama Service
+  chama-service:
+    build: ./chama-service
+    environment:
+      - DATABASE_URL=postgresql://chama_user:pass@chama-db:5432/chama_db
+      - USER_SERVICE_URL=http://user-service:8000
+    depends_on:
+      - chama-db
+    ports:
+      - "8002:8000"
+  
+  chama-db:
+    image: postgres:15-alpine
+    environment:
+      - POSTGRES_DB=chama_db
+      - POSTGRES_USER=chama_user
+      - POSTGRES_PASSWORD=pass
+    volumes:
+      - chama_db_data:/var/lib/postgresql/data
+  
+  # Contribution Service
+  contribution-service:
+    build: ./contribution-service
+    environment:
+      - DATABASE_URL=postgresql://contrib_user:pass@contribution-db:5432/contribution_db
+      - USER_SERVICE_URL=http://user-service:8000
+      - CHAMA_SERVICE_URL=http://chama-service:8000
+    depends_on:
+      - contribution-db
+    ports:
+      - "8003:8000"
+  
+  contribution-db:
+    image: postgres:15-alpine
+    environment:
+      - POSTGRES_DB=contribution_db
+      - POSTGRES_USER=contrib_user
+      - POSTGRES_PASSWORD=pass
+    volumes:
+      - contribution_db_data:/var/lib/postgresql/data
+  
+  # API Gateway (Nginx)
+  api-gateway:
+    image: nginx:alpine
+    volumes:
+      - ./nginx-gateway.conf:/etc/nginx/conf.d/default.conf
+    ports:
+      - "80:80"
+    depends_on:
+      - user-service
+      - chama-service
+      - contribution-service
+
+volumes:
+  user_db_data:
+  chama_db_data:
+  contribution_db_data:
+```
+
+#### 21.2.2 Communication Protocols
+
+Internal function calls between applications within the monolith must be replaced by network calls (e.g., HTTP requests) to other services.
+
+**Service-to-Service Communication:**
+
+```python
+# chama-service/apps/chamas/services.py
+import requests
+from django.conf import settings
+
+class UserServiceClient:
+    """Client for communicating with User Service."""
+    
+    def __init__(self):
+        self.base_url = settings.USER_SERVICE_URL
+        self.timeout = 5  # seconds
+    
+    def get_user(self, user_id):
+        """Fetch user details from User Service."""
+        try:
+            response = requests.get(
+                f"{self.base_url}/api/v1/users/{user_id}/",
+                timeout=self.timeout
+            )
+            response.raise_for_status()
+            return response.json()
+        except requests.exceptions.RequestException as e:
+            # Handle service unavailability
+            logger.error(f"Failed to fetch user {user_id}: {e}")
+            return None
+    
+    def validate_user_exists(self, user_id):
+        """Validate that a user exists."""
+        user = self.get_user(user_id)
+        return user is not None
+
+# Usage in views
+class ChamaViewSet(viewsets.ModelViewSet):
+    def perform_create(self, serializer):
+        user_client = UserServiceClient()
+        
+        # Validate user exists in User Service
+        creator_id = self.request.user.id
+        if not user_client.validate_user_exists(creator_id):
+            raise ValidationError("User not found in User Service")
+        
+        serializer.save(created_by_id=creator_id)
+```
+
+**Event-Driven Communication:**
+
+For asynchronous communication, use message queues (RabbitMQ, Kafka):
+
+```python
+# user-service/apps/users/signals.py
+from django.db.models.signals import post_save
+from django.dispatch import receiver
+from .models import User
+from .publishers import publish_user_created
+
+@receiver(post_save, sender=User)
+def user_created_handler(sender, instance, created, **kwargs):
+    """Publish user created event."""
+    if created:
+        publish_user_created({
+            'user_id': instance.id,
+            'email': instance.email,
+            'full_name': instance.full_name,
+        })
+
+# publishers.py
+import pika
+import json
+
+def publish_user_created(user_data):
+    """Publish user created event to RabbitMQ."""
+    connection = pika.BlockingConnection(
+        pika.ConnectionParameters('rabbitmq')
+    )
+    channel = connection.channel()
+    
+    channel.exchange_declare(
+        exchange='user_events',
+        exchange_type='fanout'
+    )
+    
+    channel.basic_publish(
+        exchange='user_events',
+        routing_key='',
+        body=json.dumps(user_data)
+    )
+    
+    connection.close()
+```
+
+**API Gateway Pattern:**
+
+```nginx
+# nginx-gateway.conf
+upstream user_service {
+    server user-service:8000;
+}
+
+upstream chama_service {
+    server chama-service:8000;
+}
+
+upstream contribution_service {
+    server contribution-service:8000;
+}
+
+server {
+    listen 80;
+    
+    # User Service
+    location /api/v1/users/ {
+        proxy_pass http://user_service;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+    }
+    
+    location /api/v1/auth/ {
+        proxy_pass http://user_service;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+    }
+    
+    # Chama Service
+    location /api/v1/chamas/ {
+        proxy_pass http://chama_service;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+    }
+    
+    # Contribution Service
+    location /api/v1/contributions/ {
+        proxy_pass http://contribution_service;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+    }
+}
+```
+
+### 21.3 Service Resilience Patterns
+
+**Circuit Breaker:**
+
+```python
+# apps/core/circuit_breaker.py
+from datetime import datetime, timedelta
+
+class CircuitBreaker:
+    """Simple circuit breaker pattern implementation."""
+    
+    def __init__(self, failure_threshold=5, timeout=60):
+        self.failure_threshold = failure_threshold
+        self.timeout = timeout
+        self.failures = 0
+        self.last_failure_time = None
+        self.state = 'CLOSED'  # CLOSED, OPEN, HALF_OPEN
+    
+    def call(self, func, *args, **kwargs):
+        """Execute function with circuit breaker protection."""
+        if self.state == 'OPEN':
+            if datetime.now() - self.last_failure_time > timedelta(seconds=self.timeout):
+                self.state = 'HALF_OPEN'
+            else:
+                raise Exception("Circuit breaker is OPEN")
+        
+        try:
+            result = func(*args, **kwargs)
+            self.on_success()
+            return result
+        except Exception as e:
+            self.on_failure()
+            raise e
+    
+    def on_success(self):
+        """Handle successful call."""
+        self.failures = 0
+        self.state = 'CLOSED'
+    
+    def on_failure(self):
+        """Handle failed call."""
+        self.failures += 1
+        self.last_failure_time = datetime.now()
+        
+        if self.failures >= self.failure_threshold:
+            self.state = 'OPEN'
+
+# Usage
+user_service_breaker = CircuitBreaker()
+
+def get_user_with_breaker(user_id):
+    """Get user with circuit breaker protection."""
+    def fetch():
+        return requests.get(f"{USER_SERVICE_URL}/api/v1/users/{user_id}/").json()
+    
+    return user_service_breaker.call(fetch)
+```
+
+---
+
+## 22. Monitoring, Analysis, and Third-Party Services
+
+A production-grade application must be fully observable to detect and diagnose issues rapidly across both the Python and TypeScript domains.
+
+### 22.1 Bug Reporting and Application Performance Monitoring (APM)
+
+#### 22.1.1 Sentry Integration
+
+**MANDATORY:** The immediate integration of Sentry is mandatory. Sentry provides unified visibility across the full stack, aggregating errors from the Django backend (Python exceptions) and the React frontend (client-side JavaScript/TypeScript errors).
+
+**Backend Sentry Setup:**
+
+```bash
+pip install sentry-sdk
+```
+
+```python
+# config/settings/base.py
+import sentry_sdk
+from sentry_sdk.integrations.django import DjangoIntegration
+from sentry_sdk.integrations.celery import CeleryIntegration
+from sentry_sdk.integrations.redis import RedisIntegration
+
+sentry_sdk.init(
+    dsn=config('SENTRY_DSN'),
+    integrations=[
+        DjangoIntegration(),
+        CeleryIntegration(),
+        RedisIntegration(),
+    ],
+    # Set traces_sample_rate to 1.0 to capture 100% of transactions for performance monitoring
+    traces_sample_rate=0.1,  # 10% sampling in production
+    
+    # Set profiles_sample_rate to capture profiles for performance insights
+    profiles_sample_rate=0.1,
+    
+    # Send sensitive information like user IDs
+    send_default_pii=True,
+    
+    # Environment
+    environment=config('ENVIRONMENT', default='production'),
+    
+    # Release version
+    release=config('RELEASE_VERSION', default='unknown'),
+    
+    # Custom tags
+    before_send=lambda event, hint: event,
+)
+```
+
+**Custom Error Handling:**
+
+```python
+# apps/core/exceptions.py
+from sentry_sdk import capture_exception, capture_message
+import logging
+
+logger = logging.getLogger(__name__)
+
+def handle_external_service_error(service_name, error):
+    """Handle and report external service errors."""
+    logger.error(f"{service_name} error: {error}")
+    
+    # Capture in Sentry with context
+    with sentry_sdk.push_scope() as scope:
+        scope.set_tag("service", service_name)
+        scope.set_level("error")
+        scope.set_context("service_details", {
+            "service_name": service_name,
+            "error_type": type(error).__name__,
+        })
+        capture_exception(error)
+```
+
+**Frontend Sentry Setup:**
+
+```bash
+npm install @sentry/react @sentry/tracing
+```
+
+```typescript
+// src/main.tsx
+import * as Sentry from "@sentry/react";
+import { BrowserTracing } from "@sentry/tracing";
+
+Sentry.init({
+  dsn: import.meta.env.VITE_SENTRY_DSN,
+  integrations: [
+    new BrowserTracing(),
+    new Sentry.Replay({
+      maskAllText: false,
+      blockAllMedia: false,
+    }),
+  ],
+  
+  // Performance Monitoring
+  tracesSampleRate: 0.1, // 10% of transactions
+  
+  // Session Replay
+  replaysSessionSampleRate: 0.1, // 10% of sessions
+  replaysOnErrorSampleRate: 1.0, // 100% of errors
+  
+  environment: import.meta.env.MODE,
+  release: import.meta.env.VITE_RELEASE_VERSION,
+});
+
+// Error Boundary
+const App = () => (
+  <Sentry.ErrorBoundary fallback={<ErrorFallback />}>
+    <YourApp />
+  </Sentry.ErrorBoundary>
+);
+```
+
+**Custom Frontend Error Tracking:**
+
+```typescript
+// src/utils/errorTracking.ts
+import * as Sentry from "@sentry/react";
+
+export const trackError = (error: Error, context?: Record<string, any>) => {
+  Sentry.captureException(error, {
+    contexts: {
+      custom: context,
+    },
+  });
+};
+
+export const trackMessage = (message: string, level: Sentry.SeverityLevel = "info") => {
+  Sentry.captureMessage(message, level);
+};
+
+// Usage
+try {
+  await chamasAPI.create(data);
+} catch (error) {
+  trackError(error as Error, {
+    operation: "create_chama",
+    user_id: currentUser.id,
+  });
+}
+```
+
+#### 22.1.2 Security Logging
+
+Implement robust security logging to monitor events such as failed login attempts, privilege escalation, and configuration changes.
+
+```python
+# apps/core/security_logging.py
+import logging
+from django.contrib.auth.signals import user_logged_in, user_logged_out, user_login_failed
+from django.dispatch import receiver
+
+security_logger = logging.getLogger('security')
+
+@receiver(user_logged_in)
+def log_user_login(sender, request, user, **kwargs):
+    """Log successful login."""
+    security_logger.info(
+        f"User logged in: {user.email}",
+        extra={
+            'user_id': user.id,
+            'ip_address': get_client_ip(request),
+            'user_agent': request.META.get('HTTP_USER_AGENT', ''),
+            'event': 'login_success',
+        }
+    )
+
+@receiver(user_login_failed)
+def log_failed_login(sender, credentials, request, **kwargs):
+    """Log failed login attempts."""
+    security_logger.warning(
+        f"Failed login attempt for: {credentials.get('email')}",
+        extra={
+            'email': credentials.get('email'),
+            'ip_address': get_client_ip(request),
+            'user_agent': request.META.get('HTTP_USER_AGENT', ''),
+            'event': 'login_failed',
+        }
+    )
+
+def get_client_ip(request):
+    """Extract client IP address."""
+    x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+    if x_forwarded_for:
+        ip = x_forwarded_for.split(',')[0]
+    else:
+        ip = request.META.get('REMOTE_ADDR')
+    return ip
+```
+
+### 22.2 Network Traffic Analysis Tools
+
+For deep-level debugging related to latency, dropped packets, or security protocol negotiation, advanced analysis tools are required.
+
+**Server-Side Analysis:**
+
+```bash
+# Wireshark (GUI)
+sudo apt-get install wireshark
+sudo wireshark
+
+# tcpdump (CLI)
+# Capture HTTP traffic
+sudo tcpdump -i any -s 0 -A 'tcp port 8000'
+
+# Capture and save to file
+sudo tcpdump -i any -w capture.pcap 'tcp port 8000'
+
+# Read capture file
+tcpdump -r capture.pcap
+
+# Filter by IP
+sudo tcpdump -i any 'host 192.168.1.100'
+```
+
+**Browser Tools:**
+
+The browser's network tab remains critical for analyzing frontend latency, resource loading times, and verifying HTTP-only cookie transmission during the JWT flow.
+
+### 22.3 IP Tracking Tools
+
+Integration with third-party geolocation services is often required for fraud detection, personalized content, or regulatory compliance.
+
+**Geolocation Service Integration:**
+
+```python
+# apps/core/geolocation.py
+import requests
+from django.core.cache import cache
+from django.conf import settings
+import logging
+
+logger = logging.getLogger(__name__)
+
+def get_ip_location(ip_address):
+    """
+    Get location data for IP address with caching.
+    Uses ipapi.co service.
+    """
+    # Check cache first
+    cache_key = f'ip_location_{ip_address}'
+    cached_result = cache.get(cache_key)
+    
+    if cached_result:
+        return cached_result
+    
+    try:
+        # Call ipapi.co API
+        response = requests.get(
+            f'https://ipapi.co/{ip_address}/json/',
+            timeout=5
+        )
+        response.raise_for_status()
+        
+        location_data = response.json()
+        
+        # Cache for 24 hours
+        cache.set(cache_key, location_data, timeout=86400)
+        
+        return location_data
+        
+    except requests.exceptions.RequestException as e:
+        logger.error(f"Failed to fetch IP location for {ip_address}: {e}")
+        return None
+
+# Usage in views
+from apps.core.geolocation import get_ip_location
+from apps.core.security_logging import get_client_ip
+
+class LoginView(APIView):
+    def post(self, request):
+        # ... authentication logic ...
+        
+        # Track login location
+        ip_address = get_client_ip(request)
+        location = get_ip_location(ip_address)
+        
+        if location:
+            logger.info(
+                f"Login from {location.get('city')}, {location.get('country_name')}"
+            )
+        
+        # ... rest of logic ...
+```
+
+**Rate Limiting to Avoid API Limits:**
+
+```python
+# config/settings/base.py
+
+# Custom rate limiting for geolocation
+GEOLOCATION_RATE_LIMIT = 1000  # requests per day
+GEOLOCATION_CACHE_TIMEOUT = 86400  # 24 hours
+```
+
+---
+
+## 23. Final Project: Synthesis and Comprehensive Deployment Checklist
+
+The culmination of this blueprint is a system that synthesizes performance, security, and scalability. A final audit confirms readiness for deployment.
+
+### 23.1 Pre-Deployment Security Audit
+
+**Security Checklist:**
+
+✅ **HTTPS Enforcement:**
+```python
+# config/settings/production.py
+SECURE_SSL_REDIRECT = True
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+```
+
+✅ **SECRET_KEY Externalized:**
+```bash
+# Verify .env is not in git
+git ls-files | grep .env  # Should return nothing
+
+# Verify SECRET_KEY is strong
+python -c "from decouple import config; print(len(config('SECRET_KEY')))"  # Should be >= 50
+```
+
+✅ **CSRF/XSS Mitigations Active:**
+```python
+# Verify in settings
+assert 'django.middleware.csrf.CsrfViewMiddleware' in MIDDLEWARE
+assert X_FRAME_OPTIONS == 'DENY'
+assert SECURE_CONTENT_TYPE_NOSNIFF == True
+```
+
+✅ **JWT in HTTP-only Cookies:**
+```python
+# Verify cookie settings
+assert SESSION_COOKIE_HTTPONLY == True
+assert SESSION_COOKIE_SECURE == (not DEBUG)
+assert CSRF_COOKIE_SECURE == (not DEBUG)
+```
+
+### 23.2 Performance Verification
+
+**Performance Checklist:**
+
+✅ **N+1 Queries Eliminated:**
+```python
+# Run django-debug-toolbar checks
+# All list views should have < 5 queries
+
+# Test with assertion
+from django.test import TestCase
+from django.test.utils import override_settings
+
+@override_settings(DEBUG=True)
+class PerformanceTest(TestCase):
+    def test_chama_list_queries(self):
+        with self.assertNumQueries(3):  # Should be minimal
+            response = self.client.get('/api/v1/chamas/')
+```
+
+✅ **Redis Caching Functional:**
+```python
+# Test cache
+from django.core.cache import cache
+
+cache.set('test_key', 'test_value')
+assert cache.get('test_key') == 'test_value'
+```
+
+✅ **Celery Workers Registered:**
+```bash
+# Check Celery tasks
+celery -A config inspect registered
+
+# Check Celery beat schedule
+celery -A config inspect scheduled
+```
+
+### 23.3 Architectural Conformity
+
+**Type Safety Checklist:**
+
+✅ **TypeScript Build Passes:**
+```bash
+cd chamahub-frontend
+npm run type-check
+npm run build
+```
+
+✅ **Generated Types Up-to-Date:**
+```bash
+# Backend: Generate schema
+python manage.py spectacular --file schema.yaml
+
+# Frontend: Generate types
+npm run generate:api
+
+# Verify no uncommitted changes
+git status | grep "generated"
+```
+
+### 23.4 Deployment Readiness
+
+**Deployment Checklist:**
+
+✅ **Environment Variables Configured:**
+```bash
+# Production .env template
+cat > .env.production << EOF
+ENVIRONMENT=production
+DEBUG=False
+SECRET_KEY=<generated-secret-key>
+ALLOWED_HOSTS=chamahub.com,www.chamahub.com
+DATABASE_URL=postgresql://user:pass@host:5432/db
+REDIS_URL=redis://host:6379/0
+SENTRY_DSN=https://...
+EOF
+```
+
+✅ **Static Files Collected:**
+```bash
+python manage.py collectstatic --noinput
+```
+
+✅ **Migrations Applied:**
+```bash
+python manage.py migrate --check
+python manage.py migrate
+```
+
+✅ **Docker Images Built:**
+```bash
+docker-compose -f docker-compose.prod.yml build
+docker-compose -f docker-compose.prod.yml up -d
+```
+
+✅ **SSL Certificates Configured:**
+```bash
+# Let's Encrypt with Certbot
+sudo certbot --nginx -d chamahub.com -d www.chamahub.com
+```
+
+✅ **Monitoring Active:**
+```python
+# Verify Sentry
+import sentry_sdk
+sentry_sdk.capture_message("Deployment test message")
+```
+
+✅ **Backups Configured:**
+```bash
+# Database backup script
+# scripts/backup_db.sh
+#!/bin/bash
+BACKUP_DIR="/backups/postgres"
+TIMESTAMP=$(date +%Y%m%d_%H%M%S)
+
+pg_dump -h $DB_HOST -U $DB_USER $DB_NAME | gzip > \
+    $BACKUP_DIR/backup_$TIMESTAMP.sql.gz
+
+# Keep only last 30 days
+find $BACKUP_DIR -name "backup_*.sql.gz" -mtime +30 -delete
+```
+
+### 23.5 Post-Deployment Validation
+
+**Validation Tests:**
+
+```bash
+# Test API endpoints
+curl -I https://api.chamahub.com/api/v1/chamas/
+
+# Test HTTPS redirect
+curl -I http://chamahub.com  # Should return 301 to https
+
+# Test static files
+curl -I https://chamahub.com/static/css/main.css
+
+# Load test (optional)
+pip install locust
+locust -f locustfile.py --host=https://api.chamahub.com
+```
+
+**Health Check Endpoint:**
+
+```python
+# apps/core/views.py
+from django.http import JsonResponse
+from django.db import connection
+from django.core.cache import cache
+
+def health_check(request):
+    """Health check endpoint for monitoring."""
+    status = {
+        'status': 'healthy',
+        'database': 'unknown',
+        'cache': 'unknown',
+    }
+    
+    # Check database
+    try:
+        connection.ensure_connection()
+        status['database'] = 'healthy'
+    except Exception:
+        status['database'] = 'unhealthy'
+        status['status'] = 'unhealthy'
+    
+    # Check cache
+    try:
+        cache.set('health_check', 'ok', 1)
+        if cache.get('health_check') == 'ok':
+            status['cache'] = 'healthy'
+        else:
+            status['cache'] = 'unhealthy'
+    except Exception:
+        status['cache'] = 'unhealthy'
+    
+    return JsonResponse(status)
+```
+
+### 23.6 Monitoring Dashboard
+
+**Key Metrics to Monitor:**
+
+- **Application Metrics:**
+  - Response times (p50, p95, p99)
+  - Error rates
+  - Request throughput
+  - Active users
+
+- **Infrastructure Metrics:**
+  - CPU usage
+  - Memory usage
+  - Disk I/O
+  - Network I/O
+
+- **Business Metrics:**
+  - User signups
+  - Chama creations
+  - Contribution volumes
+  - Active chamas
+
+**Example Grafana Dashboard JSON:**
+```json
+{
+  "dashboard": {
+    "title": "ChamaHub Production Dashboard",
+    "panels": [
+      {
+        "title": "Request Rate",
+        "targets": [
+          {
+            "expr": "rate(django_http_requests_total[5m])"
+          }
+        ]
+      },
+      {
+        "title": "Error Rate",
+        "targets": [
+          {
+            "expr": "rate(django_http_requests_total{status=~\"5..\"}[5m])"
+          }
+        ]
+      }
+    ]
+  }
+}
+```
 
 ---
 
