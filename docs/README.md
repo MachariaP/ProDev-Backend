@@ -105,6 +105,22 @@ This comprehensive guide series takes you from zero to production, covering:
 
 ---
 
+### [Guide 7: Django/TypeScript Full-Stack Mastery](./07-django-typescript-fullstack-mastery.md)
+**Duration:** 180-240 minutes  
+**What you'll learn:**
+- Design scalable full-stack architecture with Django and TypeScript
+- Master PostgreSQL database optimization and query efficiency
+- Implement type-safe API contracts between backend and frontend
+- Eliminate N+1 queries and optimize database operations
+- Automate TypeScript interface generation from Django serializers
+- Build component-driven React architecture with strict TypeScript
+- Implement Progressive Web App (PWA) features
+- Advanced state management with React Query and Zustand
+
+**Prerequisites:** Completed Guide 1-6, Basic TypeScript knowledge
+
+---
+
 ## 🚀 Quick Start
 
 If you want to follow the guides in order:
@@ -115,6 +131,7 @@ If you want to follow the guides in order:
 4. Add database models: [Guide 4: Models & Database](./04-models-database.md)
 5. Secure your API: [Guide 5: Advanced DRF](./05-advanced-drf.md)
 6. Add production features: [Guide 6: Production Features](./06-production-features.md)
+7. Master full-stack integration: [Guide 7: Django/TypeScript Full-Stack Mastery](./07-django-typescript-fullstack-mastery.md)
 
 ---
 
