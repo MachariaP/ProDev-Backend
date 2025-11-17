@@ -3381,6 +3381,11 @@ export const Login: React.FC = () => {
 - Use parameterized queries for raw SQL
 - Enable HTTPS in production
 - Implement rate limiting and throttling
+- Use JWT with HTTP-only cookies for authentication
+- Set appropriate cache-control headers
+- Implement ETag support for efficient caching
+- Rotate refresh tokens on use
+- Blacklist tokens after rotation
 
 ✅ **API Design:**
 - Use DRF Spectacular for OpenAPI schema generation
@@ -3397,11 +3402,44 @@ export const Login: React.FC = () => {
 - Automate type generation in CI/CD pipeline
 - Use runtime validation with Zod for critical data
 
+✅ **Routing and Protection:**
+- Implement route guards with JWT validation
+- Use React Router for dynamic routing
+- Protect critical routes (dashboard, settings)
+- Handle authentication redirects gracefully
+
 ✅ **State Management:**
 - Use React Query for server state
-- Use Zustand for client state
+- Use Zustand for client state (preferred over Redux for most cases)
 - Implement optimistic updates for better UX
 - Cache API responses appropriately
+- Separate server and client state concerns
+
+✅ **Data Fetching:**
+- Use React Query for automatic caching and background refetching
+- Implement pagination for large data sets
+- Use infinite scroll for mobile-friendly interfaces
+- Configure proper retry and error handling strategies
+
+✅ **PWA Implementation:**
+- Configure service workers for offline support
+- Create comprehensive manifest.json
+- Run Lighthouse audits for validation
+- Coordinate caching with backend using ETags
+- Implement network-first or cache-first strategies based on data type
+
+✅ **Security:**
+- Store JWT tokens in HTTP-only cookies (NEVER localStorage)
+- Use secure, SameSite=Strict cookies
+- Implement automatic token refresh
+- Protect against XSS and CSRF attacks
+- Always use HTTPS in production
+
+✅ **Mobile Development:**
+- Use React Native with existing Django backend
+- Configure CORS for mobile emulators and devices
+- Use proper base URLs for Android (10.0.2.2) and iOS
+- Implement JWT authentication with AsyncStorage for React Native
 
 ✅ **Performance:**
 - Implement code splitting
@@ -3409,6 +3447,7 @@ export const Login: React.FC = () => {
 - Optimize bundle size
 - Enable PWA for offline support
 - Use CDN for static assets
+- Implement selective state consumption in Zustand
 
 ---
 
