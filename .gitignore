@@ -61,3 +61,12 @@ celerybeat.pid
 
 # Redis
 dump.rdb
+
+# Frontend (Node.js)
+chamahub-frontend/node_modules/
+chamahub-frontend/dist/
+chamahub-frontend/.env.local
+chamahub-frontend/.env.production.local
+chamahub-frontend/.env.development.local
+chamahub-frontend/.env.test.local
+
