@@ -863,6 +863,6 @@ You've completed all 6 guides and built a production-ready Django REST Framework
 
 **Built with ❤️ by [Phinehas Macharia](https://github.com/MachariaP)**
 
-[⬅️ Previous: Advanced DRF](./05-advanced-drf.md) | [Back to Main README](../README.md)
+[⬅️ Previous: Advanced DRF](./05-advanced-drf.md) | [Next: Full-Stack Mastery →](./07-django-typescript-fullstack-mastery.md) | [Back to Main README](../README.md)
 
 </div>
