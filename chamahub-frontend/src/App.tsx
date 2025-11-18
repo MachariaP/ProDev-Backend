@@ -1,4 +1,6 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+// Layout
+import { DashboardLayout } from './components/DashboardLayout';
 // Auth pages
 import { LoginPage } from './pages/auth/LoginPage';
 import { RegisterPage } from './pages/auth/RegisterPage';
@@ -40,6 +42,16 @@ import { ChatPage } from './pages/collaboration/ChatPage';
 import { MeetingSchedulePage } from './pages/collaboration/MeetingSchedulePage';
 import { DocumentSharingPage } from './pages/collaboration/DocumentSharingPage';
 
+// Helper component to wrap authenticated routes with layout
+function AuthenticatedRoute({ children }: { children: React.ReactNode }) {
+  const isAuthenticated = !!localStorage.getItem('access_token');
+  
+  if (!isAuthenticated) {
+    return <Navigate to="/login" />;
+  }
+  return <DashboardLayout>{children}</DashboardLayout>;
+}
+
 function App() {
   const isAuthenticated = !!localStorage.getItem('access_token');
 
@@ -57,125 +69,125 @@ function App() {
         {/* Core application routes */}
         <Route
           path="/dashboard"
-          element={isAuthenticated ? <DashboardPage /> : <Navigate to="/login" />}
+          element={<AuthenticatedRoute><DashboardPage /></AuthenticatedRoute>}
         />
         <Route
           path="/profile"
-          element={isAuthenticated ? <ProfilePage /> : <Navigate to="/login" />}
+          element={<AuthenticatedRoute><ProfilePage /></AuthenticatedRoute>}
         />
         <Route
           path="/settings"
-          element={isAuthenticated ? <SettingsPage /> : <Navigate to="/login" />}
+          element={<AuthenticatedRoute><SettingsPage /></AuthenticatedRoute>}
         />
         <Route
           path="/two-factor-auth"
-          element={isAuthenticated ? <TwoFactorAuthPage /> : <Navigate to="/login" />}
+          element={<AuthenticatedRoute><TwoFactorAuthPage /></AuthenticatedRoute>}
         />
         
         {/* Group management routes */}
         <Route
           path="/groups"
-          element={isAuthenticated ? <GroupsListPage /> : <Navigate to="/login" />}
+          element={<AuthenticatedRoute><GroupsListPage /></AuthenticatedRoute>}
         />
         <Route
           path="/groups/create"
-          element={isAuthenticated ? <CreateGroupPage /> : <Navigate to="/login" />}
+          element={<AuthenticatedRoute><CreateGroupPage /></AuthenticatedRoute>}
         />
         <Route
           path="/groups/:id"
-          element={isAuthenticated ? <GroupDetailPage /> : <Navigate to="/login" />}
+          element={<AuthenticatedRoute><GroupDetailPage /></AuthenticatedRoute>}
         />
         <Route
           path="/groups/:id/members"
-          element={isAuthenticated ? <MemberManagementPage /> : <Navigate to="/login" />}
+          element={<AuthenticatedRoute><MemberManagementPage /></AuthenticatedRoute>}
         />
         
         {/* Finance routes */}
         <Route
           path="/finance"
-          element={isAuthenticated ? <FinanceHubPage /> : <Navigate to="/login" />}
+          element={<AuthenticatedRoute><FinanceHubPage /></AuthenticatedRoute>}
         />
         <Route
           path="/contributions"
-          element={isAuthenticated ? <ContributionsPage /> : <Navigate to="/login" />}
+          element={<AuthenticatedRoute><ContributionsPage /></AuthenticatedRoute>}
         />
         <Route
           path="/transactions"
-          element={isAuthenticated ? <TransactionHistoryPage /> : <Navigate to="/login" />}
+          element={<AuthenticatedRoute><TransactionHistoryPage /></AuthenticatedRoute>}
         />
         <Route
           path="/statements"
-          element={isAuthenticated ? <StatementGenerationPage /> : <Navigate to="/login" />}
+          element={<AuthenticatedRoute><StatementGenerationPage /></AuthenticatedRoute>}
         />
         
         {/* Loans routes */}
         <Route
           path="/loans"
-          element={isAuthenticated ? <LoansPage /> : <Navigate to="/login" />}
+          element={<AuthenticatedRoute><LoansPage /></AuthenticatedRoute>}
         />
         <Route
           path="/loans/apply"
-          element={isAuthenticated ? <LoanApplicationPage /> : <Navigate to="/login" />}
+          element={<AuthenticatedRoute><LoanApplicationPage /></AuthenticatedRoute>}
         />
         
         {/* Investments routes */}
         <Route
           path="/investments"
-          element={isAuthenticated ? <InvestmentsPage /> : <Navigate to="/login" />}
+          element={<AuthenticatedRoute><InvestmentsPage /></AuthenticatedRoute>}
         />
         <Route
           path="/investments/portfolio"
-          element={isAuthenticated ? <InvestmentPortfolioPage /> : <Navigate to="/login" />}
+          element={<AuthenticatedRoute><InvestmentPortfolioPage /></AuthenticatedRoute>}
         />
         <Route
           path="/wealth-engine"
-          element={isAuthenticated ? <WealthEnginePage /> : <Navigate to="/login" />}
+          element={<AuthenticatedRoute><WealthEnginePage /></AuthenticatedRoute>}
         />
         <Route
           path="/mpesa-integration"
-          element={isAuthenticated ? <MPesaIntegrationPage /> : <Navigate to="/login" />}
+          element={<AuthenticatedRoute><MPesaIntegrationPage /></AuthenticatedRoute>}
         />
         
         {/* Analytics & Reports routes */}
         <Route
           path="/analytics"
-          element={isAuthenticated ? <AnalyticsPage /> : <Navigate to="/login" />}
+          element={<AuthenticatedRoute><AnalyticsPage /></AuthenticatedRoute>}
         />
         <Route
           path="/reports"
-          element={isAuthenticated ? <ReportsPage /> : <Navigate to="/login" />}
+          element={<AuthenticatedRoute><ReportsPage /></AuthenticatedRoute>}
         />
         <Route
           path="/audit-log"
-          element={isAuthenticated ? <AuditLogPage /> : <Navigate to="/login" />}
+          element={<AuthenticatedRoute><AuditLogPage /></AuthenticatedRoute>}
         />
         
         {/* Other routes */}
         <Route
           path="/expenses"
-          element={isAuthenticated ? <ExpensesPage /> : <Navigate to="/login" />}
+          element={<AuthenticatedRoute><ExpensesPage /></AuthenticatedRoute>}
         />
         <Route
           path="/approvals"
-          element={isAuthenticated ? <ApprovalsPage /> : <Navigate to="/login" />}
+          element={<AuthenticatedRoute><ApprovalsPage /></AuthenticatedRoute>}
         />
         <Route
           path="/voting"
-          element={isAuthenticated ? <VotingPage /> : <Navigate to="/login" />}
+          element={<AuthenticatedRoute><VotingPage /></AuthenticatedRoute>}
         />
         
         {/* Collaboration routes */}
         <Route
           path="/chat"
-          element={isAuthenticated ? <ChatPage /> : <Navigate to="/login" />}
+          element={<AuthenticatedRoute><ChatPage /></AuthenticatedRoute>}
         />
         <Route
           path="/meetings"
-          element={isAuthenticated ? <MeetingSchedulePage /> : <Navigate to="/login" />}
+          element={<AuthenticatedRoute><MeetingSchedulePage /></AuthenticatedRoute>}
         />
         <Route
           path="/documents"
-          element={isAuthenticated ? <DocumentSharingPage /> : <Navigate to="/login" />}
+          element={<AuthenticatedRoute><DocumentSharingPage /></AuthenticatedRoute>}
         />
         
         <Route path="/" element={<Navigate to={isAuthenticated ? "/dashboard" : "/login"} />} />
