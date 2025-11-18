@@ -66,7 +66,7 @@ class GroupGoalSerializer(serializers.ModelSerializer):
     
     created_by_name = serializers.CharField(source='created_by.get_full_name', read_only=True)
     group_name = serializers.CharField(source='group.name', read_only=True)
-    progress_percentage = serializers.DecimalField(max_digits=5, decimal_places=2, read_only=True)
+    progress_percentage = serializers.SerializerMethodField()
     
     class Meta:
         model = GroupGoal
@@ -78,6 +78,10 @@ class GroupGoalSerializer(serializers.ModelSerializer):
             'achieved_at'
         ]
         read_only_fields = ['id', 'current_amount', 'created_at', 'updated_at', 'achieved_at']
+    
+    def get_progress_percentage(self, obj):
+        """Get goal progress percentage."""
+        return obj.progress_percentage
 
 
 class GroupDashboardSerializer(serializers.ModelSerializer):
