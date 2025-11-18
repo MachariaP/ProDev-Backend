@@ -1,38 +1,44 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { LoginPage } from './pages/LoginPage';
-import { RegisterPage } from './pages/RegisterPage';
-import { ForgotPasswordPage } from './pages/ForgotPasswordPage';
-import { ResetPasswordPage } from './pages/ResetPasswordPage';
-import { DashboardPage } from './pages/DashboardPage';
-import { ProfilePage } from './pages/ProfilePage';
-import { GroupsListPage } from './pages/GroupsListPage';
-import { CreateGroupPage } from './pages/CreateGroupPage';
-import { FinanceHubPage } from './pages/FinanceHubPage';
-import { ContributionsPage } from './pages/ContributionsPage';
-import { LoansPage } from './pages/LoansPage';
-import { ExpensesPage } from './pages/ExpensesPage';
-import { ApprovalsPage } from './pages/ApprovalsPage';
-import { VotingPage } from './pages/VotingPage';
-import { InvestmentsPage } from './pages/InvestmentsPage';
-// New pages
-import { GroupDetailPage } from './pages/GroupDetailPage';
-import { MemberManagementPage } from './pages/MemberManagementPage';
-import { TransactionHistoryPage } from './pages/TransactionHistoryPage';
-import { StatementGenerationPage } from './pages/StatementGenerationPage';
-import { SettingsPage } from './pages/SettingsPage';
-import { VerifyEmailPage } from './pages/VerifyEmailPage';
-import { OnboardingPage } from './pages/OnboardingPage';
-import { TwoFactorAuthPage } from './pages/TwoFactorAuthPage';
-import { LoanApplicationPage } from './pages/LoanApplicationPage';
-import { InvestmentPortfolioPage } from './pages/InvestmentPortfolioPage';
-import { WealthEnginePage } from './pages/WealthEnginePage';
-import { MPesaIntegrationPage } from './pages/MPesaIntegrationPage';
-import { AnalyticsPage } from './pages/AnalyticsPage';
-import { ReportsPage } from './pages/ReportsPage';
-import { AuditLogPage } from './pages/AuditLogPage';
-import { ChatPage } from './pages/ChatPage';
-import { MeetingSchedulePage } from './pages/MeetingSchedulePage';
-import { DocumentSharingPage } from './pages/DocumentSharingPage';
+// Auth pages
+import { LoginPage } from './pages/auth/LoginPage';
+import { RegisterPage } from './pages/auth/RegisterPage';
+import { ForgotPasswordPage } from './pages/auth/ForgotPasswordPage';
+import { ResetPasswordPage } from './pages/auth/ResetPasswordPage';
+import { VerifyEmailPage } from './pages/auth/VerifyEmailPage';
+import { OnboardingPage } from './pages/auth/OnboardingPage';
+// Dashboard pages
+import { DashboardPage } from './pages/dashboard/DashboardPage';
+import { AnalyticsPage } from './pages/dashboard/AnalyticsPage';
+import { FinanceHubPage } from './pages/dashboard/FinanceHubPage';
+// Group pages
+import { GroupsListPage } from './pages/groups/GroupsListPage';
+import { CreateGroupPage } from './pages/groups/CreateGroupPage';
+import { GroupDetailPage } from './pages/groups/GroupDetailPage';
+import { MemberManagementPage } from './pages/groups/MemberManagementPage';
+// Financial pages
+import { ContributionsPage } from './pages/financial/ContributionsPage';
+import { ExpensesPage } from './pages/financial/ExpensesPage';
+import { LoansPage } from './pages/financial/LoansPage';
+import { LoanApplicationPage } from './pages/financial/LoanApplicationPage';
+import { InvestmentsPage } from './pages/financial/InvestmentsPage';
+import { InvestmentPortfolioPage } from './pages/financial/InvestmentPortfolioPage';
+import { TransactionHistoryPage } from './pages/financial/TransactionHistoryPage';
+// Tools pages
+import { VotingPage } from './pages/tools/VotingPage';
+import { ApprovalsPage } from './pages/tools/ApprovalsPage';
+import { StatementGenerationPage } from './pages/tools/StatementGenerationPage';
+import { WealthEnginePage } from './pages/tools/WealthEnginePage';
+import { MPesaIntegrationPage } from './pages/tools/MPesaIntegrationPage';
+import { ReportsPage } from './pages/tools/ReportsPage';
+// Settings pages
+import { ProfilePage } from './pages/settings/ProfilePage';
+import { SettingsPage } from './pages/settings/SettingsPage';
+import { TwoFactorAuthPage } from './pages/settings/TwoFactorAuthPage';
+import { AuditLogPage } from './pages/settings/AuditLogPage';
+// Collaboration pages
+import { ChatPage } from './pages/collaboration/ChatPage';
+import { MeetingSchedulePage } from './pages/collaboration/MeetingSchedulePage';
+import { DocumentSharingPage } from './pages/collaboration/DocumentSharingPage';
 
 function App() {
   const isAuthenticated = !!localStorage.getItem('access_token');
