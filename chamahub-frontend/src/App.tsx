@@ -7,7 +7,11 @@ import { DashboardPage } from './pages/DashboardPage';
 import { ProfilePage } from './pages/ProfilePage';
 import { GroupsListPage } from './pages/GroupsListPage';
 import { CreateGroupPage } from './pages/CreateGroupPage';
+import { FinanceHubPage } from './pages/FinanceHubPage';
 import { ContributionsPage } from './pages/ContributionsPage';
+import { LoansPage } from './pages/LoansPage';
+import { ExpensesPage } from './pages/ExpensesPage';
+import { ApprovalsPage } from './pages/ApprovalsPage';
 import { VotingPage } from './pages/VotingPage';
 import { InvestmentsPage } from './pages/InvestmentsPage';
 
@@ -38,8 +42,24 @@ function App() {
           element={isAuthenticated ? <CreateGroupPage /> : <Navigate to="/login" />}
         />
         <Route
+          path="/finance"
+          element={isAuthenticated ? <FinanceHubPage /> : <Navigate to="/login" />}
+        />
+        <Route
           path="/contributions"
           element={isAuthenticated ? <ContributionsPage /> : <Navigate to="/login" />}
+        />
+        <Route
+          path="/loans"
+          element={isAuthenticated ? <LoansPage /> : <Navigate to="/login" />}
+        />
+        <Route
+          path="/expenses"
+          element={isAuthenticated ? <ExpensesPage /> : <Navigate to="/login" />}
+        />
+        <Route
+          path="/approvals"
+          element={isAuthenticated ? <ApprovalsPage /> : <Navigate to="/login" />}
         />
         <Route
           path="/voting"
