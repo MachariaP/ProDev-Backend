@@ -89,7 +89,7 @@ export const groupsService = {
     await api.delete(`/groups/chama-groups/${id}/`);
   },
 
-  async getGroupDashboard(id: number): Promise<any> {
+  async getGroupDashboard(id: number): Promise<Record<string, unknown>> {
     const response = await api.get(`/groups/chama-groups/${id}/dashboard/`);
     return response.data;
   },
