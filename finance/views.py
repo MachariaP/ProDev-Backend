@@ -1,5 +1,8 @@
-from rest_framework import viewsets, permissions
+from rest_framework import viewsets, permissions, status
+from rest_framework.decorators import action
+from rest_framework.response import Response
 from django_filters.rest_framework import DjangoFilterBackend
+from django.utils import timezone
 from .models import (
     Contribution, Loan, LoanRepayment, Expense,
     DisbursementApproval, ApprovalSignature
@@ -19,6 +22,20 @@ class ContributionViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
     filter_backends = [DjangoFilterBackend]
     filterset_fields = ['group', 'member', 'status', 'payment_method']
+    
+    @action(detail=True, methods=['post'], permission_classes=[permissions.IsAuthenticated])
+    def reconcile(self, request, pk=None):
+        """Reconcile a contribution (Admin/Treasurer only)."""
+        contribution = self.get_object()
+        
+        # Update reconciliation details
+        contribution.status = 'RECONCILED'
+        contribution.reconciled_by = request.user
+        contribution.reconciled_at = timezone.now()
+        contribution.save()
+        
+        serializer = self.get_serializer(contribution)
+        return Response(serializer.data)
 
 
 class LoanViewSet(viewsets.ModelViewSet):

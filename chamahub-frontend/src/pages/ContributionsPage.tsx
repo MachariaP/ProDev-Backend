@@ -1,14 +1,16 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Plus, DollarSign } from 'lucide-react';
+import { ArrowLeft, Plus, DollarSign, CheckCircle, AlertCircle, XCircle } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import { financeService } from '../services/apiService';
+import api from '../services/api';
 import type { Contribution } from '../types/api';
 
 export function ContributionsPage() {
   const [contributions, setContributions] = useState<Contribution[]>([]);
   const [loading, setLoading] = useState(true);
+  const [reconciling, setReconciling] = useState<number | null>(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -26,8 +28,35 @@ export function ContributionsPage() {
     }
   };
 
+  const handleReconcile = async (contributionId: number) => {
+    setReconciling(contributionId);
+    try {
+      await api.post(`/finance/contributions/${contributionId}/reconcile/`);
+      await fetchContributions();
+    } catch (err) {
+      console.error('Error reconciling contribution:', err);
+    } finally {
+      setReconciling(null);
+    }
+  };
+
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case 'RECONCILED':
+      case 'COMPLETED':
+        return <CheckCircle className="h-5 w-5 text-green-600" />;
+      case 'PENDING':
+        return <AlertCircle className="h-5 w-5 text-yellow-600" />;
+      case 'FAILED':
+        return <XCircle className="h-5 w-5 text-red-600" />;
+      default:
+        return <AlertCircle className="h-5 w-5 text-gray-600" />;
+    }
+  };
+
   const getStatusColor = (status: string) => {
     switch (status) {
+      case 'RECONCILED':
       case 'COMPLETED':
         return 'bg-green-100 text-green-700';
       case 'PENDING':
@@ -62,7 +91,7 @@ export function ContributionsPage() {
             <motion.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
-              onClick={() => navigate('/dashboard')}
+              onClick={() => navigate('/finance')}
               className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
             >
               <ArrowLeft className="h-5 w-5" />
@@ -113,15 +142,34 @@ export function ContributionsPage() {
                       <div>
                         <p className="font-semibold">Member #{contribution.member}</p>
                         <p className="text-sm text-muted-foreground">{contribution.payment_method}</p>
+                        {contribution.transaction_ref && (
+                          <p className="text-xs text-muted-foreground">Ref: {contribution.transaction_ref}</p>
+                        )}
                       </div>
                     </div>
-                    <div className="text-right">
-                      <p className="font-semibold text-green-600">
-                        KES {Number(contribution.amount).toLocaleString()}
-                      </p>
-                      <span className={`text-xs px-2 py-1 rounded-full ${getStatusColor(contribution.status)}`}>
-                        {contribution.status}
-                      </span>
+                    <div className="flex items-center gap-4">
+                      <div className="text-right">
+                        <p className="font-semibold text-green-600">
+                          KES {Number(contribution.amount).toLocaleString()}
+                        </p>
+                        <div className="flex items-center gap-2 mt-1">
+                          {getStatusIcon(contribution.status)}
+                          <span className={`text-xs px-2 py-1 rounded-full ${getStatusColor(contribution.status)}`}>
+                            {contribution.status}
+                          </span>
+                        </div>
+                      </div>
+                      {contribution.status === 'COMPLETED' && (
+                        <motion.button
+                          whileHover={{ scale: 1.05 }}
+                          whileTap={{ scale: 0.95 }}
+                          onClick={() => handleReconcile(contribution.id)}
+                          disabled={reconciling === contribution.id}
+                          className="px-4 py-2 rounded-lg bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          {reconciling === contribution.id ? 'Reconciling...' : 'Reconcile'}
+                        </motion.button>
+                      )}
                     </div>
                   </div>
                 ))}

@@ -151,7 +151,7 @@ export function DashboardPage() {
           <motion.button
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
-            onClick={() => navigate('/contributions')}
+            onClick={() => navigate('/finance')}
             className="p-6 rounded-xl border border-border bg-card hover:bg-accent/50 transition-all text-left shadow-sm hover:shadow-md"
           >
             <LayoutDashboard className="h-10 w-10 text-blue-600 mb-3" />
