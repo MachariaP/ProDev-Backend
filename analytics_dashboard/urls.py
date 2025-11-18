@@ -1,12 +1,14 @@
+# analytics_dashboard/urls.py
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from .views import AnalyticsReportViewSet, FinancialHealthScoreViewSet, PredictiveCashFlowViewSet
+from . import views
 
 router = DefaultRouter()
-router.register(r'analytics-reports', AnalyticsReportViewSet, basename='analytics-report')
-router.register(r'financial-health-scores', FinancialHealthScoreViewSet, basename='financial-health-score')
-router.register(r'predictive-cash-flows', PredictiveCashFlowViewSet, basename='predictive-cash-flow')
+router.register(r'reports', views.AnalyticsReportViewSet, basename='analyticsreport')
+router.register(r'health-scores', views.FinancialHealthScoreViewSet)
+router.register(r'cashflow-predictions', views.PredictiveCashFlowViewSet)
 
 urlpatterns = [
     path('', include(router.urls)),
+    path('dashboard/', views.dashboard_analytics, name='dashboard-analytics'),
 ]
