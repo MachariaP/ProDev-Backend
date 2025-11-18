@@ -32,12 +32,17 @@ export function CreateGroupPage() {
 
     try {
       const group = await groupsService.createGroup({
-        ...formData,
+        name: formData.name,
+        description: formData.description,
+        group_type: formData.group_type as 'SAVINGS' | 'INVESTMENT' | 'WELFARE' | 'MIXED',
+        objectives: formData.objectives,
+        contribution_frequency: formData.contribution_frequency as 'DAILY' | 'WEEKLY' | 'BIWEEKLY' | 'MONTHLY',
         minimum_contribution: Number(formData.minimum_contribution),
       });
       navigate(`/groups/${group.id}`);
-    } catch (err: any) {
-      setError(err.response?.data?.detail || 'Failed to create group. Please try again.');
+    } catch (err: unknown) {
+      const error = err as { response?: { data?: { detail?: string } } };
+      setError(error?.response?.data?.detail || 'Failed to create group. Please try again.');
     } finally {
       setLoading(false);
     }

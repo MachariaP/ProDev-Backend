@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Plus, DollarSign, TrendingUp, Clock } from 'lucide-react';
+import { ArrowLeft, Plus, DollarSign } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import { financeService } from '../services/apiService';
 import type { Contribution } from '../types/api';
