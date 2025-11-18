@@ -1,4 +1,5 @@
 from rest_framework import serializers
+from django.db.models import Sum
 from .models import ChamaGroup, GroupMembership, GroupOfficial, GroupGoal
 from accounts.serializers import UserSerializer
 
@@ -107,7 +108,7 @@ class GroupDashboardSerializer(serializers.ModelSerializer):
         total = Contribution.objects.filter(
             group=obj,
             status='COMPLETED'
-        ).aggregate(total=serializers.Sum('amount'))
+        ).aggregate(total=Sum('amount'))
         return total['total'] or 0
     
     def get_total_loans_outstanding(self, obj):
@@ -116,7 +117,7 @@ class GroupDashboardSerializer(serializers.ModelSerializer):
         total = Loan.objects.filter(
             group=obj,
             status__in=['ACTIVE', 'DISBURSED']
-        ).aggregate(total=serializers.Sum('outstanding_balance'))
+        ).aggregate(total=Sum('outstanding_balance'))
         return total['total'] or 0
     
     def get_total_investments(self, obj):
