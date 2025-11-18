@@ -4,6 +4,7 @@ import { LogIn, Mail, Lock } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
+import { authService } from '../services/apiService';
 
 export function LoginPage() {
   const [email, setEmail] = useState('');
@@ -26,6 +27,18 @@ export function LoginPage() {
       const { access, refresh } = response.data;
       localStorage.setItem('access_token', access);
       localStorage.setItem('refresh_token', refresh);
+      
+      // Fetch and save user data
+      try {
+        const userData = await authService.getCurrentUser();
+        localStorage.setItem('user', JSON.stringify({ 
+          full_name: `${userData.first_name} ${userData.last_name}`,
+          ...userData
+        }));
+      } catch (userErr) {
+        // If user fetch fails, continue anyway - they're still logged in
+        console.error('Failed to fetch user data:', userErr);
+      }
       
       navigate('/dashboard');
     } catch (err: unknown) {
