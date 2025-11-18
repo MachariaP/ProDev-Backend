@@ -120,7 +120,7 @@ export interface Loan {
   interest_rate: number;
   duration_months: number;
   purpose: string;
-  status: 'PENDING' | 'APPROVED' | 'DISBURSED' | 'REPAYING' | 'COMPLETED' | 'DEFAULTED';
+  status: 'PENDING' | 'APPROVED' | 'DISBURSED' | 'ACTIVE' | 'REPAYING' | 'COMPLETED' | 'DEFAULTED' | 'REJECTED';
   application_date: string;
   approval_date?: string;
   disbursement_date?: string;
@@ -143,10 +143,10 @@ export interface LoanRepayment {
 export interface Expense {
   id: number;
   group: number;
-  category: 'OPERATIONAL' | 'MEETING' | 'WELFARE' | 'OTHER';
+  category: 'OPERATIONAL' | 'ADMINISTRATIVE' | 'WELFARE' | 'INVESTMENT' | 'OTHER';
   description: string;
   amount: number;
-  status: 'PENDING' | 'APPROVED' | 'PAID' | 'REJECTED';
+  status: 'PENDING' | 'APPROVED' | 'DISBURSED' | 'REJECTED';
   requested_by: number;
   approved_by?: number;
   created_at: string;

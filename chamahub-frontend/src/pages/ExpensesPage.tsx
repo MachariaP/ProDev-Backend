@@ -42,7 +42,7 @@ export function ExpensesPage() {
       const total = response.results.length;
       const pending = response.results.filter(e => e.status === 'PENDING').length;
       const approved = response.results.filter(e => e.status === 'APPROVED').length;
-      const paid = response.results.filter(e => e.status === 'PAID').length;
+      const paid = response.results.filter(e => e.status === 'DISBURSED').length;
       const totalAmount = response.results.reduce((sum, e) => sum + Number(e.amount), 0);
       
       setStats({ total, pending, approved, paid, totalAmount });
@@ -55,7 +55,7 @@ export function ExpensesPage() {
 
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case 'PAID':
+      case 'DISBURSED':
         return <CheckCircle className="h-5 w-5 text-green-600" />;
       case 'APPROVED':
         return <Clock className="h-5 w-5 text-blue-600" />;
@@ -70,7 +70,7 @@ export function ExpensesPage() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'PAID':
+      case 'DISBURSED':
         return 'bg-green-100 text-green-700';
       case 'APPROVED':
         return 'bg-blue-100 text-blue-700';
@@ -87,10 +87,12 @@ export function ExpensesPage() {
     switch (category) {
       case 'OPERATIONAL':
         return '🔧';
-      case 'MEETING':
-        return '👥';
+      case 'ADMINISTRATIVE':
+        return '📋';
       case 'WELFARE':
         return '❤️';
+      case 'INVESTMENT':
+        return '💰';
       default:
         return '📝';
     }
