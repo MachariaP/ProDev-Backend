@@ -58,6 +58,21 @@ INSTALLED_APPS = [
     'finance',
     'governance',
     'investments',
+    
+    # New fintech apps
+    'mpesa_integration',
+    'wealth_engine',
+    'credit_scoring',
+    'analytics_dashboard',
+    'reporting_engine',
+    'audit_trail',
+    'kyc_verification',
+    'ai_assistant',
+    'automation_engine',
+    'mobile_sync',
+    'api_gateway',
+    'gamification',
+    'education_hub',
 ]
 
 MIDDLEWARE = [
