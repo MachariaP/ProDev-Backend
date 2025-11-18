@@ -9,6 +9,10 @@ import {
   ArrowDownRight,
   UserCircle,
   LogOut,
+  LayoutDashboard,
+  Vote,
+  FileText,
+  Settings,
 } from 'lucide-react';
 import { StatsCard } from '../components/StatsCard';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
@@ -82,7 +86,7 @@ export function DashboardPage() {
         className="max-w-7xl mx-auto space-y-6"
       >
         {/* Header with Navigation */}
-        <motion.div variants={itemVariants} className="flex items-center justify-between">
+        <motion.div variants={itemVariants} className="flex items-center justify-between flex-wrap gap-4">
           <div>
             <h1 className="text-4xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
               Dashboard
@@ -111,6 +115,53 @@ export function DashboardPage() {
               <span className="hidden sm:inline">Logout</span>
             </motion.button>
           </div>
+        </motion.div>
+
+        {/* Quick Navigation */}
+        <motion.div
+          variants={itemVariants}
+          className="grid gap-4 md:grid-cols-2 lg:grid-cols-4"
+        >
+          <motion.button
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            onClick={() => navigate('/groups')}
+            className="p-4 rounded-lg border border-border bg-card hover:bg-accent transition-colors text-left"
+          >
+            <Users className="h-8 w-8 text-primary mb-2" />
+            <h3 className="font-semibold">My Groups</h3>
+            <p className="text-sm text-muted-foreground">Manage your groups</p>
+          </motion.button>
+          <motion.button
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            onClick={() => navigate('/dashboard')}
+            className="p-4 rounded-lg border border-border bg-card hover:bg-accent transition-colors text-left"
+          >
+            <LayoutDashboard className="h-8 w-8 text-blue-600 mb-2" />
+            <h3 className="font-semibold">Finance</h3>
+            <p className="text-sm text-muted-foreground">Contributions & Loans</p>
+          </motion.button>
+          <motion.button
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            onClick={() => navigate('/dashboard')}
+            className="p-4 rounded-lg border border-border bg-card hover:bg-accent transition-colors text-left"
+          >
+            <Vote className="h-8 w-8 text-purple-600 mb-2" />
+            <h3 className="font-semibold">Governance</h3>
+            <p className="text-sm text-muted-foreground">Votes & Documents</p>
+          </motion.button>
+          <motion.button
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            onClick={() => navigate('/dashboard')}
+            className="p-4 rounded-lg border border-border bg-card hover:bg-accent transition-colors text-left"
+          >
+            <TrendingUp className="h-8 w-8 text-orange-600 mb-2" />
+            <h3 className="font-semibold">Investments</h3>
+            <p className="text-sm text-muted-foreground">Portfolio & Stocks</p>
+          </motion.button>
         </motion.div>
 
         {/* Stats Grid */}

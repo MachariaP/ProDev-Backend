@@ -5,6 +5,11 @@ import { ForgotPasswordPage } from './pages/ForgotPasswordPage';
 import { ResetPasswordPage } from './pages/ResetPasswordPage';
 import { DashboardPage } from './pages/DashboardPage';
 import { ProfilePage } from './pages/ProfilePage';
+import { GroupsListPage } from './pages/GroupsListPage';
+import { CreateGroupPage } from './pages/CreateGroupPage';
+import { ContributionsPage } from './pages/ContributionsPage';
+import { VotingPage } from './pages/VotingPage';
+import { InvestmentsPage } from './pages/InvestmentsPage';
 
 function App() {
   const isAuthenticated = !!localStorage.getItem('access_token');
@@ -23,6 +28,26 @@ function App() {
         <Route
           path="/profile"
           element={isAuthenticated ? <ProfilePage /> : <Navigate to="/login" />}
+        />
+        <Route
+          path="/groups"
+          element={isAuthenticated ? <GroupsListPage /> : <Navigate to="/login" />}
+        />
+        <Route
+          path="/groups/create"
+          element={isAuthenticated ? <CreateGroupPage /> : <Navigate to="/login" />}
+        />
+        <Route
+          path="/contributions"
+          element={isAuthenticated ? <ContributionsPage /> : <Navigate to="/login" />}
+        />
+        <Route
+          path="/voting"
+          element={isAuthenticated ? <VotingPage /> : <Navigate to="/login" />}
+        />
+        <Route
+          path="/investments"
+          element={isAuthenticated ? <InvestmentsPage /> : <Navigate to="/login" />}
         />
         <Route path="/" element={<Navigate to={isAuthenticated ? "/dashboard" : "/login"} />} />
       </Routes>
