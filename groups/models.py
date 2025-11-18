@@ -1,6 +1,7 @@
 from django.db import models
 from django.conf import settings
 from django.utils.translation import gettext_lazy as _
+from decimal import Decimal
 
 
 class ChamaGroup(models.Model):
@@ -55,7 +56,7 @@ class ChamaGroup(models.Model):
         _('minimum contribution'),
         max_digits=10,
         decimal_places=2,
-        default=0.00
+        default=Decimal('0.00')
     )
     
     # Group balance
@@ -63,7 +64,7 @@ class ChamaGroup(models.Model):
         _('total balance'),
         max_digits=15,
         decimal_places=2,
-        default=0.00
+        default=Decimal('0.00')
     )
     
     # Status
@@ -133,7 +134,7 @@ class GroupMembership(models.Model):
         _('total contributions'),
         max_digits=12,
         decimal_places=2,
-        default=0.00
+        default=Decimal('0.00')
     )
     
     class Meta:
@@ -190,7 +191,7 @@ class GroupGoal(models.Model):
     title = models.CharField(_('title'), max_length=200)
     description = models.TextField(_('description'))
     target_amount = models.DecimalField(_('target amount'), max_digits=15, decimal_places=2)
-    current_amount = models.DecimalField(_('current amount'), max_digits=15, decimal_places=2, default=0.00)
+    current_amount = models.DecimalField(_('current amount'), max_digits=15, decimal_places=2, default=Decimal('0.00'))
     target_date = models.DateField(_('target date'))
     status = models.CharField(_('status'), max_length=20, choices=STATUS_CHOICES, default='ACTIVE')
     
@@ -216,7 +217,9 @@ class GroupGoal(models.Model):
     @property
     def progress_percentage(self):
         """Calculate goal progress percentage."""
-        if self.target_amount > 0:
-            return (self.current_amount / self.target_amount) * 100
-        return 0
+        from decimal import Decimal
+        if self.target_amount > Decimal('0'):
+            percentage = (self.current_amount / self.target_amount) * Decimal('100')
+            return float(percentage)
+        return 0.0
 
