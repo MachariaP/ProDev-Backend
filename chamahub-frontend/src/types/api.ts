@@ -106,7 +106,7 @@ export interface Contribution {
   amount: number;
   payment_method: 'MPESA' | 'CASH' | 'BANK' | 'OTHER';
   transaction_ref: string;
-  status: 'PENDING' | 'COMPLETED' | 'FAILED';
+  status: 'PENDING' | 'COMPLETED' | 'FAILED' | 'RECONCILED';
   contribution_date: string;
   notes?: string;
   created_at: string;
