@@ -11,12 +11,11 @@ import {
   LogOut,
   LayoutDashboard,
   Vote,
-  FileText,
-  Settings,
 } from 'lucide-react';
 import { StatsCard } from '../components/StatsCard';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts';
+import { useState } from 'react';
 
 // Sample data for charts
 const contributionData = [
@@ -71,9 +70,25 @@ const itemVariants = {
 export function DashboardPage() {
   const navigate = useNavigate();
 
+  // Get user from localStorage (common pattern after login)
+  const [user] = useState<{ full_name?: string }>(() => {
+    const storedUser = localStorage.getItem('user');
+    if (storedUser) {
+      try {
+        return JSON.parse(storedUser);
+      } catch {
+        return {};
+      }
+    }
+    return {};
+  });
+
+  const userName = user?.full_name || 'Member';
+
   const handleLogout = () => {
     localStorage.removeItem('access_token');
     localStorage.removeItem('refresh_token');
+    localStorage.removeItem('user'); // Optional: clear user data
     navigate('/login');
   };
 
@@ -92,7 +107,7 @@ export function DashboardPage() {
               Dashboard
             </h1>
             <p className="text-muted-foreground mt-2">
-              Welcome back! Here's what's happening with your Chama.
+              Welcome back, <span className="font-medium text-foreground">{userName}</span>! Here's what's happening with your Chama.
             </p>
           </div>
           <div className="flex items-center gap-3">
@@ -126,41 +141,44 @@ export function DashboardPage() {
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
             onClick={() => navigate('/groups')}
-            className="p-4 rounded-lg border border-border bg-card hover:bg-accent transition-colors text-left"
+            className="p-6 rounded-xl border border-border bg-card hover:bg-accent/50 transition-all text-left shadow-sm hover:shadow-md"
           >
-            <Users className="h-8 w-8 text-primary mb-2" />
-            <h3 className="font-semibold">My Groups</h3>
-            <p className="text-sm text-muted-foreground">Manage your groups</p>
+            <Users className="h-10 w-10 text-primary mb-3" />
+            <h3 className="font-semibold text-lg">My Groups</h3>
+            <p className="text-sm text-muted-foreground">View and manage your groups</p>
           </motion.button>
+
           <motion.button
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
-            onClick={() => navigate('/dashboard')}
-            className="p-4 rounded-lg border border-border bg-card hover:bg-accent transition-colors text-left"
+            onClick={() => navigate('/contributions')}
+            className="p-6 rounded-xl border border-border bg-card hover:bg-accent/50 transition-all text-left shadow-sm hover:shadow-md"
           >
-            <LayoutDashboard className="h-8 w-8 text-blue-600 mb-2" />
-            <h3 className="font-semibold">Finance</h3>
+            <LayoutDashboard className="h-10 w-10 text-blue-600 mb-3" />
+            <h3 className="font-semibold text-lg">Finance</h3>
             <p className="text-sm text-muted-foreground">Contributions & Loans</p>
           </motion.button>
+
           <motion.button
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
-            onClick={() => navigate('/dashboard')}
-            className="p-4 rounded-lg border border-border bg-card hover:bg-accent transition-colors text-left"
+            onClick={() => navigate('/voting')}
+            className="p-6 rounded-xl border border-border bg-card hover:bg-accent/50 transition-all text-left shadow-sm hover:shadow-md"
           >
-            <Vote className="h-8 w-8 text-purple-600 mb-2" />
-            <h3 className="font-semibold">Governance</h3>
+            <Vote className="h-10 w-10 text-purple-600 mb-3" />
+            <h3 className="font-semibold text-lg">Governance</h3>
             <p className="text-sm text-muted-foreground">Votes & Documents</p>
           </motion.button>
+
           <motion.button
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
-            onClick={() => navigate('/dashboard')}
-            className="p-4 rounded-lg border border-border bg-card hover:bg-accent transition-colors text-left"
+            onClick={() => navigate('/investments')}
+            className="p-6 rounded-xl border border-border bg-card hover:bg-accent/50 transition-all text-left shadow-sm hover:shadow-md"
           >
-            <TrendingUp className="h-8 w-8 text-orange-600 mb-2" />
-            <h3 className="font-semibold">Investments</h3>
-            <p className="text-sm text-muted-foreground">Portfolio & Stocks</p>
+            <TrendingUp className="h-10 w-10 text-orange-600 mb-3" />
+            <h3 className="font-semibold text-lg">Investments</h3>
+            <p className="text-sm text-muted-foreground">Portfolio & Returns</p>
           </motion.button>
         </motion.div>
 
@@ -205,7 +223,7 @@ export function DashboardPage() {
           <motion.div variants={itemVariants}>
             <Card>
               <CardHeader>
-                <CardTitle>Contribution Trend</CardTitle>
+                <CardTitle>Contribution Trend (6 Months)</CardTitle>
               </CardHeader>
               <CardContent>
                 <ResponsiveContainer width="100%" height={300}>
@@ -218,8 +236,9 @@ export function DashboardPage() {
                     </defs>
                     <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                     <XAxis dataKey="month" className="text-sm" />
-                    <YAxis className="text-sm" />
+                    <YAxis className="text-sm" tickFormatter={(value) => `KES ${value / 1000}k`} />
                     <Tooltip
+                      formatter={(value: number) => `KES ${value.toLocaleString()}`}
                       contentStyle={{
                         backgroundColor: 'hsl(var(--card))',
                         border: '1px solid hsl(var(--border))',
@@ -232,7 +251,7 @@ export function DashboardPage() {
                       stroke="hsl(142 76% 36%)"
                       fillOpacity={1}
                       fill="url(#colorAmount)"
-                      strokeWidth={2}
+                      strokeWidth={3}
                     />
                   </AreaChart>
                 </ResponsiveContainer>
@@ -286,14 +305,14 @@ export function DashboardPage() {
                   >
                     <div className="flex items-center space-x-4">
                       <div
-                        className={`p-2 rounded-full ${
+                        className={`p-3 rounded-full ${
                           transaction.isPositive ? 'bg-green-100' : 'bg-orange-100'
                         }`}
                       >
                         {transaction.isPositive ? (
-                          <ArrowUpRight className="h-4 w-4 text-green-600" />
+                          <ArrowUpRight className="h-5 w-5 text-green-600" />
                         ) : (
-                          <ArrowDownRight className="h-4 w-4 text-orange-600" />
+                          <ArrowDownRight className="h-5 w-5 text-orange-600" />
                         )}
                       </div>
                       <div>
@@ -302,8 +321,8 @@ export function DashboardPage() {
                       </div>
                     </div>
                     <div className="text-right">
-                      <p className={`font-semibold ${transaction.isPositive ? 'text-green-600' : 'text-orange-600'}`}>
-                        {transaction.isPositive ? '+' : '-'}KES {transaction.amount.toLocaleString()}
+                      <p className={`font-semibold text-lg ${transaction.isPositive ? 'text-green-600' : 'text-orange-600'}`}>
+                        {transaction.isPositive ? '+' : '-'}KES {transaction.amount.toLocaleString('en-KE')}
                       </p>
                       <p className="text-sm text-muted-foreground">{transaction.time}</p>
                     </div>
