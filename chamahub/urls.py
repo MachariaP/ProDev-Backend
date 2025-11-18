@@ -40,12 +40,27 @@ urlpatterns = [
     path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     
-    # API v1 endpoints
+    # API v1 endpoints - Core apps
     path('api/v1/accounts/', include('accounts.urls')),
     path('api/v1/groups/', include('groups.urls')),
     path('api/v1/finance/', include('finance.urls')),
     path('api/v1/governance/', include('governance.urls')),
     path('api/v1/investments/', include('investments.urls')),
+    
+    # API v1 endpoints - Fintech apps
+    path('api/v1/mpesa/', include('mpesa_integration.urls')),
+    path('api/v1/wealth-engine/', include('wealth_engine.urls')),
+    path('api/v1/credit-scoring/', include('credit_scoring.urls')),
+    path('api/v1/analytics/', include('analytics_dashboard.urls')),
+    path('api/v1/reports/', include('reporting_engine.urls')),
+    path('api/v1/audit/', include('audit_trail.urls')),
+    path('api/v1/kyc/', include('kyc_verification.urls')),
+    path('api/v1/ai-assistant/', include('ai_assistant.urls')),
+    path('api/v1/automation/', include('automation_engine.urls')),
+    path('api/v1/mobile-sync/', include('mobile_sync.urls')),
+    path('api/v1/api-gateway/', include('api_gateway.urls')),
+    path('api/v1/gamification/', include('gamification.urls')),
+    path('api/v1/education/', include('education_hub.urls')),
 ]
 
 # Serve media files in development
