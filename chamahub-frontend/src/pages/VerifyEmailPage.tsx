@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { Mail, CheckCircle, AlertCircle, RefreshCw, ArrowRight } from 'lucide-react';
+import { CheckCircle, AlertCircle, RefreshCw, ArrowRight } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import api from '../services/api';
 

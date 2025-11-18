@@ -10,8 +10,8 @@ import {
   ArrowRight,
   ArrowLeft,
   Sparkles,
-  Target,
-  PiggyBank,
+
+
 } from 'lucide-react';
 import { Card, CardContent } from '../components/ui/card';
 

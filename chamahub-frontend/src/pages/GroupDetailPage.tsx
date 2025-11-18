@@ -5,7 +5,7 @@ import {
   Users,
   Wallet,
   TrendingUp,
-  Calendar,
+
   Settings,
   ArrowLeft,
   UserPlus,
