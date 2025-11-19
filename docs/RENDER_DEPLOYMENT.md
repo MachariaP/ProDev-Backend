@@ -986,6 +986,8 @@ python manage.py loaddata backup.json
 - [Guide 2: First API Endpoint](./02-first-endpoint.md)
 - [Guide 3: Deployment (Railway & DigitalOcean)](./03-deployment.md)
 - [Guide 6: Production Features](./06-production-features.md)
+- [🎯 Render Deployment Checklist](./RENDER_CHECKLIST.md) - Track your progress
+- [🏗️ Render Architecture Diagram](./RENDER_ARCHITECTURE.md) - Understand the infrastructure
 
 ### Community Support
 
