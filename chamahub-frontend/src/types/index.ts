@@ -167,3 +167,19 @@ export interface InvestmentPerformance {
   value: number;
   returns: number;
 }
+
+// Group Message Types
+export interface GroupMessage {
+  id: number;
+  group: number;
+  user: number;
+  user_name: string;
+  user_email: string;
+  content: string;
+  attachment?: string;
+  attachment_name?: string;
+  is_edited: boolean;
+  edited_at?: string;
+  created_at: string;
+  is_own: boolean;
+}

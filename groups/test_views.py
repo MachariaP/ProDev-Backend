@@ -6,7 +6,7 @@ from rest_framework.test import APIClient
 from rest_framework import status
 from decimal import Decimal
 from datetime import date, timedelta
-from .models import ChamaGroup, GroupMembership, GroupOfficial, GroupGoal
+from .models import ChamaGroup, GroupMembership, GroupOfficial, GroupGoal, GroupMessage
 
 User = get_user_model()
 
@@ -402,3 +402,200 @@ class GroupGoalViewSetTest(TestCase):
         goal.refresh_from_db()
         self.assertEqual(goal.status, 'ACHIEVED')
         self.assertIsNotNone(goal.achieved_at)
+
+
+class GroupMessageViewSetTest(TestCase):
+    """Test GroupMessageViewSet."""
+    
+    def setUp(self):
+        """Set up test client, users, group, and memberships."""
+        self.client = APIClient()
+        
+        self.user1 = User.objects.create_user(
+            email='user1@example.com',
+            password='testpass123',
+            first_name='User',
+            last_name='One',
+            phone_number='+254700000001'
+        )
+        self.user2 = User.objects.create_user(
+            email='user2@example.com',
+            password='testpass123',
+            first_name='User',
+            last_name='Two',
+            phone_number='+254700000002'
+        )
+        self.user3 = User.objects.create_user(
+            email='user3@example.com',
+            password='testpass123',
+            first_name='User',
+            last_name='Three',
+            phone_number='+254700000003'
+        )
+        
+        self.group = ChamaGroup.objects.create(
+            name='Test Chama',
+            description='Test group',
+            group_type='SAVINGS',
+            objectives='Test objectives',
+            created_by=self.user1
+        )
+        
+        # Add user1 and user2 as active members
+        self.membership1 = GroupMembership.objects.create(
+            group=self.group,
+            user=self.user1,
+            role='ADMIN',
+            status='ACTIVE'
+        )
+        self.membership2 = GroupMembership.objects.create(
+            group=self.group,
+            user=self.user2,
+            role='MEMBER',
+            status='ACTIVE'
+        )
+        # user3 is not a member
+    
+    def test_create_message(self):
+        """Test creating a message as an active member."""
+        self.client.force_authenticate(user=self.user1)
+        
+        url = reverse('message-list')
+        data = {
+            'group': self.group.id,
+            'content': 'Hello everyone!'
+        }
+        
+        response = self.client.post(url, data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(GroupMessage.objects.count(), 1)
+        
+        message = GroupMessage.objects.first()
+        self.assertEqual(message.content, 'Hello everyone!')
+        self.assertEqual(message.user, self.user1)
+        self.assertEqual(message.group, self.group)
+    
+    def test_create_message_non_member(self):
+        """Test that non-members cannot send messages."""
+        self.client.force_authenticate(user=self.user3)
+        
+        url = reverse('message-list')
+        data = {
+            'group': self.group.id,
+            'content': 'Hello!'
+        }
+        
+        response = self.client.post(url, data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(GroupMessage.objects.count(), 0)
+    
+    def test_list_messages_for_member(self):
+        """Test listing messages for a group member."""
+        # Create some messages
+        GroupMessage.objects.create(
+            group=self.group,
+            user=self.user1,
+            content='First message'
+        )
+        GroupMessage.objects.create(
+            group=self.group,
+            user=self.user2,
+            content='Second message'
+        )
+        
+        self.client.force_authenticate(user=self.user1)
+        
+        url = reverse('message-list')
+        response = self.client.get(url, {'group': self.group.id})
+        
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        # Check if response has results key (paginated) or is a list
+        if isinstance(response.data, dict) and 'results' in response.data:
+            self.assertEqual(len(response.data['results']), 2)
+        else:
+            self.assertEqual(len(response.data), 2)
+    
+    def test_list_messages_non_member(self):
+        """Test that non-members cannot see messages."""
+        # Create a message
+        GroupMessage.objects.create(
+            group=self.group,
+            user=self.user1,
+            content='Secret message'
+        )
+        
+        self.client.force_authenticate(user=self.user3)
+        
+        url = reverse('message-list')
+        response = self.client.get(url, {'group': self.group.id})
+        
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        # user3 should not see messages from groups they're not in
+        if isinstance(response.data, dict) and 'results' in response.data:
+            self.assertEqual(len(response.data['results']), 0)
+        else:
+            self.assertEqual(len(response.data), 0)
+    
+    def test_edit_own_message(self):
+        """Test editing your own message."""
+        message = GroupMessage.objects.create(
+            group=self.group,
+            user=self.user1,
+            content='Original content'
+        )
+        
+        self.client.force_authenticate(user=self.user1)
+        
+        url = reverse('message-edit', kwargs={'pk': message.pk})
+        data = {'content': 'Updated content'}
+        
+        response = self.client.patch(url, data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        
+        message.refresh_from_db()
+        self.assertEqual(message.content, 'Updated content')
+        self.assertTrue(message.is_edited)
+        self.assertIsNotNone(message.edited_at)
+    
+    def test_edit_others_message(self):
+        """Test that you cannot edit someone else's message."""
+        message = GroupMessage.objects.create(
+            group=self.group,
+            user=self.user1,
+            content='Original content'
+        )
+        
+        self.client.force_authenticate(user=self.user2)
+        
+        url = reverse('message-edit', kwargs={'pk': message.pk})
+        data = {'content': 'Hacked content'}
+        
+        response = self.client.patch(url, data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        
+        message.refresh_from_db()
+        self.assertEqual(message.content, 'Original content')
+        self.assertFalse(message.is_edited)
+    
+    def test_message_is_own_field(self):
+        """Test that is_own field is correctly set."""
+        message = GroupMessage.objects.create(
+            group=self.group,
+            user=self.user1,
+            content='My message'
+        )
+        
+        # Check as user1 (owner)
+        self.client.force_authenticate(user=self.user1)
+        url = reverse('message-detail', kwargs={'pk': message.pk})
+        response = self.client.get(url)
+        
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertTrue(response.data['is_own'])
+        
+        # Check as user2 (not owner)
+        self.client.force_authenticate(user=self.user2)
+        response = self.client.get(url)
+        
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertFalse(response.data['is_own'])

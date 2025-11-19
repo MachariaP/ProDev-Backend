@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import ChamaGroup, GroupMembership, GroupOfficial, GroupGoal
+from .models import ChamaGroup, GroupMembership, GroupOfficial, GroupGoal, GroupMessage
 
 
 @admin.register(ChamaGroup)
@@ -51,4 +51,18 @@ class GroupGoalAdmin(admin.ModelAdmin):
     list_filter = ['status', 'created_at']
     search_fields = ['title', 'group__name']
     readonly_fields = ['created_at', 'updated_at', 'achieved_at']
+
+
+@admin.register(GroupMessage)
+class GroupMessageAdmin(admin.ModelAdmin):
+    """Admin for Group Messages."""
+    
+    list_display = ['get_message_preview', 'user', 'group', 'created_at', 'is_edited']
+    list_filter = ['group', 'created_at', 'is_edited']
+    search_fields = ['content', 'user__email', 'group__name']
+    readonly_fields = ['created_at', 'edited_at']
+    
+    def get_message_preview(self, obj):
+        return obj.content[:50]
+    get_message_preview.short_description = 'Message'
 

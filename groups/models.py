@@ -223,3 +223,50 @@ class GroupGoal(models.Model):
             return float(percentage)
         return 0.0
 
+
+class GroupMessage(models.Model):
+    """Model for group chat messages."""
+    
+    group = models.ForeignKey(
+        ChamaGroup,
+        on_delete=models.CASCADE,
+        related_name='messages'
+    )
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='group_messages'
+    )
+    content = models.TextField(_('content'))
+    
+    # Optional file attachment
+    attachment = models.FileField(
+        _('attachment'),
+        upload_to='groups/messages/attachments/',
+        blank=True,
+        null=True
+    )
+    attachment_name = models.CharField(
+        _('attachment name'),
+        max_length=255,
+        blank=True
+    )
+    
+    # Message metadata
+    is_edited = models.BooleanField(_('is edited'), default=False)
+    edited_at = models.DateTimeField(_('edited at'), blank=True, null=True)
+    
+    created_at = models.DateTimeField(_('created at'), auto_now_add=True)
+    
+    class Meta:
+        verbose_name = _('group message')
+        verbose_name_plural = _('group messages')
+        ordering = ['created_at']
+        indexes = [
+            models.Index(fields=['group', 'created_at']),
+            models.Index(fields=['user', 'created_at']),
+        ]
+    
+    def __str__(self):
+        return f"{self.user.get_full_name()} in {self.group.name}: {self.content[:50]}"
+
