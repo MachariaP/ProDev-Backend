@@ -138,7 +138,8 @@ This repository is organized into **two main folders** for optimal learning:
 | [Guide 9](./docs/09-complete-dashboard.md) | **Complete Dashboard** 📊 | 240-300 min | Advanced |
 | [Guide 10](./docs/10-advanced-forms.md) | **Advanced Forms** 📝 | 180-240 min | Advanced |
 | [Guide 11](./docs/11-realtime-websockets.md) | **Real-Time WebSockets** ⚡ | 180-240 min | Advanced |
-| [Guide 3](./docs/03-deployment.md) | Deployment | 60-90 min | Intermediate |
+| [Guide 3](./docs/03-deployment.md) | Deployment (Railway/DO) | 60-90 min | Intermediate |
+| [🚀 Render Guide](./docs/RENDER_DEPLOYMENT.md) | **Deploy to Render** 🌟 | 45-60 min | Beginner |
 
 **🌟 Guide 7 is the flagship** for full-stack development—it provides comprehensive documentation on Django + TypeScript integration.
 
@@ -236,6 +237,7 @@ pip install -r requirements.txt
 **👉 Next Steps**:
 - **Backend Only**: [Guide 1: Initial Setup](./docs/01-initial-setup.md)
 - **Full-Stack**: Start with Guide 1, then jump to [Guide 7](./docs/07-django-typescript-fullstack-mastery.md) after Guide 6
+- **Deploy to Internet**: [🚀 Render Deployment Guide](./docs/RENDER_DEPLOYMENT.md) - Deploy your app in 45 minutes!
 - **Learn Concepts**: Browse the [Learning Center](./learn/)
 
 ---
@@ -359,6 +361,37 @@ Choose your path based on your goals and experience:
 | **JWT** | Authentication | Secure user login and session management |
 | **pytest** | Testing | Automatically verify your code works correctly |
 | **Docker** | Containerization | Package your app so it runs anywhere |
+
+---
+
+## 🚀 Deployment Options
+
+Ready to deploy your Django app to production? We've got you covered with comprehensive guides for different platforms:
+
+### 🌟 Recommended: Render (Easiest for Beginners)
+
+**[📘 Complete Render Deployment Guide](./docs/RENDER_DEPLOYMENT.md)**
+
+Perfect for beginners! Deploy in 45-60 minutes with:
+- ✅ **Free tier available** (90 days free PostgreSQL)
+- ✅ **Auto-deploy from GitHub** (push and it deploys automatically)
+- ✅ **Managed databases** (PostgreSQL & Redis included)
+- ✅ **Free SSL certificates** (automatic HTTPS)
+- ✅ **Easy setup** (no complex configuration)
+- ✅ **Step-by-step tutorial** with troubleshooting
+
+**Cost:** Free tier available, production starts at $7/month
+
+### Alternative Platforms
+
+| Platform | Guide | Best For | Starting Cost |
+|----------|-------|----------|---------------|
+| **Render** 🌟 | [Render Guide](./docs/RENDER_DEPLOYMENT.md) | Beginners, small-medium apps | Free tier |
+| **Railway** | [Guide 3](./docs/03-deployment.md) | Quick prototypes | Free tier (limited) |
+| **DigitalOcean** | [Guide 3](./docs/03-deployment.md) | Full control, scaling | $6/month |
+| **AWS/Heroku** | Coming soon | Enterprise apps | Variable |
+
+**👉 New to deployment?** Start with [Render](./docs/RENDER_DEPLOYMENT.md) - it's the easiest!
 
 ---
 

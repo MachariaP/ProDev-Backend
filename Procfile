@@ -1,3 +1,3 @@
-web: gunicorn config.wsgi:application --bind 0.0.0.0:$PORT
-worker: celery -A config worker --loglevel=info
-beat: celery -A config beat --loglevel=info
+web: gunicorn chamahub.wsgi:application --bind 0.0.0.0:$PORT
+worker: celery -A chamahub worker --loglevel=info
+beat: celery -A chamahub beat --loglevel=info
