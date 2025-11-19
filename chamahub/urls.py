@@ -61,6 +61,27 @@ urlpatterns = [
     path('api/v1/api-gateway/', include('api_gateway.urls')),
     path('api/v1/gamification/', include('gamification.urls')),
     path('api/v1/education/', include('education_hub.urls')),
+    
+    # Backwards-compatible URL patterns (without /api/v1/ prefix)
+    # These support legacy frontend configurations
+    path('accounts/', include('accounts.urls')),
+    path('groups/', include('groups.urls')),
+    path('finance/', include('finance.urls')),
+    path('governance/', include('governance.urls')),
+    path('investments/', include('investments.urls')),
+    path('mpesa/', include('mpesa_integration.urls')),
+    path('wealth-engine/', include('wealth_engine.urls')),
+    path('credit-scoring/', include('credit_scoring.urls')),
+    path('analytics/', include('analytics_dashboard.urls')),
+    path('reports/', include('reporting_engine.urls')),
+    path('audit/', include('audit_trail.urls')),
+    path('kyc/', include('kyc_verification.urls')),
+    path('ai-assistant/', include('ai_assistant.urls')),
+    path('automation/', include('automation_engine.urls')),
+    path('mobile-sync/', include('mobile_sync.urls')),
+    path('api-gateway/', include('api_gateway.urls')),
+    path('gamification/', include('gamification.urls')),
+    path('education/', include('education_hub.urls')),
 ]
 
 # Serve media files in development
