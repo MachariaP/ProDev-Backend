@@ -11,19 +11,9 @@ import {
   Vote,
   Bell,
   RefreshCw,
-  Calendar,
-  Download,
-  MoreHorizontal,
   Eye,
-  Filter,
   Search,
-  Shield,
-  AlertCircle,
-  CheckCircle,
-  Clock,
-  FileText,
   BarChart3,
-  PieChart as PieChartIcon, // Renamed to avoid conflict
 } from 'lucide-react';
 import { StatsCard } from '../../components/StatsCard';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../../components/ui/card';
@@ -33,8 +23,8 @@ import { Badge } from '../../components/ui/badge';
 import { Button } from '../../components/ui/button';
 import { Skeleton } from '../../components/ui/skeleton';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select';
-import { analyticsService, groupsService } from '../../services/apiService';
-import type { DashboardStats, RecentActivity, ChamaGroup, Notification } from '../../types/api';
+import { groupsService } from '../../services/apiService';
+import type { ChamaGroup, Notification } from '../../types/api';
 
 // Mock data for demonstration
 const mockDashboardData = {
@@ -125,7 +115,7 @@ const itemVariants = {
     opacity: 1,
     y: 0,
     transition: {
-      type: 'spring',
+      type: 'spring' as const,
       stiffness: 100
     }
   }
@@ -310,7 +300,7 @@ export function DashboardPage() {
     fetchData();
   }, []);
 
-  const fetchDashboardData = async (groupId: number) => {
+  const fetchDashboardData = async (_groupId: number) => {
     try {
       // In a real app, you would fetch actual dashboard data
       // const stats = await analyticsService.getGroupStats(groupId);
@@ -532,7 +522,6 @@ export function DashboardPage() {
             icon={Wallet}
             trend={dashboardData.summary.growth_rates.balance}
             iconClassName="bg-green-100 text-green-600 dark:bg-green-900 dark:text-green-400"
-            loading={isRefreshing}
           />
           <StatsCard
             title="Total Members"
@@ -540,7 +529,6 @@ export function DashboardPage() {
             icon={Users}
             trend={dashboardData.summary.growth_rates.members}
             iconClassName="bg-blue-100 text-blue-600 dark:bg-blue-900 dark:text-blue-400"
-            loading={isRefreshing}
           />
           <StatsCard
             title="Active Loans"
@@ -548,7 +536,6 @@ export function DashboardPage() {
             icon={TrendingUp}
             trend={dashboardData.summary.growth_rates.loans}
             iconClassName="bg-orange-100 text-orange-600 dark:bg-orange-900 dark:text-orange-400"
-            loading={isRefreshing}
           />
           <StatsCard
             title="Investments"
@@ -556,7 +543,6 @@ export function DashboardPage() {
             icon={PiggyBank}
             trend={dashboardData.summary.growth_rates.investments}
             iconClassName="bg-purple-100 text-purple-600 dark:bg-purple-900 dark:text-purple-400"
-            loading={isRefreshing}
           />
         </motion.div>
 

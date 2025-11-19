@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Plus, Receipt, DollarSign, CheckCircle, Clock, XCircle, AlertCircle, Download, Filter, Search, Users, Calendar } from 'lucide-react';
+import { ArrowLeft, Plus, Receipt, DollarSign, CheckCircle, Clock, XCircle, AlertCircle, Download, Filter, Search, Users } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../../components/ui/card';
 import { financeService } from '../../services/apiService';
 import type { Expense } from '../../types/api';
@@ -160,7 +160,7 @@ export function ExpensesPage() {
                       <div className="flex items-center gap-4">
                         <span><Users className="inline h-4 w-4" /> Member #{e.requested_by}</span>
                         <span>•</span>
-                        <span>{new Date(e.created_at).toLocaleDateString()}</span>
+                        <span>{new Date(e.requested_at).toLocaleDateString()}</span>
                       </div>
                       {e.approved_by && <span>Approved by Member #{e.approved_by}</span>}
                     </div>

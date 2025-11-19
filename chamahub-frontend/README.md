@@ -123,6 +123,16 @@ npm run build
 
 The build output will be in the `dist/` directory.
 
+### Deploy to Render (Recommended)
+
+For detailed deployment instructions, see [RENDER_DEPLOYMENT.md](./RENDER_DEPLOYMENT.md).
+
+Quick start:
+1. Connect your repository to Render
+2. Render will auto-detect `render.yaml`
+3. Set `VITE_API_URL` environment variable
+4. Deploy!
+
 ### Deploy to Vercel
 ```bash
 vercel --prod
@@ -143,3 +153,4 @@ netlify deploy --prod --dir=dist
 ---
 
 Built with ❤️ for the ChamaHub community
+# chamahub-frontend

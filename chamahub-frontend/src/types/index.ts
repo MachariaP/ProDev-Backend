@@ -85,6 +85,7 @@ export interface Contribution {
   amount: string;
   payment_method: 'MPESA' | 'BANK' | 'CASH';
   reference_number: string;
+  transaction_ref?: string; // Alias for reference_number
   status: 'PENDING' | 'CONFIRMED' | 'REJECTED';
   contribution_date: string;
   created_at: string;
@@ -96,11 +97,13 @@ export interface Loan {
   applicant: number;
   applicant_name?: string;
   principal_amount: string;
+  amount?: string; // Alias for principal_amount
   interest_rate: string;
   duration_months: number;
   monthly_payment: string;
   total_repayable: string;
   outstanding_balance: string;
+  total_repaid?: number; // Total amount repaid
   purpose: string;
   status: 'PENDING' | 'APPROVED' | 'REJECTED' | 'DISBURSED' | 'ACTIVE' | 'COMPLETED' | 'DEFAULTED';
   application_date: string;
@@ -128,6 +131,7 @@ export interface Expense {
   status: 'PENDING' | 'APPROVED' | 'REJECTED' | 'PAID';
   request_date: string;
   approval_date?: string;
+  created_at?: string; // Date when expense was created
 }
 
 // Dashboard Types

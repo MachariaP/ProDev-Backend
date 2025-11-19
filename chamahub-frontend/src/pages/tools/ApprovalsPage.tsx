@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, CheckCircle, XCircle, Clock, DollarSign, FileText, Users, Download, Filter, Search, Calendar } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../../components/ui/card';
+import { ArrowLeft, CheckCircle, XCircle, Clock, DollarSign, FileText, Users, Download, Filter, Search } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
 import api from '../../services/api';
 
 interface DisbursementApproval { id: number; approval_type: 'LOAN'|'EXPENSE'|'WITHDRAWAL'; amount: number; description: string; status: 'PENDING'|'APPROVED'|'REJECTED'; approvals_count: number; required_approvals: number; requested_by_name: string; created_at: string; signatures: any[]; }

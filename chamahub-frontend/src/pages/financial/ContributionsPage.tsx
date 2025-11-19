@@ -164,7 +164,7 @@ export function ContributionsPage() {
                         <div>
                           <p className="font-semibold text-lg">Member #{c.member}</p>
                           <p className="text-sm text-gray-600">{c.payment_method}</p>
-                          {c.transaction_ref && <p className="text-xs text-gray-500 mt-1">Ref: {c.transaction_ref}</p>}
+                          {c.reference_number && <p className="text-xs text-gray-500 mt-1">Ref: {c.reference_number}</p>}
                         </div>
                       </div>
                       <div className="flex items-center gap-6">

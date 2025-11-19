@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Plus, DollarSign, Clock, CheckCircle, XCircle, AlertCircle, Download, Filter, Search, Calendar } from 'lucide-react';
+import { ArrowLeft, Plus, DollarSign, Clock, CheckCircle, AlertCircle, Download, Filter, Search, Calendar } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../../components/ui/card';
 import { financeService } from '../../services/apiService';
 import type { Loan } from '../../types/api';
@@ -26,10 +26,10 @@ export function LoansPage() {
     active: loans.filter(l => ['ACTIVE','DISBURSED'].includes(l.status)).length,
     completed: loans.filter(l => l.status === 'COMPLETED').length,
     pending: loans.filter(l => l.status === 'PENDING').length,
-    totalAmount: loans.reduce((s, l) => s + Number(l.amount), 0)
+    totalAmount: loans.reduce((s, l) => s + Number(l.principal_amount), 0)
   };
 
-  const progress = (loan: Loan) => (loan.total_repaid || 0) / (loan.amount || 1) * 100;
+  const progress = (loan: Loan) => (loan.total_repaid || 0) / (Number(loan.principal_amount) || 1) * 100;
 
   if (loading) return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-blue-50">
@@ -131,7 +131,7 @@ export function LoansPage() {
                           <DollarSign className="h-7 w-7 text-blue-600" />
                         </div>
                         <div>
-                          <h3 className="font-bold text-xl">KES {Number(loan.amount).toLocaleString()}</h3>
+                          <h3 className="font-bold text-xl">KES {Number(loan.principal_amount).toLocaleString()}</h3>
                           <p className="text-gray-600">{loan.purpose}</p>
                         </div>
                       </div>
