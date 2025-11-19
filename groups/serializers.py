@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from django.db.models import Sum
-from .models import ChamaGroup, GroupMembership, GroupOfficial, GroupGoal
+from .models import ChamaGroup, GroupMembership, GroupOfficial, GroupGoal, GroupMessage
 from accounts.serializers import UserSerializer
 
 
@@ -129,3 +129,33 @@ class GroupDashboardSerializer(serializers.ModelSerializer):
         if hasattr(obj, 'portfolio'):
             return obj.portfolio.current_value
         return 0
+
+
+class GroupMessageSerializer(serializers.ModelSerializer):
+    """Serializer for Group Messages."""
+    
+    user_name = serializers.CharField(source='user.get_full_name', read_only=True)
+    user_email = serializers.CharField(source='user.email', read_only=True)
+    is_own = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = GroupMessage
+        fields = [
+            'id', 'group', 'user', 'user_name', 'user_email',
+            'content', 'attachment', 'attachment_name',
+            'is_edited', 'edited_at', 'created_at', 'is_own'
+        ]
+        read_only_fields = ['id', 'user', 'is_edited', 'edited_at', 'created_at']
+    
+    def get_is_own(self, obj):
+        """Check if the message belongs to the current user."""
+        request = self.context.get('request')
+        if request and request.user:
+            return obj.user == request.user
+        return False
+    
+    def create(self, validated_data):
+        """Set user to current user when creating a message."""
+        request = self.context.get('request')
+        validated_data['user'] = request.user
+        return super().create(validated_data)

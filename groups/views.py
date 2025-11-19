@@ -2,11 +2,11 @@ from rest_framework import viewsets, permissions, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from django_filters.rest_framework import DjangoFilterBackend
-from .models import ChamaGroup, GroupMembership, GroupOfficial, GroupGoal
+from .models import ChamaGroup, GroupMembership, GroupOfficial, GroupGoal, GroupMessage
 from .serializers import (
     ChamaGroupSerializer, GroupMembershipSerializer,
     GroupOfficialSerializer, GroupGoalSerializer,
-    GroupDashboardSerializer
+    GroupDashboardSerializer, GroupMessageSerializer
 )
 
 
@@ -121,5 +121,71 @@ class GroupGoalViewSet(viewsets.ModelViewSet):
         goal.save()
         
         serializer = self.get_serializer(goal)
+        return Response(serializer.data)
+
+
+class GroupMessageViewSet(viewsets.ModelViewSet):
+    """ViewSet for Group Messages."""
+    
+    queryset = GroupMessage.objects.all()
+    serializer_class = GroupMessageSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    filter_backends = [DjangoFilterBackend]
+    filterset_fields = ['group']
+    
+    def get_queryset(self):
+        """Filter messages for groups the user is a member of."""
+        user = self.request.user
+        # Get groups where user is an active member
+        user_groups = GroupMembership.objects.filter(
+            user=user,
+            status='ACTIVE'
+        ).values_list('group_id', flat=True)
+        
+        return GroupMessage.objects.filter(group_id__in=user_groups).select_related('user', 'group')
+    
+    def perform_create(self, serializer):
+        """Validate user is a member of the group before creating message."""
+        group = serializer.validated_data.get('group')
+        user = self.request.user
+        
+        # Check if user is an active member of the group
+        membership = GroupMembership.objects.filter(
+            group=group,
+            user=user,
+            status='ACTIVE'
+        ).first()
+        
+        if not membership:
+            from rest_framework.exceptions import PermissionDenied
+            raise PermissionDenied("You must be an active member of this group to send messages.")
+        
+        serializer.save(user=user)
+    
+    @action(detail=True, methods=['patch'])
+    def edit(self, request, pk=None):
+        """Edit a message (only by the original sender)."""
+        message = self.get_object()
+        
+        if message.user != request.user:
+            return Response(
+                {'error': 'You can only edit your own messages'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        content = request.data.get('content')
+        if not content:
+            return Response(
+                {'error': 'Content is required'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        from django.utils import timezone
+        message.content = content
+        message.is_edited = True
+        message.edited_at = timezone.now()
+        message.save()
+        
+        serializer = self.get_serializer(message)
         return Response(serializer.data)
 
