@@ -3,7 +3,7 @@ from django.test import TestCase
 from django.contrib.auth import get_user_model
 from decimal import Decimal
 from datetime import date, timedelta
-from .models import ChamaGroup, GroupMembership, GroupOfficial, GroupGoal
+from .models import ChamaGroup, GroupMembership, GroupOfficial, GroupGoal, GroupMessage
 
 User = get_user_model()
 
@@ -266,3 +266,112 @@ class GroupGoalModelTest(TestCase):
             created_by=self.user
         )
         self.assertEqual(goal.progress_percentage, 100.0)
+
+
+class GroupMessageModelTest(TestCase):
+    """Test GroupMessage model."""
+    
+    def setUp(self):
+        """Set up test users, group, and membership."""
+        self.user1 = User.objects.create_user(
+            email='user1@example.com',
+            password='testpass123',
+            first_name='User',
+            last_name='One',
+            phone_number='+254700000001'
+        )
+        self.user2 = User.objects.create_user(
+            email='user2@example.com',
+            password='testpass123',
+            first_name='User',
+            last_name='Two',
+            phone_number='+254700000002'
+        )
+        self.group = ChamaGroup.objects.create(
+            name='Test Chama',
+            description='Test chama group',
+            group_type='SAVINGS',
+            objectives='Save together',
+            created_by=self.user1
+        )
+        # Add both users as active members
+        GroupMembership.objects.create(
+            group=self.group,
+            user=self.user1,
+            role='ADMIN',
+            status='ACTIVE'
+        )
+        GroupMembership.objects.create(
+            group=self.group,
+            user=self.user2,
+            role='MEMBER',
+            status='ACTIVE'
+        )
+    
+    def test_message_creation(self):
+        """Test message creation."""
+        message = GroupMessage.objects.create(
+            group=self.group,
+            user=self.user1,
+            content='Hello, this is a test message!'
+        )
+        self.assertEqual(message.group, self.group)
+        self.assertEqual(message.user, self.user1)
+        self.assertEqual(message.content, 'Hello, this is a test message!')
+        self.assertFalse(message.is_edited)
+        self.assertIsNone(message.edited_at)
+    
+    def test_message_str(self):
+        """Test string representation of message."""
+        message = GroupMessage.objects.create(
+            group=self.group,
+            user=self.user1,
+            content='Test message content that is longer than fifty characters to test truncation'
+        )
+        expected = f"{self.user1.get_full_name()} in {self.group.name}: Test message content that is longer than fifty cha"
+        self.assertEqual(str(message), expected)
+    
+    def test_message_with_attachment(self):
+        """Test message with attachment."""
+        message = GroupMessage.objects.create(
+            group=self.group,
+            user=self.user1,
+            content='Check out this file',
+            attachment_name='test_document.pdf'
+        )
+        self.assertEqual(message.attachment_name, 'test_document.pdf')
+    
+    def test_message_ordering(self):
+        """Test that messages are ordered by created_at."""
+        message1 = GroupMessage.objects.create(
+            group=self.group,
+            user=self.user1,
+            content='First message'
+        )
+        message2 = GroupMessage.objects.create(
+            group=self.group,
+            user=self.user2,
+            content='Second message'
+        )
+        messages = list(GroupMessage.objects.all())
+        self.assertEqual(messages[0], message1)
+        self.assertEqual(messages[1], message2)
+    
+    def test_edited_message(self):
+        """Test editing a message."""
+        from django.utils import timezone
+        message = GroupMessage.objects.create(
+            group=self.group,
+            user=self.user1,
+            content='Original content'
+        )
+        
+        # Edit the message
+        message.content = 'Updated content'
+        message.is_edited = True
+        message.edited_at = timezone.now()
+        message.save()
+        
+        self.assertEqual(message.content, 'Updated content')
+        self.assertTrue(message.is_edited)
+        self.assertIsNotNone(message.edited_at)
