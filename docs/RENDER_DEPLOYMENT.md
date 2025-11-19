@@ -5,6 +5,8 @@
 > **Prerequisites:** GitHub account, completed basic Django setup  
 > **Outcome:** Production-ready Django app running on Render with PostgreSQL and Redis
 
+> **📝 Track Your Progress:** Use the [Deployment Checklist](./RENDER_CHECKLIST.md) to track each step!
+
 ---
 
 ## 📋 Table of Contents
