@@ -393,6 +393,8 @@ Perfect for beginners! Deploy in 45-60 minutes with:
 
 **👉 New to deployment?** Start with [Render](./docs/RENDER_DEPLOYMENT.md) - it's the easiest!
 
+**⚠️ After Deployment:** If login/registration doesn't work, see [CORS Troubleshooting](./CORS_TROUBLESHOOTING.md)
+
 ---
 
 ## 📖 Documentation Structure
@@ -487,6 +489,11 @@ We welcome contributions! Here's how:
 ### 💬 Have Questions?
 - Check existing [Issues](https://github.com/MachariaP/ProDev-Backend/issues)
 - Join discussions in [Discussions](https://github.com/MachariaP/ProDev-Backend/discussions)
+
+### 🔧 Login/Registration Not Working After Deployment?
+- **Most Common Issue:** CORS configuration
+- **Quick Fix:** Add frontend URL to backend's `CORS_ALLOWED_ORIGINS` environment variable
+- **Detailed Guide:** [CORS Troubleshooting](./CORS_TROUBLESHOOTING.md)
 
 ### 🤝 Want to Connect?
 - Twitter: [@_M_Phinehas](https://twitter.com/_M_Phinehas)
