@@ -1,4 +1,4 @@
-// API Type Definitions for ChamaHub
+// API Type Definitions for ChamaHub - Updated to match Django models
 
 // User & Authentication Types
 export interface User {
@@ -6,6 +6,7 @@ export interface User {
   email: string;
   first_name: string;
   last_name: string;
+  full_name?: string;
   phone_number: string;
   profile_picture?: string;
   date_of_birth?: string;
@@ -16,6 +17,7 @@ export interface User {
   kyc_verified_at?: string;
   is_kyc_complete: boolean;
   credit_score: number;
+  role?: string;
   created_at: string;
   updated_at: string;
 }
@@ -65,6 +67,8 @@ export interface ChamaGroup {
   contribution_frequency: 'DAILY' | 'WEEKLY' | 'BIWEEKLY' | 'MONTHLY';
   minimum_contribution: number;
   total_balance: number;
+  available_funds?: number;
+  max_loan_amount?: number;
   is_active: boolean;
   kyb_verified: boolean;
   kyb_verified_at?: string;
@@ -78,6 +82,7 @@ export interface GroupMembership {
   id: number;
   group: number;
   user: number;
+  user_details?: User;
   role: 'ADMIN' | 'TREASURER' | 'SECRETARY' | 'MEMBER';
   status: 'PENDING' | 'ACTIVE' | 'SUSPENDED' | 'REMOVED';
   joined_at: string;
@@ -98,58 +103,106 @@ export interface GroupGoal {
   created_at: string;
 }
 
-// Finance Types
+// Finance Types - Updated to match Django models
 export interface Contribution {
   id: number;
   group: number;
   member: number;
-  amount: number;
-  payment_method: 'MPESA' | 'CASH' | 'BANK' | 'OTHER';
-  transaction_ref: string;
+  member_name?: string;
+  amount: string;
+  payment_method: 'MPESA' | 'BANK' | 'CASH' | 'OTHER';
+  reference_number: string;
   status: 'PENDING' | 'COMPLETED' | 'FAILED' | 'RECONCILED';
-  contribution_date: string;
-  notes?: string;
+  reconciled_by?: number;
+  reconciled_at?: string;
+  notes: string;
   created_at: string;
+  updated_at: string;
 }
 
 export interface Loan {
   id: number;
   group: number;
+  group_name?: string;
   borrower: number;
-  amount: number;
-  interest_rate: number;
+  borrower_name?: string;
+  principal_amount: string;
+  interest_rate: string;
   duration_months: number;
+  total_amount: string;
+  monthly_payment: string;
+  outstanding_balance: string;
+  status: 'PENDING' | 'APPROVED' | 'DISBURSED' | 'ACTIVE' | 'COMPLETED' | 'DEFAULTED' | 'REJECTED';
   purpose: string;
-  status: 'PENDING' | 'APPROVED' | 'DISBURSED' | 'ACTIVE' | 'REPAYING' | 'COMPLETED' | 'DEFAULTED' | 'REJECTED';
-  application_date: string;
-  approval_date?: string;
-  disbursement_date?: string;
+  applied_at: string;
+  approved_by?: number;
+  approved_at?: string;
+  disbursed_at?: string;
   due_date?: string;
-  total_repaid: number;
-  created_at: string;
+  completed_at?: string;
+  notes?: string;
+  updated_at: string;
+  // Frontend calculated fields
+  total_repaid?: number;
+  progress_percentage?: number;
 }
 
 export interface LoanRepayment {
   id: number;
   loan: number;
-  amount: number;
-  payment_method: 'MPESA' | 'CASH' | 'BANK' | 'OTHER';
-  transaction_ref: string;
+  amount: string;
+  payment_method: string;
+  reference_number: string;
   status: 'PENDING' | 'COMPLETED' | 'FAILED';
-  payment_date: string;
-  created_at: string;
+  paid_at: string;
+  notes: string;
 }
 
 export interface Expense {
   id: number;
   group: number;
+  group_name?: string;
   category: 'OPERATIONAL' | 'ADMINISTRATIVE' | 'WELFARE' | 'INVESTMENT' | 'OTHER';
   description: string;
-  amount: number;
+  amount: string;
   status: 'PENDING' | 'APPROVED' | 'DISBURSED' | 'REJECTED';
+  receipt?: string;
   requested_by: number;
+  requested_by_name?: string;
   approved_by?: number;
+  approved_by_name?: string;
+  requested_at: string;
+  approved_at?: string;
+  disbursed_at?: string;
+  notes: string;
+}
+
+export interface DisbursementApproval {
+  id: number;
+  group: number;
+  group_name?: string;
+  approval_type: 'LOAN' | 'EXPENSE' | 'WITHDRAWAL';
+  amount: string;
+  description: string;
+  loan?: number;
+  expense?: number;
+  required_approvals: number;
+  approvals_count: number;
+  status: 'PENDING' | 'APPROVED' | 'REJECTED';
+  requested_by: number;
+  requested_by_name?: string;
   created_at: string;
+  updated_at: string;
+}
+
+export interface ApprovalSignature {
+  id: number;
+  approval: number;
+  approver: number;
+  approver_name?: string;
+  approved: boolean;
+  comments: string;
+  signed_at: string;
 }
 
 // Governance Types
@@ -163,16 +216,19 @@ export interface Vote {
   start_date: string;
   end_date: string;
   created_by: number;
+  created_by_name?: string;
   created_at: string;
   yes_votes?: number;
   no_votes?: number;
   abstain_votes?: number;
+  total_votes?: number;
 }
 
 export interface VoteBallot {
   id: number;
   vote: number;
   voter: number;
+  voter_name?: string;
   choice: 'YES' | 'NO' | 'ABSTAIN';
   is_proxy: boolean;
   proxy_for?: number;
@@ -183,11 +239,13 @@ export interface Fine {
   id: number;
   group: number;
   member: number;
+  member_name?: string;
   fine_type: 'LATE_CONTRIBUTION' | 'MISSED_MEETING' | 'LOAN_DEFAULT' | 'CONDUCT' | 'OTHER';
-  amount: number;
+  amount: string;
   reason: string;
   status: 'PENDING' | 'PAID' | 'WAIVED';
   issued_by: number;
+  issued_by_name?: string;
   issued_at: string;
   paid_at?: string;
 }
@@ -201,6 +259,7 @@ export interface Document {
   description?: string;
   is_public: boolean;
   uploaded_by: number;
+  uploaded_by_name?: string;
   uploaded_at: string;
 }
 
@@ -208,17 +267,22 @@ export interface Document {
 export interface Investment {
   id: number;
   group: number;
+  group_name?: string;
   investment_type: 'TREASURY_BILLS' | 'STOCKS' | 'BONDS' | 'REAL_ESTATE' | 'OTHER';
   name: string;
   description: string;
-  amount_invested: number;
-  current_value: number;
-  expected_return: number;
+  amount_invested: string;
+  current_value: string;
+  expected_return: string;
   status: 'ACTIVE' | 'MATURED' | 'SOLD' | 'CANCELLED';
   investment_date: string;
   maturity_date?: string;
   created_by: number;
+  created_by_name?: string;
   created_at: string;
+  // Additional fields for portfolio
+  returns?: number;
+  roi_percentage?: number;
 }
 
 export interface StockHolding {
@@ -228,18 +292,18 @@ export interface StockHolding {
   stock_name: string;
   exchange: 'NSE' | 'OTHER';
   shares: number;
-  purchase_price: number;
-  current_price: number;
+  purchase_price: string;
+  current_price: string;
   purchase_date: string;
 }
 
 export interface Portfolio {
   id: number;
   group: number;
-  total_value: number;
-  total_invested: number;
-  total_returns: number;
-  return_percentage: number;
+  total_value: string;
+  total_invested: string;
+  total_returns: string;
+  return_percentage: string;
   last_updated: string;
 }
 
@@ -251,16 +315,51 @@ export interface DashboardStats {
   total_investments: number;
   monthly_contributions: number;
   pending_approvals: number;
+  growth_rates?: {
+    balance: number;
+    members: number;
+    loans: number;
+    investments: number;
+  };
+  quick_stats?: {
+    pending_actions: number;
+    upcoming_meetings: number;
+    unread_notifications: number;
+    loan_approvals: number;
+  };
 }
 
 export interface RecentActivity {
   id: number;
-  type: 'contribution' | 'loan' | 'expense' | 'vote' | 'investment';
+  type: 'contribution' | 'loan' | 'expense' | 'vote' | 'investment' | 'loan_repayment' | 'fine';
   description: string;
   amount?: number;
   user: string;
+  user_id: number;
+  group_id: number;
   timestamp: string;
-  is_positive: boolean;
+  is_positive?: boolean;
+  status?: string;
+}
+
+// Analytics Types
+export interface AnalyticsData {
+  contributions_over_time: Array<{ date: string; amount: number; target?: number }>;
+  member_activity: Array<{ member_name: string; transactions: number; contributions: number }>;
+  category_breakdown: Array<{ name: string; value: number }>;
+  growth_trends: Array<{ month: string; growth: number }>;
+  weekly_activity: Array<{ name: string; contributions: number; loans: number; meetings: number }>;
+}
+
+// Notification Types
+export interface Notification {
+  id: string;
+  title: string;
+  message: string;
+  type: 'info' | 'warning' | 'success' | 'error';
+  time: string;
+  read: boolean;
+  action_url?: string;
 }
 
 // Pagination
@@ -275,5 +374,34 @@ export interface PaginatedResponse<T> {
 export interface ApiError {
   detail?: string;
   message?: string;
+  error?: string;
   [key: string]: unknown;
+}
+
+// Form Data Types
+export interface LoanApplicationData {
+  group_id: string;
+  amount: string;
+  purpose: string;
+  duration_months: string;
+  guarantors: string[];
+  repayment_method: string;
+}
+
+export interface ContributionFormData {
+  group_id: string;
+  member_id: string;
+  amount: string;
+  payment_method: 'MPESA' | 'BANK' | 'CASH' | 'OTHER';
+  reference_number: string;
+  notes: string;
+}
+
+export interface ExpenseFormData {
+  group_id: string;
+  category: 'OPERATIONAL' | 'ADMINISTRATIVE' | 'WELFARE' | 'INVESTMENT' | 'OTHER';
+  description: string;
+  amount: string;
+  receipt?: File;
+  notes: string;
 }

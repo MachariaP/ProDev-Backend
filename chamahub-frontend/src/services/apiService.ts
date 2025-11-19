@@ -11,6 +11,8 @@ import type {
   Loan,
   LoanRepayment,
   Expense,
+  DisbursementApproval,
+  ApprovalSignature,
   Vote,
   VoteBallot,
   Fine,
@@ -19,6 +21,8 @@ import type {
   StockHolding,
   Portfolio,
   PaginatedResponse,
+  DashboardStats,
+  RecentActivity,
 } from '../types/api';
 
 // Authentication Services
@@ -136,7 +140,8 @@ export const groupsService = {
 
 // Finance Services
 export const financeService = {
-  async getContributions(params?: { group?: number; member?: number; page?: number }): Promise<PaginatedResponse<Contribution>> {
+  // Contributions
+  async getContributions(params?: { group?: number; member?: number; status?: string; payment_method?: string; page?: number }): Promise<PaginatedResponse<Contribution>> {
     const response = await api.get('/finance/contributions/', { params });
     return response.data;
   },
@@ -146,6 +151,12 @@ export const financeService = {
     return response.data;
   },
 
+  async reconcileContribution(id: number): Promise<Contribution> {
+    const response = await api.post(`/finance/contributions/${id}/reconcile/`);
+    return response.data;
+  },
+
+  // Loans
   async getLoans(params?: { group?: number; borrower?: number; status?: string; page?: number }): Promise<PaginatedResponse<Loan>> {
     const response = await api.get('/finance/loans/', { params });
     return response.data;
@@ -161,18 +172,29 @@ export const financeService = {
     return response.data;
   },
 
+  async calculateLoan(data: { group_id: number; amount: number; duration_months: number }): Promise<{
+    monthly_payment: number;
+    total_interest: number;
+    total_repayment: number;
+  }> {
+    const response = await api.post('/finance/loans/calculate/', data);
+    return response.data;
+  },
+
+  // Loan Repayments
   async getLoanRepayments(loanId: number): Promise<PaginatedResponse<LoanRepayment>> {
-    const response = await api.get('/finance/repayments/', {
+    const response = await api.get('/finance/loan-repayments/', {
       params: { loan: loanId },
     });
     return response.data;
   },
 
   async createLoanRepayment(data: Partial<LoanRepayment>): Promise<LoanRepayment> {
-    const response = await api.post('/finance/repayments/', data);
+    const response = await api.post('/finance/loan-repayments/', data);
     return response.data;
   },
 
+  // Expenses
   async getExpenses(params?: { group?: number; category?: string; status?: string; page?: number }): Promise<PaginatedResponse<Expense>> {
     const response = await api.get('/finance/expenses/', { params });
     return response.data;
@@ -180,6 +202,54 @@ export const financeService = {
 
   async createExpense(data: Partial<Expense>): Promise<Expense> {
     const response = await api.post('/finance/expenses/', data);
+    return response.data;
+  },
+
+  // Disbursement Approvals
+  async getDisbursementApprovals(params?: { group?: number; approval_type?: string; status?: string; page?: number }): Promise<PaginatedResponse<DisbursementApproval>> {
+    const response = await api.get('/finance/disbursement-approvals/', { params });
+    return response.data;
+  },
+
+  async createDisbursementApproval(data: Partial<DisbursementApproval>): Promise<DisbursementApproval> {
+    const response = await api.post('/finance/disbursement-approvals/', data);
+    return response.data;
+  },
+
+  // Approval Signatures
+  async getApprovalSignatures(params?: { approval?: number; approver?: number; approved?: boolean }): Promise<PaginatedResponse<ApprovalSignature>> {
+    const response = await api.get('/finance/approval-signatures/', { params });
+    return response.data;
+  },
+
+  async createApprovalSignature(data: Partial<ApprovalSignature>): Promise<ApprovalSignature> {
+    const response = await api.post('/finance/approval-signatures/', data);
+    return response.data;
+  },
+
+  // Transaction History
+  async getTransactions(params?: { 
+    group?: number; 
+    type?: string; 
+    status?: string; 
+    date_from?: string; 
+    date_to?: string;
+    page?: number 
+  }): Promise<PaginatedResponse<any>> {
+    const response = await api.get('/finance/transactions/', { params });
+    return response.data;
+  },
+
+  async exportTransactions(params?: { 
+    type?: string; 
+    status?: string; 
+    date_from?: string; 
+    date_to?: string;
+  }): Promise<Blob> {
+    const response = await api.get('/finance/transactions/export/', { 
+      params,
+      responseType: 'blob'
+    });
     return response.data;
   },
 };
@@ -259,7 +329,35 @@ export const investmentService = {
     const response = await api.get('/investments/portfolios/', {
       params: { group: groupId },
     });
-    return response.data.results[0];
+    return response.data.results?.[0] || null;
+  },
+
+  async getInvestmentPortfolio(): Promise<{ results: Investment[] }> {
+    const response = await api.get('/investments/portfolio/');
+    return response.data;
+  },
+};
+
+// Analytics Services
+export const analyticsService = {
+  async getDashboardAnalytics(groupId: number): Promise<{
+    contributions_over_time: Array<{ date: string; amount: number }>;
+    member_activity: Array<{ member_name: string; transactions: number }>;
+    category_breakdown: Array<{ name: string; value: number }>;
+    growth_trends: Array<{ month: string; growth: number }>;
+  }> {
+    const response = await api.get(`/analytics/dashboard/?group_id=${groupId}`);
+    return response.data;
+  },
+
+  async getGroupStats(groupId: number): Promise<DashboardStats> {
+    const response = await api.get(`/analytics/groups/${groupId}/stats/`);
+    return response.data;
+  },
+
+  async getRecentActivity(groupId: number): Promise<RecentActivity[]> {
+    const response = await api.get(`/analytics/groups/${groupId}/recent-activity/`);
+    return response.data;
   },
 };
 
@@ -269,4 +367,5 @@ export default {
   finance: financeService,
   governance: governanceService,
   investments: investmentService,
+  analytics: analyticsService,
 };
