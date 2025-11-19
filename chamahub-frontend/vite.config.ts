@@ -27,7 +27,7 @@ export default defineConfig({
     host: true,
     // Allow Render's onrender.com subdomain + any custom domain you might add later
     allowedHosts: [
-      'chamahub-uwvc.onrender.com',   // ← your current URL
+      'chama-hub-qe2d.onrender.com',   // ← your current URL
       '.onrender.com',                // ← allows ALL *.onrender.com (recommended)
       'localhost',
       '127.0.0.1',
