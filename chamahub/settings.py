@@ -119,7 +119,9 @@ WSGI_APPLICATION = 'chamahub.wsgi.application'
 
 DATABASES = {
     'default': dj_database_url.config(
-        default=config('DATABASE_URL', default='postgresql://chamahub_user:password@localhost:5432/chamahub_dev')
+        default='sqlite:///' + str(BASE_DIR / 'db.sqlite3'),
+        conn_max_age=600,
+        ssl_require=True if not DEBUG else False,
     )
 }
 
