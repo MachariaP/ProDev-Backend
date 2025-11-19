@@ -44,7 +44,15 @@ SECRET_KEY=your-generated-secret-key
 DEBUG=False
 ALLOWED_HOSTS=your-app-name.onrender.com
 DATABASE_URL=<paste-from-step-3>
+CORS_ALLOWED_ORIGINS=https://your-frontend-app.onrender.com
+# OR use regex for all onrender.com subdomains:
+# CORS_ALLOWED_ORIGIN_REGEXES=^https://.*\.onrender\.com$
 ```
+
+**Important for Frontend Integration:**
+- If you have a separate frontend deployment, add its URL to `CORS_ALLOWED_ORIGINS`
+- For multiple frontends: `CORS_ALLOWED_ORIGINS=https://frontend1.com,https://frontend2.com`
+- For development/testing only: `CORS_ALLOW_ALL_ORIGINS=True` (NOT recommended for production!)
 
 Click **Create Web Service** → Wait 5-10 minutes → Done! 🎉
 
@@ -89,6 +97,14 @@ Click **Create Web Service** → Wait 5-10 minutes → Done! 🎉
 ### Static Files Missing?
 - Ensure `whitenoise` is in `requirements.txt`
 - Check `build.sh` runs `collectstatic`
+
+### Login/Registration Not Working? (CORS Error)
+- **Symptom:** Frontend shows errors like "Network Error" or "CORS policy blocked"
+- **Fix:** Add your frontend URL to backend's `CORS_ALLOWED_ORIGINS` environment variable
+- **Example:** `CORS_ALLOWED_ORIGINS=https://your-frontend.onrender.com`
+- **For multiple frontends:** Separate with commas: `https://app1.com,https://app2.com`
+- **Quick test (development only):** Set `CORS_ALLOW_ALL_ORIGINS=True` temporarily
+- **Check browser console:** Look for "Access-Control-Allow-Origin" errors
 
 ### App Won't Start?
 - Verify Procfile uses correct WSGI path

@@ -222,6 +222,16 @@ CORS_ALLOWED_ORIGINS = config(
     default='http://localhost:3000,http://localhost:5173'
 ).split(',')
 
+# Additional CORS configuration for production deployments
+# This allows more flexible CORS handling when CORS_ALLOW_ALL_ORIGINS is set to True
+CORS_ALLOW_ALL_ORIGINS = config('CORS_ALLOW_ALL_ORIGINS', default=False, cast=bool)
+
+# Allowed origin regex patterns for dynamic subdomains (e.g., *.onrender.com)
+CORS_ALLOWED_ORIGIN_REGEXES = []
+cors_regex_patterns = config('CORS_ALLOWED_ORIGIN_REGEXES', default='')
+if cors_regex_patterns:
+    CORS_ALLOWED_ORIGIN_REGEXES = cors_regex_patterns.split(',')
+
 CORS_ALLOW_CREDENTIALS = True
 
 # Email Configuration (Console backend for development)
