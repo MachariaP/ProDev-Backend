@@ -1,0 +1,115 @@
+# render.yaml - Render Infrastructure as Code configuration
+# This file defines all services needed for ProDev-Backend deployment
+# 
+# Usage:
+# 1. Connect your GitHub repo to Render
+# 2. Render will automatically detect this file
+# 3. Click "Apply" to create all services at once
+#
+# Learn more: https://render.com/docs/infrastructure-as-code
+
+services:
+  # Django Web Application
+  - type: web
+    name: chamahub-backend
+    runtime: python
+    plan: free  # Change to 'starter' or 'standard' for production
+    region: oregon  # Choose: oregon, frankfurt, singapore, etc.
+    branch: main
+    buildCommand: "./build.sh"
+    startCommand: "gunicorn chamahub.wsgi:application --bind 0.0.0.0:$PORT"
+    healthCheckPath: /api/v1/
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.0
+      - key: SECRET_KEY
+        generateValue: true  # Render will auto-generate a secure key
+      - key: DEBUG
+        value: False
+      - key: ALLOWED_HOSTS
+        sync: false  # Set manually: your-app-name.onrender.com
+      - key: DATABASE_URL
+        fromDatabase:
+          name: chamahub-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: chamahub-redis
+          property: connectionString
+    autoDeploy: true  # Auto-deploy on git push
+
+  # Background Worker (Celery) - Optional
+  # Uncomment if using Celery for background tasks
+  # - type: worker
+  #   name: chamahub-worker
+  #   runtime: python
+  #   plan: free
+  #   region: oregon
+  #   branch: main
+  #   buildCommand: "pip install -r requirements.txt"
+  #   startCommand: "celery -A chamahub worker --loglevel=info"
+  #   envVars:
+  #     - key: PYTHON_VERSION
+  #       value: 3.12.0
+  #     - key: DATABASE_URL
+  #       fromDatabase:
+  #         name: chamahub-db
+  #         property: connectionString
+  #     - key: REDIS_URL
+  #       fromService:
+  #         type: redis
+  #         name: chamahub-redis
+  #         property: connectionString
+
+  # Celery Beat Scheduler - Optional
+  # Uncomment if using Celery beat for scheduled tasks
+  # - type: worker
+  #   name: chamahub-beat
+  #   runtime: python
+  #   plan: free
+  #   region: oregon
+  #   branch: main
+  #   buildCommand: "pip install -r requirements.txt"
+  #   startCommand: "celery -A chamahub beat --loglevel=info"
+  #   envVars:
+  #     - key: PYTHON_VERSION
+  #       value: 3.12.0
+  #     - key: REDIS_URL
+  #       fromService:
+  #         type: redis
+  #         name: chamahub-redis
+  #         property: connectionString
+
+databases:
+  # PostgreSQL Database
+  - name: chamahub-db
+    databaseName: chamahub_db
+    user: chamahub_user
+    plan: free  # Free for 90 days, then $7/month
+    region: oregon  # Must match web service region
+    ipAllowList: []  # Empty = allow connections from Render services only
+
+  # Redis Cache/Queue - Optional
+  # Uncomment if using Celery or caching
+  # - name: chamahub-redis
+  #   plan: free  # Free for 90 days, then $7/month
+  #   region: oregon
+  #   maxmemoryPolicy: allkeys-lru  # Eviction policy when memory full
+  #   ipAllowList: []
+
+# Optional: Cron Jobs (Scheduled tasks without Celery)
+# - type: cron
+#   name: daily-cleanup
+#   runtime: python
+#   schedule: "0 0 * * *"  # Daily at midnight
+#   buildCommand: "pip install -r requirements.txt"
+#   startCommand: "python manage.py cleanup_old_data"
+#   region: oregon
+
+# Notes:
+# - Free tier web services spin down after 15 minutes of inactivity
+# - Databases are free for 90 days, then $7/month
+# - For production, upgrade to 'starter' plan ($7/month) for always-on service
+# - All services in the same region have low latency connections
+# - Environment variables can be overridden in Render Dashboard
