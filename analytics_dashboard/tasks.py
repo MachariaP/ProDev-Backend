@@ -3,12 +3,11 @@ import logging
 from datetime import timedelta
 from typing import Dict, Any
 from django.utils import timezone
-from django.db.models import Sum, Count, F
+from django.db.models import Sum, Count
 from django.db.models.functions import TruncDate
 from celery import shared_task, group
 from groups.models import ChamaGroup
-from contributions.models import Contribution
-from transactions.models import Transaction
+from finance.models import Contribution, Expense, Loan, LoanRepayment
 from .models import AnalyticsReport
 
 logger = logging.getLogger(__name__)
@@ -48,24 +47,35 @@ def compute_dashboard_for_group(self, group_id: int) -> None:
         })
         current += timedelta(days=1)
 
-    # 2. Top 10 active members
-    member_activity = list(
-        Transaction.objects
+    # 2. Top 10 active members (aggregate from contributions)
+    # Get member contributions count
+    member_contributions = (
+        Contribution.objects
         .filter(group=group_obj, created_at__date__gte=start_date)
-        .values(member_name=F('member__user__get_full_name'))
+        .values('member__id', 'member__first_name', 'member__last_name')
         .annotate(transactions=Count('id'))
         .order_by('-transactions')[:10]
-        .values('member_name', 'transactions')
-    ) or [{"member_name": "No activity", "transactions": 0}]
+    )
+    
+    member_activity = []
+    for mc in member_contributions:
+        name = f"{mc['member__first_name']} {mc['member__last_name']}".strip() or "Unknown"
+        member_activity.append({
+            "member_name": name,
+            "transactions": mc['transactions']
+        })
+    
+    if not member_activity:
+        member_activity = [{"member_name": "No activity", "transactions": 0}]
 
-    # 3. Category breakdown
+    # 3. Category breakdown (from expenses)
     category_breakdown = list(
-        Transaction.objects
-        .filter(group=group_obj, created_at__date__gte=start_date)
-        .values('category__name')
+        Expense.objects
+        .filter(group=group_obj, requested_at__date__gte=start_date, status='APPROVED')
+        .values('category')
         .annotate(value=Sum('amount'))
-        .values('category__name', 'value')
-    ) or [{"category__name": "Uncategorized", "value": 0}]
+        .values('category', 'value')
+    ) or [{"category": "No expenses", "value": 0}]
 
     # 4. Monthly growth (last 12 months)
     growth_trends = []
@@ -89,7 +99,7 @@ def compute_dashboard_for_group(self, group_id: int) -> None:
     dashboard_data = {
         "contributions_over_time": contributions_over_time,
         "member_activity": member_activity,
-        "category_breakdown": [{"name": c['category__name'], "value": float(c['value'])} for c in category_breakdown],
+        "category_breakdown": [{"name": c['category'], "value": float(c['value'])} for c in category_breakdown],
         "growth_trends": growth_trends,
         "generated_at": timezone.now().isoformat(),
     }
