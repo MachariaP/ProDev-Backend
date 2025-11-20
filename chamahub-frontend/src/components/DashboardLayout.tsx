@@ -233,9 +233,9 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   );
 
   return (
-    <div className="flex h-screen bg-background overflow-hidden">
+    <div className="flex h-screen bg-background">
       {/* Desktop Sidebar */}
-      <div className="hidden lg:block">
+      <div className="hidden lg:block h-screen">
         <Sidebar />
       </div>
 
@@ -264,9 +264,9 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
       </AnimatePresence>
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col overflow-hidden">
+      <div className="flex-1 flex flex-col h-screen">
         {/* Mobile Header */}
-        <div className="lg:hidden border-b border-border bg-card p-4 flex items-center justify-between">
+        <div className="lg:hidden border-b border-border bg-card p-4 flex items-center justify-between shrink-0">
           <button
             onClick={() => setMobileMenuOpen(true)}
             className="p-2 hover:bg-accent rounded-lg transition-colors"
@@ -280,7 +280,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
         </div>
 
         {/* Page Content */}
-        <main className="flex-1 overflow-y-auto">
+        <main className="flex-1 overflow-y-auto overflow-x-hidden">
           {children}
         </main>
       </div>

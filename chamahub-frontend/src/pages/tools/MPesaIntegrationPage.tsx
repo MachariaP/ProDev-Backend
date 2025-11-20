@@ -20,7 +20,11 @@ export function MPesaIntegrationPage() {
     setError('');
     setSuccess('');
     try {
-      await api.post('/finance/mpesa/link/', { phone_number: phoneNumber, pin });
+      await api.post('/mpesa/transactions/', { 
+        phone_number: phoneNumber, 
+        transaction_type: 'LINK_ACCOUNT',
+        amount: 0
+      });
       setSuccess('M-Pesa linked successfully!');
       setIsLinked(true);
     } catch (err: unknown) {

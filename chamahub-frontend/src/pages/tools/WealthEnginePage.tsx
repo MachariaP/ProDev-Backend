@@ -31,10 +31,18 @@ export function WealthEnginePage() {
 
   const fetchWealthEngineData = async () => {
     try {
-      const response = await api.get('/investments/wealth-engine/');
-      setIsActive(response.data.is_active);
-      setRecommendations(response.data.recommendations || []);
-      setStats(response.data.stats || stats);
+      const response = await api.get('/wealth-engine/recommendations/');
+      setRecommendations(response.data.results || response.data || []);
+      
+      // Get performance stats
+      const perfResponse = await api.get('/wealth-engine/performance/');
+      const perfData = perfResponse.data.results?.[0] || perfResponse.data || {};
+      
+      setStats({
+        total_automated: perfData.total_value || 0,
+        projected_returns: perfData.projected_return || 0,
+        active_investments: perfData.active_count || 0,
+      });
     } catch (err) {
       console.error('Failed to load wealth engine data:', err);
     } finally {
@@ -44,7 +52,7 @@ export function WealthEnginePage() {
 
   const handleToggleEngine = async () => {
     try {
-      await api.post('/investments/wealth-engine/toggle/', { active: !isActive });
+      await api.post('/wealth-engine/auto-rules/', { is_active: !isActive });
       setIsActive(!isActive);
     } catch (err) {
       console.error('Failed to toggle wealth engine:', err);

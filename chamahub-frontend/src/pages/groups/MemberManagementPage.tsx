@@ -61,7 +61,7 @@ export function MemberManagementPage() {
 
   const fetchMembers = async () => {
     try {
-      const response = await api.get(`/groups/groups/${id}/members/`);
+      const response = await api.get(`/groups/memberships/?group=${id}`);
       setMembers(response.data.results || response.data);
     } catch (err) {
       setError('Failed to load members');
@@ -77,9 +77,11 @@ export function MemberManagementPage() {
     setSuccess('');
 
     try {
-      await api.post(`/groups/groups/${id}/invite/`, {
-        email: inviteEmail,
+      await api.post('/groups/memberships/', {
+        group: id,
+        user_email: inviteEmail,
         role: inviteRole,
+        status: 'PENDING',
       });
       setSuccess('Invitation sent successfully!');
       setShowInviteModal(false);
@@ -96,7 +98,7 @@ export function MemberManagementPage() {
     if (!confirm('Are you sure you want to remove this member?')) return;
 
     try {
-      await api.delete(`/groups/groups/${id}/members/${memberId}/`);
+      await api.delete(`/groups/memberships/${memberId}/`);
       setSuccess('Member removed successfully!');
       fetchMembers();
       setTimeout(() => setSuccess(''), 3000);
