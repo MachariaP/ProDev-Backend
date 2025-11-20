@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -49,28 +49,10 @@ export function LoanApplicationPage() {
 
   useEffect(() => {
     fetchGroups();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  useEffect(() => {
-    if (formData.amount && formData.duration_months && formData.group_id) {
-      calculateLoan();
-    }
-  }, [formData.amount, formData.duration_months, formData.group_id]);
-
-  const fetchGroups = async () => {
-    try {
-      setInitialLoading(true);
-      const response = await api.get('/groups/chama-groups/');
-      setGroups(response.data.results || response.data);
-    } catch (err) {
-      console.error('Failed to load groups:', err);
-      setError('Failed to load groups. Please refresh the page.');
-    } finally {
-      setInitialLoading(false);
-    }
-  };
-
-  const calculateLoan = async () => {
+  const calculateLoan = useCallback(async () => {
     setCalculating(true);
     try {
       const response = await api.post('/finance/loans/calculate/', {
@@ -86,6 +68,25 @@ export function LoanApplicationPage() {
       // Don't show error for calculation - it's not critical
     } finally {
       setCalculating(false);
+    }
+  }, [formData.amount, formData.duration_months, formData.group_id]);
+
+  useEffect(() => {
+    if (formData.amount && formData.duration_months && formData.group_id) {
+      calculateLoan();
+    }
+  }, [formData.amount, formData.duration_months, formData.group_id, calculateLoan]);
+
+  const fetchGroups = async () => {
+    try {
+      setInitialLoading(true);
+      const response = await api.get('/groups/chama-groups/');
+      setGroups(response.data.results || response.data);
+    } catch (err) {
+      console.error('Failed to load groups:', err);
+      setError('Failed to load groups. Please refresh the page.');
+    } finally {
+      setInitialLoading(false);
     }
   };
 
