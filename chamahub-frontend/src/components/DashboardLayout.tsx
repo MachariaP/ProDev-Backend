@@ -108,6 +108,122 @@ interface DashboardLayoutProps {
   children: React.ReactNode;
 }
 
+interface SidebarProps {
+  isMobile?: boolean;
+  sidebarOpen: boolean;
+  setSidebarOpen: (open: boolean) => void;
+  expandedSections: Set<string>;
+  toggleSection: (title: string) => void;
+  isActivePath: (path: string) => boolean;
+  handleLogout: () => void;
+  setMobileMenuOpen: (open: boolean) => void;
+}
+
+function Sidebar({
+  isMobile = false,
+  sidebarOpen,
+  setSidebarOpen,
+  expandedSections,
+  toggleSection,
+  isActivePath,
+  handleLogout,
+  setMobileMenuOpen,
+}: SidebarProps) {
+  return (
+    <div
+      className={`${
+        isMobile ? 'w-full' : sidebarOpen ? 'w-64' : 'w-20'
+      } bg-gradient-to-b from-card to-card/95 border-r border-border/50 flex flex-col transition-all duration-300 shadow-lg`}
+    >
+      {/* Logo & Toggle */}
+      <div className="p-4 border-b border-border/50 flex items-center justify-between flex-shrink-0 bg-card/50 backdrop-blur-sm">
+        {(sidebarOpen || isMobile) && (
+          <h1 className="text-xl font-bold bg-gradient-to-r from-primary via-primary/80 to-primary/60 bg-clip-text text-transparent drop-shadow-sm">
+            ChamaHub
+          </h1>
+        )}
+        {!isMobile && (
+          <button
+            onClick={() => setSidebarOpen(!sidebarOpen)}
+            className="p-2 hover:bg-accent/70 rounded-lg transition-all hover:scale-110"
+          >
+            {sidebarOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+          </button>
+        )}
+      </div>
+
+      {/* Navigation */}
+      <nav className="flex-1 overflow-y-auto p-4 space-y-6 scrollbar-thin scrollbar-thumb-primary/20 scrollbar-track-transparent">
+        {navigationSections.map((section) => (
+          <div key={section.title} className="space-y-2">
+            {(sidebarOpen || isMobile) && (
+              <button
+                onClick={() => toggleSection(section.title)}
+                className="flex items-center justify-between w-full px-2 py-1 text-sm font-semibold text-muted-foreground hover:text-foreground transition-all hover:translate-x-1"
+              >
+                <span>{section.title}</span>
+                <ChevronDown
+                  className={`h-4 w-4 transition-transform duration-200 ${
+                    expandedSections.has(section.title) ? 'rotate-0' : '-rotate-90'
+                  }`}
+                />
+              </button>
+            )}
+            <AnimatePresence>
+              {(expandedSections.has(section.title) || !sidebarOpen) && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  exit={{ opacity: 0, height: 0 }}
+                  transition={{ duration: 0.2 }}
+                  className="space-y-1"
+                >
+                  {section.items.map((item) => {
+                    const Icon = item.icon;
+                    const isActive = isActivePath(item.path);
+                    return (
+                      <Link
+                        key={item.path}
+                        to={item.path}
+                        onClick={() => isMobile && setMobileMenuOpen(false)}
+                        className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 ${
+                          isActive
+                            ? 'bg-gradient-to-r from-primary to-primary/90 text-primary-foreground shadow-md shadow-primary/20 scale-105'
+                            : 'hover:bg-accent/70 text-foreground hover:scale-102 hover:shadow-sm'
+                        } ${!sidebarOpen && !isMobile ? 'justify-center' : ''}`}
+                        title={!sidebarOpen && !isMobile ? item.name : undefined}
+                      >
+                        <Icon className={`h-5 w-5 flex-shrink-0 ${isActive ? 'animate-pulse' : ''}`} />
+                        {(sidebarOpen || isMobile) && (
+                          <span className="text-sm font-medium">{item.name}</span>
+                        )}
+                      </Link>
+                    );
+                  })}
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+        ))}
+      </nav>
+
+      {/* Logout Button */}
+      <div className="p-4 border-t border-border/50 bg-card/50 backdrop-blur-sm flex-shrink-0">
+        <button
+          onClick={handleLogout}
+          className={`flex items-center gap-3 px-3 py-2.5 rounded-lg w-full text-destructive hover:bg-destructive/10 transition-all hover:scale-105 hover:shadow-md ${
+            !sidebarOpen && !isMobile ? 'justify-center' : ''
+          }`}
+          title={!sidebarOpen && !isMobile ? 'Logout' : undefined}
+        >
+          <LogOut className="h-5 w-5 flex-shrink-0" />
+          {(sidebarOpen || isMobile) && <span className="text-sm font-medium">Logout</span>}
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export function DashboardLayout({ children }: DashboardLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -138,105 +254,19 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
     return location.pathname === path || location.pathname.startsWith(path + '/');
   };
 
-  const Sidebar = ({ isMobile = false }: { isMobile?: boolean }) => (
-    <div
-      className={`${
-        isMobile ? 'w-full' : sidebarOpen ? 'w-64' : 'w-20'
-      } bg-card border-r border-border flex flex-col transition-all duration-300`}
-    >
-      {/* Logo & Toggle */}
-      <div className="p-4 border-b border-border flex items-center justify-between">
-        {(sidebarOpen || isMobile) && (
-          <h1 className="text-xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
-            ChamaHub
-          </h1>
-        )}
-        {!isMobile && (
-          <button
-            onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="p-2 hover:bg-accent rounded-lg transition-colors"
-          >
-            {sidebarOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-          </button>
-        )}
-      </div>
-
-      {/* Navigation */}
-      <nav className="flex-1 overflow-y-auto p-4 space-y-6">
-        {navigationSections.map((section) => (
-          <div key={section.title} className="space-y-2">
-            {(sidebarOpen || isMobile) && (
-              <button
-                onClick={() => toggleSection(section.title)}
-                className="flex items-center justify-between w-full px-2 py-1 text-sm font-semibold text-muted-foreground hover:text-foreground transition-colors"
-              >
-                <span>{section.title}</span>
-                <ChevronDown
-                  className={`h-4 w-4 transition-transform ${
-                    expandedSections.has(section.title) ? 'rotate-0' : '-rotate-90'
-                  }`}
-                />
-              </button>
-            )}
-            <AnimatePresence>
-              {(expandedSections.has(section.title) || !sidebarOpen) && (
-                <motion.div
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: 'auto' }}
-                  exit={{ opacity: 0, height: 0 }}
-                  transition={{ duration: 0.2 }}
-                  className="space-y-1"
-                >
-                  {section.items.map((item) => {
-                    const Icon = item.icon;
-                    const isActive = isActivePath(item.path);
-                    return (
-                      <Link
-                        key={item.path}
-                        to={item.path}
-                        onClick={() => isMobile && setMobileMenuOpen(false)}
-                        className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-all ${
-                          isActive
-                            ? 'bg-primary text-primary-foreground shadow-sm'
-                            : 'hover:bg-accent text-foreground'
-                        } ${!sidebarOpen && !isMobile ? 'justify-center' : ''}`}
-                        title={!sidebarOpen && !isMobile ? item.name : undefined}
-                      >
-                        <Icon className="h-5 w-5 flex-shrink-0" />
-                        {(sidebarOpen || isMobile) && (
-                          <span className="text-sm font-medium">{item.name}</span>
-                        )}
-                      </Link>
-                    );
-                  })}
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
-        ))}
-      </nav>
-
-      {/* Logout Button */}
-      <div className="p-4 border-t border-border">
-        <button
-          onClick={handleLogout}
-          className={`flex items-center gap-3 px-3 py-2 rounded-lg w-full text-destructive hover:bg-destructive/10 transition-colors ${
-            !sidebarOpen && !isMobile ? 'justify-center' : ''
-          }`}
-          title={!sidebarOpen && !isMobile ? 'Logout' : undefined}
-        >
-          <LogOut className="h-5 w-5 flex-shrink-0" />
-          {(sidebarOpen || isMobile) && <span className="text-sm font-medium">Logout</span>}
-        </button>
-      </div>
-    </div>
-  );
-
   return (
-    <div className="flex h-screen bg-background">
+    <div className="flex h-screen bg-background overflow-hidden">
       {/* Desktop Sidebar */}
-      <div className="hidden lg:block h-screen">
-        <Sidebar />
+      <div className="hidden lg:flex lg:flex-col h-screen flex-shrink-0">
+        <Sidebar
+          sidebarOpen={sidebarOpen}
+          setSidebarOpen={setSidebarOpen}
+          expandedSections={expandedSections}
+          toggleSection={toggleSection}
+          isActivePath={isActivePath}
+          handleLogout={handleLogout}
+          setMobileMenuOpen={setMobileMenuOpen}
+        />
       </div>
 
       {/* Mobile Menu */}
@@ -257,23 +287,32 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
               transition={{ type: 'spring', damping: 25, stiffness: 200 }}
               className="fixed inset-y-0 left-0 z-50 lg:hidden"
             >
-              <Sidebar isMobile />
+              <Sidebar
+                isMobile
+                sidebarOpen={sidebarOpen}
+                setSidebarOpen={setSidebarOpen}
+                expandedSections={expandedSections}
+                toggleSection={toggleSection}
+                isActivePath={isActivePath}
+                handleLogout={handleLogout}
+                setMobileMenuOpen={setMobileMenuOpen}
+              />
             </motion.div>
           </>
         )}
       </AnimatePresence>
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col h-screen">
+      <div className="flex-1 flex flex-col h-screen overflow-hidden">
         {/* Mobile Header */}
-        <div className="lg:hidden border-b border-border bg-card p-4 flex items-center justify-between shrink-0">
+        <div className="lg:hidden border-b border-border/50 bg-gradient-to-r from-card to-card/95 p-4 flex items-center justify-between flex-shrink-0 shadow-sm backdrop-blur-sm">
           <button
             onClick={() => setMobileMenuOpen(true)}
-            className="p-2 hover:bg-accent rounded-lg transition-colors"
+            className="p-2 hover:bg-accent/70 rounded-lg transition-all hover:scale-110"
           >
             <Menu className="h-6 w-6" />
           </button>
-          <h1 className="text-lg font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
+          <h1 className="text-lg font-bold bg-gradient-to-r from-primary via-primary/80 to-primary/60 bg-clip-text text-transparent drop-shadow-sm">
             ChamaHub
           </h1>
           <div className="w-10" /> {/* Spacer for centering */}
