@@ -372,7 +372,7 @@ export function LandingPage() {
               Empowering African communities through transparent financial technology
             </p>
             <p className="text-gray-500 text-sm">
-              &copy; 2024 ChamaHub. All rights reserved.
+              &copy; 2025 ChamaHub. All rights reserved.
             </p>
           </div>
         </div>
