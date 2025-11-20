@@ -182,10 +182,14 @@ class AnalyticsDashboardTestCase(TestCase):
         self.assertIn('error', response.data)
 
     def test_dashboard_analytics_no_report(self):
-        """Test that endpoint returns 503 when no analytics report exists."""
+        """Test that endpoint auto-generates analytics when no report exists."""
         self.client.force_authenticate(user=self.user)
         response = self.client.get(f'/analytics/dashboard/?group_id={self.group.id}')
         
-        self.assertEqual(response.status_code, status.HTTP_503_SERVICE_UNAVAILABLE)
-        self.assertIn('error', response.data)
+        # Should auto-generate and return 200 with data
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn('contributions_over_time', response.data)
+        self.assertIn('member_activity', response.data)
+        self.assertIn('category_breakdown', response.data)
+        self.assertIn('growth_trends', response.data)
 
