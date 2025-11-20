@@ -19,8 +19,8 @@ export function DocumentSharingPage() {
 
   const fetchDocuments = async () => {
     try {
-      const params = filterType !== 'all' ? `?type=${filterType}` : '';
-      const response = await api.get(`/documents/${params}`);
+      const params = filterType !== 'all' ? `?document_type=${filterType}` : '';
+      const response = await api.get(`/governance/documents/${params}`);
       setDocuments(response.data.results || response.data);
     } catch (err) {
       console.error('Failed to load documents:', err);
@@ -37,9 +37,10 @@ export function DocumentSharingPage() {
     const formData = new FormData();
     formData.append('file', file);
     formData.append('name', file.name);
+    formData.append('document_type', 'GENERAL');
 
     try {
-      await api.post('/documents/', formData, {
+      await api.post('/governance/documents/', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
       fetchDocuments();
@@ -53,7 +54,7 @@ export function DocumentSharingPage() {
   const handleDelete = async (id: number) => {
     if (!confirm('Are you sure you want to delete this document?')) return;
     try {
-      await api.delete(`/documents/${id}/`);
+      await api.delete(`/governance/documents/${id}/`);
       fetchDocuments();
     } catch (err) {
       console.error('Failed to delete document:', err);

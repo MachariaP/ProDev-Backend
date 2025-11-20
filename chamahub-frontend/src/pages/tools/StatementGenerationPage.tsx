@@ -57,7 +57,7 @@ export function StatementGenerationPage() {
 
   const fetchGroups = async () => {
     try {
-      const response = await api.get('/groups/groups/');
+      const response = await api.get('/groups/chama-groups/');
       setGroups(response.data.results || response.data);
     } catch (err) {
       console.error('Failed to load groups:', err);
