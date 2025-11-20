@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -29,16 +29,19 @@ import {
   Smartphone,
   LineChart,
 } from 'lucide-react';
+import type { User } from '../types';
 
 interface NavItem {
   name: string;
   path: string;
   icon: React.ElementType;
+  adminOnly?: boolean;
 }
 
 interface NavSection {
   title: string;
   items: NavItem[];
+  adminOnly?: boolean;
 }
 
 const navigationSections: NavSection[] = [
@@ -94,6 +97,13 @@ const navigationSections: NavSection[] = [
     ],
   },
   {
+    title: 'Administration',
+    items: [
+      { name: 'Admin Panel', path: '/admin', icon: Shield, adminOnly: true },
+    ],
+    adminOnly: true,
+  },
+  {
     title: 'Account',
     items: [
       { name: 'Profile', path: '/profile', icon: UserCircle },
@@ -117,6 +127,7 @@ interface SidebarProps {
   isActivePath: (path: string) => boolean;
   handleLogout: () => void;
   setMobileMenuOpen: (open: boolean) => void;
+  isAdmin: boolean;
 }
 
 function Sidebar({
@@ -128,6 +139,7 @@ function Sidebar({
   isActivePath,
   handleLogout,
   setMobileMenuOpen,
+  isAdmin,
 }: SidebarProps) {
   return (
     <div
@@ -154,7 +166,9 @@ function Sidebar({
 
       {/* Navigation */}
       <nav className="flex-1 overflow-y-auto p-4 space-y-6 scrollbar-thin scrollbar-thumb-primary/20 scrollbar-track-transparent">
-        {navigationSections.map((section) => (
+        {navigationSections
+          .filter((section) => !section.adminOnly || isAdmin)
+          .map((section) => (
           <div key={section.title} className="space-y-2">
             {(sidebarOpen || isMobile) && (
               <button
@@ -178,7 +192,9 @@ function Sidebar({
                   transition={{ duration: 0.2 }}
                   className="space-y-1"
                 >
-                  {section.items.map((item) => {
+                  {section.items
+                    .filter((item) => !item.adminOnly || isAdmin)
+                    .map((item) => {
                     const Icon = item.icon;
                     const isActive = isActivePath(item.path);
                     return (
@@ -230,8 +246,22 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   const [expandedSections, setExpandedSections] = useState<Set<string>>(
     new Set(navigationSections.map((section) => section.title))
   );
+  const [isAdmin, setIsAdmin] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    // Get user data from localStorage
+    const userStr = localStorage.getItem('user');
+    if (userStr) {
+      try {
+        const user: User = JSON.parse(userStr);
+        setIsAdmin(user.is_staff || false);
+      } catch (err) {
+        console.error('Failed to parse user data:', err);
+      }
+    }
+  }, []);
 
   const toggleSection = (title: string) => {
     const newExpanded = new Set(expandedSections);
@@ -266,6 +296,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
           isActivePath={isActivePath}
           handleLogout={handleLogout}
           setMobileMenuOpen={setMobileMenuOpen}
+          isAdmin={isAdmin}
         />
       </div>
 
@@ -296,6 +327,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                 isActivePath={isActivePath}
                 handleLogout={handleLogout}
                 setMobileMenuOpen={setMobileMenuOpen}
+                isAdmin={isAdmin}
               />
             </motion.div>
           </>

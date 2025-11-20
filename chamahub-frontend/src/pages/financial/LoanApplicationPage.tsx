@@ -28,6 +28,7 @@ export function LoanApplicationPage() {
   const navigate = useNavigate();
   const [groups, setGroups] = useState<Group[]>([]);
   const [loading, setLoading] = useState(false);
+  const [initialLoading, setInitialLoading] = useState(true);
   const [calculating, setCalculating] = useState(false);
   const [success, setSuccess] = useState('');
   const [error, setError] = useState('');
@@ -58,10 +59,14 @@ export function LoanApplicationPage() {
 
   const fetchGroups = async () => {
     try {
+      setInitialLoading(true);
       const response = await api.get('/groups/chama-groups/');
       setGroups(response.data.results || response.data);
     } catch (err) {
       console.error('Failed to load groups:', err);
+      setError('Failed to load groups. Please refresh the page.');
+    } finally {
+      setInitialLoading(false);
     }
   };
 
@@ -74,8 +79,11 @@ export function LoanApplicationPage() {
         duration_months: parseInt(formData.duration_months),
       });
       setLoanPreview(response.data);
+      setError(''); // Clear any previous errors
     } catch (err) {
       console.error('Failed to calculate loan:', err);
+      setLoanPreview(null);
+      // Don't show error for calculation - it's not critical
     } finally {
       setCalculating(false);
     }
@@ -126,6 +134,18 @@ export function LoanApplicationPage() {
   };
 
   const selectedGroup = groups.find((g) => g.id.toString() === formData.group_id);
+
+  // Show loading state while fetching initial data
+  if (initialLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-primary/10 via-background to-secondary/10 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Loading...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary/10 via-background to-secondary/10">

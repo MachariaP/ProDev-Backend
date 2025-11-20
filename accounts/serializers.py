@@ -18,9 +18,9 @@ class UserSerializer(serializers.ModelSerializer):
             'phone_number', 'id_number', 'kra_pin', 'kyc_verified',
             'kyc_verified_at', 'profile_picture', 'date_of_birth',
             'address', 'credit_score', 'is_kyc_complete',
-            'created_at', 'updated_at', 'is_active'
+            'created_at', 'updated_at', 'is_active', 'is_staff'
         ]
-        read_only_fields = ['id', 'created_at', 'updated_at', 'kyc_verified', 'kyc_verified_at', 'credit_score']
+        read_only_fields = ['id', 'created_at', 'updated_at', 'kyc_verified', 'kyc_verified_at', 'credit_score', 'is_staff']
         extra_kwargs = {
             'password': {'write_only': True}
         }
