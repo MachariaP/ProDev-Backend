@@ -46,14 +46,6 @@ interface NavSection {
 
 const navigationSections: NavSection[] = [
   {
-    title: 'Admin',
-    items: [
-      { name: 'User Management', path: '/admin/users', icon: Users },
-      { name: 'System Settings', path: '/admin/settings', icon: Settings },
-    ],
-    adminOnly: true,
-  },
-  {
     title: 'Overview',
     items: [
       { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
