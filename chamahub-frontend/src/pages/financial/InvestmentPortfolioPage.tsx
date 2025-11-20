@@ -19,12 +19,12 @@ import api from '../../services/api';
 
 interface Investment {
   id: number;
-  type: string;
+  investment_type: string;
   name: string;
-  amount: number;
+  principal_amount: number;
   current_value: number;
-  returns: number;
-  roi_percentage: number;
+  roi: number;
+  profit_loss: number;
   maturity_date: string;
   status: string;
 }
@@ -48,16 +48,16 @@ export function InvestmentPortfolioPage() {
 
   const fetchInvestments = async () => {
     try {
-      const response = await api.get('/investments/portfolio/');
-      const data = response.data.results || response.data.investments || [];
+      const response = await api.get('/investments/investments/');
+      const data = response.data.results || response.data || [];
       setInvestments(data);
 
       // Calculate stats
-      const totalInvested = data.reduce((sum: number, inv: Investment) => sum + inv.amount, 0);
+      const totalInvested = data.reduce((sum: number, inv: Investment) => sum + inv.principal_amount, 0);
       const currentValue = data.reduce((sum: number, inv: Investment) => sum + inv.current_value, 0);
-      const totalReturns = data.reduce((sum: number, inv: Investment) => sum + inv.returns, 0);
+      const totalReturns = data.reduce((sum: number, inv: Investment) => sum + inv.profit_loss, 0);
       const avgROI = data.length > 0
-        ? data.reduce((sum: number, inv: Investment) => sum + inv.roi_percentage, 0) / data.length
+        ? data.reduce((sum: number, inv: Investment) => sum + inv.roi, 0) / data.length
         : 0;
 
       setStats({
@@ -74,7 +74,7 @@ export function InvestmentPortfolioPage() {
   };
 
   const portfolioDistribution = investments.reduce((acc: Record<string, number>, inv) => {
-    acc[inv.type] = (acc[inv.type] || 0) + inv.current_value;
+    acc[inv.investment_type] = (acc[inv.investment_type] || 0) + inv.current_value;
     return acc;
   }, {});
 
@@ -86,7 +86,7 @@ export function InvestmentPortfolioPage() {
   const performanceData = investments.slice(0, 6).map((inv) => ({
     name: inv.name.substring(0, 10),
     value: inv.current_value,
-    returns: inv.returns,
+    returns: inv.profit_loss,
   }));
 
   if (loading) {
@@ -262,7 +262,7 @@ export function InvestmentPortfolioPage() {
                       <div className="flex items-center justify-between mb-3">
                         <div>
                           <h4 className="font-semibold">{investment.name}</h4>
-                          <p className="text-sm text-muted-foreground">{investment.type}</p>
+                          <p className="text-sm text-muted-foreground">{investment.investment_type}</p>
                         </div>
                         <span
                           className={`px-3 py-1 rounded-full text-xs font-medium ${
@@ -280,7 +280,7 @@ export function InvestmentPortfolioPage() {
                         <div>
                           <p className="text-xs text-muted-foreground">Invested</p>
                           <p className="font-medium">
-                            KES {investment.amount.toLocaleString()}
+                            KES {investment.principal_amount.toLocaleString()}
                           </p>
                         </div>
                         <div>
@@ -292,13 +292,13 @@ export function InvestmentPortfolioPage() {
                         <div>
                           <p className="text-xs text-muted-foreground">Returns</p>
                           <p className="font-medium text-green-600">
-                            +KES {investment.returns.toLocaleString()}
+                            +KES {investment.profit_loss.toLocaleString()}
                           </p>
                         </div>
                         <div>
                           <p className="text-xs text-muted-foreground">ROI</p>
                           <p className="font-medium text-green-600">
-                            +{investment.roi_percentage.toFixed(2)}%
+                            +{investment.roi.toFixed(2)}%
                           </p>
                         </div>
                       </div>

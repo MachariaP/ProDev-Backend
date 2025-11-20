@@ -12,12 +12,11 @@ export function WealthEnginePage() {
   const [isActive, setIsActive] = useState(false);
   const [recommendations, setRecommendations] = useState<Array<{
     id: number;
-    type: string;
-    title: string;
-    description: string;
-    potential_return: number;
+    investment_type: string;
+    analysis_summary: string;
+    expected_return: number;
     risk_level: string;
-    amount: number;
+    recommended_amount: number;
   }>>([]);
   const [stats, setStats] = useState({
     total_automated: 0,
@@ -34,14 +33,19 @@ export function WealthEnginePage() {
       const response = await api.get('/wealth-engine/recommendations/');
       setRecommendations(response.data.results || response.data || []);
       
-      // Get performance stats
+      // Get performance stats - calculate from all performance records
       const perfResponse = await api.get('/wealth-engine/performance/');
-      const perfData = perfResponse.data.results?.[0] || perfResponse.data || {};
+      const perfDataArray = perfResponse.data.results || perfResponse.data || [];
+      
+      // Calculate aggregated stats
+      const totalValue = perfDataArray.reduce((sum: number, p: any) => sum + (parseFloat(p.current_value) || 0), 0);
+      const totalReturns = perfDataArray.reduce((sum: number, p: any) => sum + (parseFloat(p.total_returns) || 0), 0);
+      const activeCount = perfDataArray.length;
       
       setStats({
-        total_automated: perfData.total_value || 0,
-        projected_returns: perfData.projected_return || 0,
-        active_investments: perfData.active_count || 0,
+        total_automated: totalValue,
+        projected_returns: totalReturns,
+        active_investments: activeCount,
       });
     } catch (err) {
       console.error('Failed to load wealth engine data:', err);
@@ -109,16 +113,16 @@ export function WealthEnginePage() {
                 <motion.div key={rec.id} initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: index * 0.1 }}
                   className="p-4 rounded-lg bg-secondary/50 hover:bg-secondary transition-colors">
                   <div className="flex items-center justify-between mb-2">
-                    <h4 className="font-semibold">{rec.title}</h4>
-                    <span className={`px-3 py-1 rounded-full text-xs ${rec.risk_level === 'low' ? 'bg-green-100 text-green-700' : rec.risk_level === 'medium' ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700'}`}>
-                      {rec.risk_level} risk
+                    <h4 className="font-semibold">{rec.investment_type.replace(/_/g, ' ')}</h4>
+                    <span className={`px-3 py-1 rounded-full text-xs ${rec.risk_level === 'LOW' ? 'bg-green-100 text-green-700' : rec.risk_level === 'MEDIUM' ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700'}`}>
+                      {rec.risk_level.toLowerCase()} risk
                     </span>
                   </div>
-                  <p className="text-sm text-muted-foreground mb-3">{rec.description}</p>
+                  <p className="text-sm text-muted-foreground mb-3">{rec.analysis_summary}</p>
                   <div className="flex items-center justify-between">
                     <div className="flex gap-4 text-sm">
-                      <div><span className="text-muted-foreground">Amount:</span> <span className="font-medium">KES {rec.amount.toLocaleString()}</span></div>
-                      <div><span className="text-muted-foreground">Est. Return:</span> <span className="font-medium text-green-600">{rec.potential_return}%</span></div>
+                      <div><span className="text-muted-foreground">Amount:</span> <span className="font-medium">KES {rec.recommended_amount.toLocaleString()}</span></div>
+                      <div><span className="text-muted-foreground">Est. Return:</span> <span className="font-medium text-green-600">{rec.expected_return}%</span></div>
                     </div>
                     <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
                       className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90">
