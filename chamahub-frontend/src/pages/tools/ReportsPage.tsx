@@ -22,17 +22,40 @@ export function ReportsPage() {
   const handleGenerateReport = async (templateId: string) => {
     setGenerating(templateId);
     try {
-      const response = await api.post(`/reports/generate/${templateId}/`, dateRange, { responseType: 'blob' });
-      const url = window.URL.createObjectURL(new Blob([response.data]));
-      const link = document.createElement('a');
-      link.href = url;
-      link.setAttribute('download', `${templateId}-${Date.now()}.pdf`);
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
+      const response = await api.post('/reports/generated-reports/', {
+        report_type: templateId,
+        start_date: dateRange.from,
+        end_date: dateRange.to,
+        format: 'PDF'
+      });
+      
+      // If the report is generated immediately, download it
+      if (response.data.file) {
+        window.open(response.data.file, '_blank');
+      } else {
+        // Poll for the report to be ready
+        const reportId = response.data.id;
+        const checkReport = setInterval(async () => {
+          const statusResponse = await api.get(`/reports/generated-reports/${reportId}/`);
+          if (statusResponse.data.status === 'COMPLETED' && statusResponse.data.file) {
+            window.open(statusResponse.data.file, '_blank');
+            clearInterval(checkReport);
+            setGenerating(null);
+          } else if (statusResponse.data.status === 'FAILED') {
+            console.error('Report generation failed');
+            clearInterval(checkReport);
+            setGenerating(null);
+          }
+        }, 2000);
+        
+        // Stop polling after 30 seconds
+        setTimeout(() => {
+          clearInterval(checkReport);
+          setGenerating(null);
+        }, 30000);
+      }
     } catch (err) {
       console.error('Failed to generate report:', err);
-    } finally {
       setGenerating(null);
     }
   };
