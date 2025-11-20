@@ -9,6 +9,7 @@ export interface User {
   credit_score: number;
   profile_picture?: string;
   created_at: string;
+  is_staff?: boolean;
 }
 
 export interface AuthTokens {

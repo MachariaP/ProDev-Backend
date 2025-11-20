@@ -43,6 +43,8 @@ import { AuditLogPage } from './pages/settings/AuditLogPage';
 import { ChatPage } from './pages/collaboration/ChatPage';
 import { MeetingSchedulePage } from './pages/collaboration/MeetingSchedulePage';
 import { DocumentSharingPage } from './pages/collaboration/DocumentSharingPage';
+// Admin pages
+import { AdminPanelPage } from './pages/admin/AdminPanelPage';
 
 // Helper component to wrap authenticated routes with layout
 function AuthenticatedRoute({ children }: { children: React.ReactNode }) {
@@ -191,6 +193,12 @@ function App() {
         <Route
           path="/documents"
           element={<AuthenticatedRoute><DocumentSharingPage /></AuthenticatedRoute>}
+        />
+        
+        {/* Admin route */}
+        <Route
+          path="/admin"
+          element={<AuthenticatedRoute><AdminPanelPage /></AuthenticatedRoute>}
         />
         
         <Route path="/" element={<Navigate to={isAuthenticated ? "/dashboard" : "/login"} />} />
