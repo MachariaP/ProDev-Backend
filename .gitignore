@@ -72,3 +72,4 @@ chamahub-frontend/.env.development.local
 chamahub-frontend/.env.test.local
 
 test_chat.db
+celery_config_old.py.bak
