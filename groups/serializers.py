@@ -10,6 +10,8 @@ class ChamaGroupSerializer(serializers.ModelSerializer):
     created_by_name = serializers.CharField(source='created_by.get_full_name', read_only=True)
     is_kyb_complete = serializers.BooleanField(read_only=True)
     member_count = serializers.SerializerMethodField()
+    available_funds = serializers.SerializerMethodField()
+    max_loan_amount = serializers.SerializerMethodField()
     
     class Meta:
         model = ChamaGroup
@@ -20,6 +22,7 @@ class ChamaGroupSerializer(serializers.ModelSerializer):
             'minimum_contribution', 'total_balance', 'is_active',
             'kyb_verified', 'kyb_verified_at', 'created_by',
             'created_by_name', 'is_kyb_complete', 'member_count',
+            'available_funds', 'max_loan_amount',
             'created_at', 'updated_at'
         ]
         read_only_fields = ['id', 'total_balance', 'kyb_verified', 'kyb_verified_at', 'created_at', 'updated_at']
@@ -27,6 +30,25 @@ class ChamaGroupSerializer(serializers.ModelSerializer):
     def get_member_count(self, obj):
         """Get the number of active members."""
         return obj.memberships.filter(status='ACTIVE').count()
+    
+    def get_available_funds(self, obj):
+        """Calculate available funds for loans (total balance minus outstanding loans)."""
+        from finance.models import Loan
+        from decimal import Decimal
+        total_outstanding = Loan.objects.filter(
+            group=obj,
+            status__in=['ACTIVE', 'DISBURSED', 'APPROVED']
+        ).aggregate(total=Sum('outstanding_balance'))['total'] or Decimal('0.00')
+        available = obj.total_balance - total_outstanding
+        return max(available, Decimal('0.00'))
+    
+    def get_max_loan_amount(self, obj):
+        """Calculate maximum loan amount (typically a percentage of available funds)."""
+        from decimal import Decimal
+        # Default to 80% of available funds or total balance, whichever is lower
+        available_funds = self.get_available_funds(obj)
+        max_amount = available_funds * Decimal('0.8')
+        return max(max_amount, Decimal('0.00'))
 
 
 class GroupMembershipSerializer(serializers.ModelSerializer):
