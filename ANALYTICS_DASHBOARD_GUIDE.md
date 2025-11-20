@@ -42,8 +42,18 @@ GET /analytics/dashboard/?group_id={group_id}
 
 ## Data Generation
 
+### Automatic Generation on First Access (NEW!)
+**Analytics are now automatically generated when you first access the dashboard!**
+
+When you visit the analytics page and no data exists for your group, the backend will:
+1. Automatically compute analytics data in real-time
+2. Store it in the database for future fast access
+3. Return the data immediately to display charts
+
+This means you no longer need to wait for Celery to run or manually generate analytics!
+
 ### Automatic Generation (Celery)
-Analytics data is automatically computed daily at 2:30 AM by the Celery Beat scheduler.
+Analytics data is also automatically computed daily at 2:30 AM by the Celery Beat scheduler for all groups.
 
 To start the Celery worker:
 ```bash
@@ -56,32 +66,37 @@ celery -A chamahub beat -l info
 ```
 
 ### Manual Generation
-To manually generate analytics for a specific group:
+To manually generate analytics for a specific group, use the management command:
 
-```python
-from analytics_dashboard.tasks import compute_dashboard_for_group
-from groups.models import ChamaGroup
-
-group = ChamaGroup.objects.get(id=1)
-# Run the task synchronously (for testing)
-# Note: In production, use Celery to run this asynchronously
+**Generate analytics for all groups:**
+```bash
+python manage.py generate_analytics --all
 ```
 
-Or use Django shell to generate analytics data:
+**Generate analytics for a specific group:**
+```bash
+python manage.py generate_analytics --group-id 1
+```
+
+The command will show progress as it generates analytics:
+```
+Generating analytics for 15 groups...
+✓ Generated analytics for: Umoja Savings Group (ID: 1)
+✓ Generated analytics for: Harambee Investment Club (ID: 2)
+...
+Done! Analytics data has been generated.
+```
+
+**Note**: You can also use Django shell to generate analytics programmatically (advanced):
 ```bash
 python manage.py shell
 ```
 
 ```python
-from django.utils import timezone
-from django.db.models import Sum, Count
-from django.db.models.functions import TruncDate
-from datetime import timedelta
-from groups.models import ChamaGroup
-from finance.models import Contribution, Expense
-from analytics_dashboard.models import AnalyticsReport
+from analytics_dashboard.tasks import compute_dashboard_for_group
 
-# ... (see implementation in tasks.py)
+# Generate for a specific group
+compute_dashboard_for_group(group_id=1)
 ```
 
 ## Frontend Integration
@@ -140,11 +155,18 @@ Test coverage includes:
 ## Troubleshooting
 
 ### "Analytics are being generated" message
-If you see this message, it means:
-1. No analytics report exists for the group yet
-2. The Celery task hasn't run yet
+**This issue has been fixed!** Analytics are now automatically generated on first access.
 
-**Solution**: Run the manual generation command or wait for the nightly Celery Beat task.
+If analytics haven't been generated yet:
+1. **Automatic Generation**: Simply access the analytics page - analytics will be generated automatically on your first visit
+2. **Manual Generation**: Use the management command for immediate generation:
+   ```bash
+   # Generate analytics for all groups
+   python manage.py generate_analytics --all
+   
+   # Generate analytics for a specific group
+   python manage.py generate_analytics --group-id 1
+   ```
 
 ### Empty data or zeros
 This indicates:
