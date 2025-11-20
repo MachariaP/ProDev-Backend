@@ -72,8 +72,8 @@ export function GroupDetailPage() {
   const fetchGroupDetails = async () => {
     try {
       const [groupRes, membersRes, transactionsRes] = await Promise.all([
-        api.get(`/groups/groups/${id}/`),
-        api.get(`/groups/groups/${id}/members/`),
+        api.get(`/groups/chama-groups/${id}/`),
+        api.get(`/groups/memberships/?group=${id}`),
         api.get(`/finance/transactions/?group=${id}&limit=10`),
       ]);
       setGroup(groupRes.data);

@@ -58,7 +58,7 @@ export function AnalyticsPage() {
 
   // Load user's groups
   useEffect(() => {
-    api.get('/groups/my-groups/')
+    api.get('/groups/chama-groups/my_groups/')
       .then(res => {
         setGroups(res.data);
         if (res.data.length > 0) {
