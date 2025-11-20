@@ -152,40 +152,41 @@ function Sidebar({
   return (
     <div
       className={`${
-        isMobile ? 'w-full' : sidebarOpen ? 'w-64' : 'w-20'
-      } bg-gradient-to-b from-card to-card/95 border-r border-border/50 flex flex-col transition-all duration-300 shadow-lg`}
+        isMobile ? 'w-full' : sidebarOpen ? 'w-64' : 'w-16'
+      } bg-card border-r border-border flex flex-col transition-all duration-300`}
     >
       {/* Logo & Toggle */}
-      <div className="p-4 border-b border-border/50 flex items-center justify-between flex-shrink-0 bg-card/50 backdrop-blur-sm">
+      <div className="p-4 border-b border-border flex items-center justify-between flex-shrink-0">
         {(sidebarOpen || isMobile) && (
-          <h1 className="text-xl font-bold bg-gradient-to-r from-primary via-primary/80 to-primary/60 bg-clip-text text-transparent drop-shadow-sm">
+          <h1 className="text-lg font-bold text-primary">
             ChamaHub
           </h1>
         )}
         {!isMobile && (
           <button
             onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="p-2 hover:bg-accent/70 rounded-lg transition-all hover:scale-110"
+            className="p-1.5 hover:bg-accent rounded transition-all"
+            title={sidebarOpen ? 'Collapse sidebar' : 'Expand sidebar'}
           >
-            {sidebarOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+            {sidebarOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
           </button>
         )}
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 overflow-y-auto p-4 space-y-6 scrollbar-thin scrollbar-thumb-primary/20 scrollbar-track-transparent">
+      <nav className="flex-1 overflow-y-auto p-3 space-y-1 scrollbar-thin scrollbar-thumb-primary/20 scrollbar-track-transparent">
         {navigationSections
           .filter((section) => !section.adminOnly || isAdmin)
           .map((section) => (
-          <div key={section.title} className="space-y-2">
+          <div key={section.title} className="space-y-1">
             {(sidebarOpen || isMobile) && (
               <button
                 onClick={() => toggleSection(section.title)}
-                className="flex items-center justify-between w-full px-2 py-1 text-sm font-semibold text-muted-foreground hover:text-foreground transition-all hover:translate-x-1"
+                className="flex items-center justify-between w-full px-3 py-2 text-xs font-bold uppercase tracking-wide bg-primary/10 hover:bg-primary/20 text-primary rounded transition-all"
               >
                 <span>{section.title}</span>
                 <ChevronDown
-                  className={`h-4 w-4 transition-transform duration-200 ${
+                  className={`h-3.5 w-3.5 transition-transform duration-200 ${
                     expandedSections.has(section.title) ? 'rotate-0' : '-rotate-90'
                   }`}
                 />
@@ -198,7 +199,7 @@ function Sidebar({
                   animate={{ opacity: 1, height: 'auto' }}
                   exit={{ opacity: 0, height: 0 }}
                   transition={{ duration: 0.2 }}
-                  className="space-y-1"
+                  className="space-y-0.5 py-1"
                 >
                   {section.items
                     .filter((item) => !item.adminOnly || isAdmin)
@@ -210,16 +211,16 @@ function Sidebar({
                         key={item.path}
                         to={item.path}
                         onClick={() => isMobile && setMobileMenuOpen(false)}
-                        className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 ${
+                        className={`flex items-center gap-3 px-3 py-2 rounded transition-all duration-150 ${
                           isActive
-                            ? 'bg-gradient-to-r from-primary to-primary/90 text-primary-foreground shadow-md shadow-primary/20 scale-105'
-                            : 'hover:bg-accent/70 text-foreground hover:scale-102 hover:shadow-sm'
+                            ? 'bg-primary text-primary-foreground font-medium'
+                            : 'hover:bg-accent text-foreground/90 hover:text-foreground'
                         } ${!sidebarOpen && !isMobile ? 'justify-center' : ''}`}
                         title={!sidebarOpen && !isMobile ? item.name : undefined}
                       >
-                        <Icon className={`h-5 w-5 flex-shrink-0 ${isActive ? 'animate-pulse' : ''}`} />
+                        <Icon className={`h-4 w-4 flex-shrink-0`} />
                         {(sidebarOpen || isMobile) && (
-                          <span className="text-sm font-medium">{item.name}</span>
+                          <span className="text-sm">{item.name}</span>
                         )}
                       </Link>
                     );
@@ -232,15 +233,15 @@ function Sidebar({
       </nav>
 
       {/* Logout Button */}
-      <div className="p-4 border-t border-border/50 bg-card/50 backdrop-blur-sm flex-shrink-0">
+      <div className="p-3 border-t border-border flex-shrink-0">
         <button
           onClick={handleLogout}
-          className={`flex items-center gap-3 px-3 py-2.5 rounded-lg w-full text-destructive hover:bg-destructive/10 transition-all hover:scale-105 hover:shadow-md ${
+          className={`flex items-center gap-3 px-3 py-2 rounded w-full text-destructive hover:bg-destructive/10 transition-all ${
             !sidebarOpen && !isMobile ? 'justify-center' : ''
           }`}
           title={!sidebarOpen && !isMobile ? 'Logout' : undefined}
         >
-          <LogOut className="h-5 w-5 flex-shrink-0" />
+          <LogOut className="h-4 w-4 flex-shrink-0" />
           {(sidebarOpen || isMobile) && <span className="text-sm font-medium">Logout</span>}
         </button>
       </div>
@@ -345,17 +346,17 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
       {/* Main Content */}
       <div className="flex-1 flex flex-col h-screen overflow-hidden">
         {/* Mobile Header */}
-        <div className="lg:hidden border-b border-border/50 bg-gradient-to-r from-card to-card/95 p-4 flex items-center justify-between flex-shrink-0 shadow-sm backdrop-blur-sm">
+        <div className="lg:hidden border-b border-border bg-card p-4 flex items-center justify-between flex-shrink-0">
           <button
             onClick={() => setMobileMenuOpen(true)}
-            className="p-2 hover:bg-accent/70 rounded-lg transition-all hover:scale-110"
+            className="p-2 hover:bg-accent rounded transition-all"
           >
-            <Menu className="h-6 w-6" />
+            <Menu className="h-5 w-5" />
           </button>
-          <h1 className="text-lg font-bold bg-gradient-to-r from-primary via-primary/80 to-primary/60 bg-clip-text text-transparent drop-shadow-sm">
+          <h1 className="text-base font-bold text-primary">
             ChamaHub
           </h1>
-          <div className="w-10" /> {/* Spacer for centering */}
+          <div className="w-9" /> {/* Spacer for centering */}
         </div>
 
         {/* Page Content */}
