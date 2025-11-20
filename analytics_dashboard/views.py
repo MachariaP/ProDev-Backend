@@ -20,7 +20,11 @@ class BaseAnalyticsViewSet(viewsets.ReadOnlyModelViewSet):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self) -> QuerySet:
-        return self.queryset.filter(group__members=self.request.user).distinct()
+        # Filter to groups where the user has an active membership
+        return self.queryset.filter(
+            group__memberships__user=self.request.user,
+            group__memberships__status='ACTIVE'
+        ).distinct()
 
 
 class AnalyticsReportViewSet(BaseAnalyticsViewSet):
@@ -54,7 +58,8 @@ def dashboard_analytics(request) -> Response:
 
     group = get_object_or_404(ChamaGroup, id=group_id)
 
-    if not group.members.filter(id=request.user.id).exists():
+    # Check if user is a member of the group
+    if not group.memberships.filter(user=request.user, status='ACTIVE').exists():
         return Response(
             {"error": "You do not have access to this group's analytics"},
             status=status.HTTP_403_FORBIDDEN
