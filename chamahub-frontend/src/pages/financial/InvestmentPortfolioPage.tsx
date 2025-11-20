@@ -158,10 +158,7 @@ export function InvestmentPortfolioPage() {
             title="Total Returns"
             value={`KES ${stats.total_returns.toLocaleString()}`}
             icon={TrendingUp}
-            trend={{
-              value: stats.average_roi,
-              isPositive: stats.average_roi > 0,
-            }}
+            trend={stats.average_roi}
             iconClassName="bg-purple-100 text-purple-600"
           />
           <StatsCard
