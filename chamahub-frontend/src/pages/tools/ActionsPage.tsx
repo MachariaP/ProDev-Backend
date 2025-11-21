@@ -14,7 +14,7 @@ import {
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/card';
 import { Badge } from '../../components/ui/badge';
-import api from '../../services/api';
+import axios from 'axios';
 
 interface ActionParameter {
   name: string;
@@ -54,7 +54,10 @@ export function ActionsPage() {
     try {
       setLoading(true);
       setError(null);
-      const response = await api.get<ActionsResponse>('/actions');
+      // Use direct axios call to bypass auth interceptor since /actions allows AllowAny
+      const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+      const apiUrl = baseUrl.replace('/api/v1', '');
+      const response = await axios.get<ActionsResponse>(`${apiUrl}/actions`);
       setActions(response.data.actions);
     } catch (err) {
       console.error('Failed to fetch actions:', err);
