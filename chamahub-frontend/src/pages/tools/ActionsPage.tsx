@@ -365,6 +365,7 @@ export function ActionsPage() {
                   <select
                     value={sortBy}
                     onChange={(e) => setSortBy(e.target.value as SortOption)}
+                    aria-label="Sort actions by"
                     className="bg-transparent text-sm font-medium focus:outline-none cursor-pointer"
                   >
                     <option value="name">Sort by Name</option>
@@ -473,8 +474,8 @@ export function ActionsPage() {
                           <CardTitle className="text-xl group-hover:text-primary transition-colors">
                             {action.display_name}
                           </CardTitle>
-                          <CardDescription className="text-sm line-clamp-2">
-                            {action.description}
+                          <CardDescription className="text-sm">
+                            <span className="line-clamp-2 block overflow-hidden">{action.description}</span>
                           </CardDescription>
                         </CardHeader>
                         <CardContent className="relative z-10">

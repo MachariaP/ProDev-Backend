@@ -10,6 +10,19 @@ interface DialogProps {
 }
 
 export function Dialog({ open, onOpenChange, children }: DialogProps) {
+  React.useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && open) {
+        onOpenChange?.(false);
+      }
+    };
+    
+    if (open) {
+      document.addEventListener('keydown', handleEscape);
+      return () => document.removeEventListener('keydown', handleEscape);
+    }
+  }, [open, onOpenChange]);
+
   return (
     <AnimatePresence>
       {open && (
@@ -30,6 +43,8 @@ export function Dialog({ open, onOpenChange, children }: DialogProps) {
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
               transition={{ type: "spring", damping: 25, stiffness: 300 }}
               className="relative w-full max-w-2xl"
+              role="dialog"
+              aria-modal="true"
             >
               {children}
             </motion.div>
@@ -73,6 +88,7 @@ export function DialogHeader({ className, children, onClose, ...props }: DialogH
       {onClose && (
         <button
           onClick={onClose}
+          aria-label="Close dialog"
           className="ml-4 p-2 hover:bg-accent rounded-lg transition-colors"
         >
           <X className="h-5 w-5" />
