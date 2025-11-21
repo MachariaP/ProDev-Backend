@@ -55,8 +55,9 @@ export function ActionsPage() {
       setLoading(true);
       setError(null);
       // Use direct axios call to bypass auth interceptor since /actions allows AllowAny
+      // Note: /actions endpoint is at root level, NOT under /api/v1/
       const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000';
-      const apiUrl = baseUrl.replace('/api/v1', '');
+      const apiUrl = baseUrl.replace('/api/v1', ''); // Remove /api/v1 suffix to get root URL
       const response = await axios.get<ActionsResponse>(`${apiUrl}/actions`);
       setActions(response.data.actions);
     } catch (err) {
