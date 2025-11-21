@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import {
-  Users, Search, Filter, CheckCircle, XCircle, Shield,
-  Edit, Trash2, UserPlus, Mail, Phone, Calendar, Award
+  Users, Search, CheckCircle, XCircle, Shield,
+  Edit, UserPlus, Mail, Phone, Calendar, Award
 } from 'lucide-react';
 import { AdminLayout } from '../../components/AdminLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/card';

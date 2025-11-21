@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 import {
   Shield, Users, Building2, DollarSign, FileText, Settings,
   BarChart3, UserCheck, Activity, LogOut, Menu, X, ArrowLeft,
-  Wallet, TrendingUp, ClipboardCheck, AlertCircle, Home
+  Wallet, TrendingUp, Home
 } from 'lucide-react';
 
 interface AdminLayoutProps {

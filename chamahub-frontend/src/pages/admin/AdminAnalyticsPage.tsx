@@ -134,12 +134,12 @@ export function AdminAnalyticsPage() {
                         cx="50%"
                         cy="50%"
                         labelLine={false}
-                        label={(entry) => `${entry.type}: ${entry.count}`}
+                        label={(props: any) => `${props.type}: ${props.count}`}
                         outerRadius={100}
                         fill="#8884d8"
                         dataKey="count"
                       >
-                        {analyticsData.groups_by_type.map((entry, index) => (
+                        {analyticsData.groups_by_type.map((_entry, index) => (
                           <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                         ))}
                       </Pie>

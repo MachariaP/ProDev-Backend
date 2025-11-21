@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import {
-  Building2, Search, CheckCircle, XCircle, Users,
-  DollarSign, Calendar, Edit, Eye, TrendingUp
+  Building2, Search, CheckCircle, Users,
+  DollarSign, Calendar, Edit, Eye
 } from 'lucide-react';
 import { AdminLayout } from '../../components/AdminLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/card';

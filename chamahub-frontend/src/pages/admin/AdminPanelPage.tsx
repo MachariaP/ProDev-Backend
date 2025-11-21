@@ -5,7 +5,7 @@ import {
   Shield, Users, Settings, BarChart3, FileText,
   DollarSign, UserCheck, AlertCircle, Activity, CheckCircle,
   Clock, UserPlus, Building2, Wallet, ArrowUpRight,
-  RefreshCw, TrendingUp, ClipboardCheck
+  RefreshCw
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/card';
 import { AdminLayout } from '../../components/AdminLayout';
