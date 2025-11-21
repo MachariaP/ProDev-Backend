@@ -9,7 +9,7 @@ import type { Loan } from '../../types/api';
 export function LoansPage() {
   const [loans, setLoans] = useState<Loan[]>([]);
   const [loading, setLoading] = useState(true);
-  const [showForm, setShowForm] = useState(false);
+  const [exporting, setExporting] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => { fetchLoans(); }, []);
@@ -30,6 +30,49 @@ export function LoansPage() {
   };
 
   const progress = (loan: Loan) => (loan.total_repaid || 0) / (Number(loan.principal_amount) || 1) * 100;
+
+  const handleExport = () => {
+    setExporting(true);
+    try {
+      // Prepare CSV data
+      const headers = ['Loan ID', 'Borrower', 'Amount (KES)', 'Interest Rate (%)', 'Duration (Months)', 'Status', 'Purpose', 'Applied Date', 'Total Repaid (KES)', 'Outstanding (KES)'];
+      const rows = loans.map(loan => [
+        loan.id,
+        loan.borrower_name || 'Unknown Borrower',
+        Number(loan.principal_amount).toFixed(2),
+        loan.interest_rate,
+        loan.duration_months,
+        loan.status,
+        loan.purpose,
+        new Date(loan.applied_at).toLocaleDateString(),
+        (loan.total_repaid || 0).toFixed(2),
+        Number(loan.outstanding_balance).toFixed(2)
+      ]);
+
+      // Create CSV content
+      const csvContent = [
+        headers.join(','),
+        ...rows.map(row => row.map(cell => `"${cell}"`).join(','))
+      ].join('\n');
+
+      // Create and download file
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      const url = URL.createObjectURL(blob);
+      link.setAttribute('href', url);
+      link.setAttribute('download', `loans_export_${new Date().toISOString().split('T')[0]}.csv`);
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url); // Clean up the URL object
+    } catch (err) {
+      console.error('Export failed:', err);
+      alert('Failed to export loans. Please try again.');
+    } finally {
+      setExporting(false);
+    }
+  };
 
   if (loading) return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-blue-50">
@@ -58,10 +101,15 @@ export function LoansPage() {
             </div>
           </div>
           <div className="flex gap-3">
-            <button className="flex items-center gap-2 px-5 py-3 bg-white rounded-xl shadow-md hover:shadow-lg border">
-              <Download className="h-4 w-4" /> Export
+            <button 
+              onClick={handleExport}
+              disabled={exporting || loans.length === 0}
+              className="flex items-center gap-2 px-5 py-3 bg-white rounded-xl shadow-md hover:shadow-lg border disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+            >
+              <Download className="h-4 w-4" /> 
+              {exporting ? 'Exporting...' : 'Export'}
             </button>
-            <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={() => setShowForm(true)}
+            <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={() => navigate('/loans/apply')}
               className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-500 to-cyan-600 text-white font-bold rounded-xl shadow-lg shadow-blue-500/30">
               <Plus className="h-5 w-5" /> Apply for Loan
             </motion.button>
@@ -98,7 +146,7 @@ export function LoansPage() {
                 <DollarSign className="h-16 w-16 text-blue-600" />
               </div>
               <h3 className="text-2xl font-bold mb-3">No Loans Yet</h3>
-              <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={() => setShowForm(true)}
+              <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={() => navigate('/loans/apply')}
                 className="px-8 py-4 bg-gradient-to-r from-blue-500 to-cyan-600 text-white font-bold rounded-xl shadow-lg">
                 Apply Now
               </motion.button>
@@ -165,20 +213,6 @@ export function LoansPage() {
           </Card>
         )}
       </motion.div>
-
-      {/* Modal placeholder */}
-      {showForm && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => setShowForm(false)}>
-          <motion.div initial={{ scale: 0.9 }} animate={{ scale: 1 }} onClick={e => e.stopPropagation()}
-            className="bg-white p-10 rounded-3xl shadow-2xl max-w-2xl w-full text-center">
-            <h2 className="text-3xl font-bold mb-4">Apply for Loan</h2>
-            <p className="text-gray-600 mb-8">Loan application form coming soon...</p>
-            <button onClick={() => setShowForm(false)} className="px-8 py-4 bg-gradient-to-r from-blue-500 to-cyan-600 text-white font-bold rounded-xl shadow-lg">
-              Close
-            </button>
-          </motion.div>
-        </div>
-      )}
     </div>
   );
 }

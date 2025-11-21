@@ -79,7 +79,8 @@ class Loan(models.Model):
         _('interest rate'),
         max_digits=5,
         decimal_places=2,
-        help_text=_('Annual interest rate in percentage')
+        default=Decimal('10.0'),
+        help_text=_('Annual interest rate in percentage (defaults to 10%)')
     )
     duration_months = models.PositiveIntegerField(_('duration (months)'))
     
