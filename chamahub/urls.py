@@ -27,9 +27,13 @@ from drf_spectacular.views import (
     SpectacularSwaggerView,
     SpectacularRedocView,
 )
+from .views import actions_list
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    
+    # Actions endpoint
+    path('actions', actions_list, name='actions-list'),
     
     # API Documentation
     path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
