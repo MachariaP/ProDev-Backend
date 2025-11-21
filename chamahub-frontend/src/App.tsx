@@ -66,6 +66,16 @@ function AuthenticatedRoute({ children }: { children: React.ReactNode }) {
   return <DashboardLayout>{children}</DashboardLayout>;
 }
 
+// Helper component for admin routes without DashboardLayout wrapper
+function AdminRoute({ children }: { children: React.ReactNode }) {
+  const isAuthenticated = !!localStorage.getItem('access_token');
+  
+  if (!isAuthenticated) {
+    return <Navigate to="/auth/login" />;
+  }
+  return <>{children}</>;
+}
+
 function App() {
   const isAuthenticated = !!localStorage.getItem('access_token');
 
@@ -212,43 +222,43 @@ function App() {
         {/* Admin routes */}
         <Route
           path="/admin"
-          element={<AuthenticatedRoute><AdminPanelPage /></AuthenticatedRoute>}
+          element={<AdminRoute><AdminPanelPage /></AdminRoute>}
         />
         <Route
           path="/admin/users"
-          element={<AuthenticatedRoute><AdminUsersPage /></AuthenticatedRoute>}
+          element={<AdminRoute><AdminUsersPage /></AdminRoute>}
         />
         <Route
           path="/admin/groups"
-          element={<AuthenticatedRoute><AdminGroupsPage /></AuthenticatedRoute>}
+          element={<AdminRoute><AdminGroupsPage /></AdminRoute>}
         />
         <Route
           path="/admin/contributions"
-          element={<AuthenticatedRoute><AdminContributionsPage /></AuthenticatedRoute>}
+          element={<AdminRoute><AdminContributionsPage /></AdminRoute>}
         />
         <Route
           path="/admin/loans"
-          element={<AuthenticatedRoute><AdminLoansPage /></AuthenticatedRoute>}
+          element={<AdminRoute><AdminLoansPage /></AdminRoute>}
         />
         <Route
           path="/admin/expenses"
-          element={<AuthenticatedRoute><AdminExpensesPage /></AuthenticatedRoute>}
+          element={<AdminRoute><AdminExpensesPage /></AdminRoute>}
         />
         <Route
           path="/admin/kyc"
-          element={<AuthenticatedRoute><AdminKYCPage /></AuthenticatedRoute>}
+          element={<AdminRoute><AdminKYCPage /></AdminRoute>}
         />
         <Route
           path="/admin/audit-logs"
-          element={<AuthenticatedRoute><AdminAuditLogsPage /></AuthenticatedRoute>}
+          element={<AdminRoute><AdminAuditLogsPage /></AdminRoute>}
         />
         <Route
           path="/admin/analytics"
-          element={<AuthenticatedRoute><AdminAnalyticsPage /></AuthenticatedRoute>}
+          element={<AdminRoute><AdminAnalyticsPage /></AdminRoute>}
         />
         <Route
           path="/admin/settings"
-          element={<AuthenticatedRoute><AdminSettingsPage /></AuthenticatedRoute>}
+          element={<AdminRoute><AdminSettingsPage /></AdminRoute>}
         />
         
         <Route path="/" element={<Navigate to={isAuthenticated ? "/dashboard" : "/login"} />} />
