@@ -57,6 +57,14 @@ class LoanSerializer(serializers.ModelSerializer):
 class LoanApplicationSerializer(serializers.ModelSerializer):
     """Serializer for loan application."""
     
+    interest_rate = serializers.DecimalField(
+        max_digits=5, 
+        decimal_places=2, 
+        required=False, 
+        default=10.0,
+        help_text='Annual interest rate in percentage (defaults to 10% if not provided)'
+    )
+    
     class Meta:
         model = Loan
         fields = [

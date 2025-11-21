@@ -98,10 +98,12 @@ export function LoanApplicationPage() {
 
     try {
       await api.post('/finance/loans/', {
-        ...formData,
-        amount: parseFloat(formData.amount),
+        group: parseInt(formData.group_id),
+        principal_amount: parseFloat(formData.amount),
         duration_months: parseInt(formData.duration_months),
-        guarantors: formData.guarantors.filter((g) => g.trim() !== ''),
+        purpose: formData.purpose,
+        // guarantors and repayment_method are not part of the backend API yet
+        // they would need to be added to the backend model if required
       });
       setSuccess('Loan application submitted successfully! Awaiting approval.');
       setTimeout(() => {
