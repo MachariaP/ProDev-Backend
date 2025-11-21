@@ -97,13 +97,14 @@ export function LoanApplicationPage() {
     setSuccess('');
 
     try {
+      // Note: The backend currently only supports group, principal_amount, duration_months, and purpose.
+      // Guarantors and repayment_method fields are collected in the UI for future implementation.
+      // TODO: Add backend support for guarantors and repayment_method in the Loan model
       await api.post('/finance/loans/', {
         group: parseInt(formData.group_id),
         principal_amount: parseFloat(formData.amount),
         duration_months: parseInt(formData.duration_months),
         purpose: formData.purpose,
-        // guarantors and repayment_method are not part of the backend API yet
-        // they would need to be added to the backend model if required
       });
       setSuccess('Loan application submitted successfully! Awaiting approval.');
       setTimeout(() => {

@@ -38,7 +38,7 @@ export function LoansPage() {
       const headers = ['Loan ID', 'Borrower', 'Amount (KES)', 'Interest Rate (%)', 'Duration (Months)', 'Status', 'Purpose', 'Applied Date', 'Total Repaid (KES)', 'Outstanding (KES)'];
       const rows = loans.map(loan => [
         loan.id,
-        loan.borrower_name || loan.borrower,
+        loan.borrower_name || 'Unknown Borrower',
         Number(loan.principal_amount).toFixed(2),
         loan.interest_rate,
         loan.duration_months,
@@ -65,8 +65,10 @@ export function LoansPage() {
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
+      URL.revokeObjectURL(url); // Clean up the URL object
     } catch (err) {
       console.error('Export failed:', err);
+      alert('Failed to export loans. Please try again.');
     } finally {
       setExporting(false);
     }
