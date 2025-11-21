@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import {
   Users, Search, CheckCircle, XCircle, Shield,
@@ -43,19 +43,21 @@ export function AdminUsersPage() {
     }
   };
 
-  const filteredUsers = users.filter(user => {
-    const matchesSearch = 
-      user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.first_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.last_name.toLowerCase().includes(searchTerm.toLowerCase());
-    
-    const matchesFilter = 
-      filterStatus === 'all' ||
-      (filterStatus === 'active' && user.is_active) ||
-      (filterStatus === 'inactive' && !user.is_active);
-    
-    return matchesSearch && matchesFilter;
-  });
+  const filteredUsers = useMemo(() => {
+    return users.filter(user => {
+      const matchesSearch = 
+        user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        user.first_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        user.last_name.toLowerCase().includes(searchTerm.toLowerCase());
+      
+      const matchesFilter = 
+        filterStatus === 'all' ||
+        (filterStatus === 'active' && user.is_active) ||
+        (filterStatus === 'inactive' && !user.is_active);
+      
+      return matchesSearch && matchesFilter;
+    });
+  }, [users, searchTerm, filterStatus]);
 
   const formatDate = (dateStr: string | undefined) => {
     if (!dateStr) return 'Never';
@@ -203,7 +205,7 @@ export function AdminUsersPage() {
                           <td className="px-4 py-4">
                             <div className="flex items-center gap-3">
                               <div className="h-10 w-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-semibold">
-                                {user.first_name.charAt(0)}{user.last_name.charAt(0)}
+                                {(user.first_name?.charAt(0) || '?')}{(user.last_name?.charAt(0) || '?')}
                               </div>
                               <div>
                                 <p className="font-medium text-gray-900 dark:text-white">

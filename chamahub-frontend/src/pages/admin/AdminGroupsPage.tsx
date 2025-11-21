@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import {
   Building2, Search, CheckCircle, Users,
@@ -33,9 +33,11 @@ export function AdminGroupsPage() {
     }
   };
 
-  const filteredGroups = groups.filter(group =>
-    group.name.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredGroups = useMemo(() => {
+    return groups.filter(group =>
+      group.name.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  }, [groups, searchTerm]);
 
   const formatCurrency = (value: string) => {
     return new Intl.NumberFormat('en-KE', {

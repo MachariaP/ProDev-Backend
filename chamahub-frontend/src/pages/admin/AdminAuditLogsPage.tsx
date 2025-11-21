@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { FileText, Search, Calendar, User, Activity } from 'lucide-react';
 import { AdminLayout } from '../../components/AdminLayout';
@@ -30,10 +30,12 @@ export function AdminAuditLogsPage() {
     }
   };
 
-  const filteredLogs = logs.filter(log =>
-    log.action.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (log.user_email && log.user_email.toLowerCase().includes(searchTerm.toLowerCase()))
-  );
+  const filteredLogs = useMemo(() => {
+    return logs.filter(log =>
+      log.action.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (log.user_email && log.user_email.toLowerCase().includes(searchTerm.toLowerCase()))
+    );
+  }, [logs, searchTerm]);
 
   const formatDate = (dateStr: string) => {
     return new Date(dateStr).toLocaleString('en-US', {

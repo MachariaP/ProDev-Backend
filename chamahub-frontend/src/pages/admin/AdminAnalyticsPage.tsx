@@ -134,7 +134,7 @@ export function AdminAnalyticsPage() {
                         cx="50%"
                         cy="50%"
                         labelLine={false}
-                        label={(props: any) => `${props.type}: ${props.count}`}
+                        label={false}
                         outerRadius={100}
                         fill="#8884d8"
                         dataKey="count"
