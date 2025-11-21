@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from django.db.models import Sum
+from decimal import Decimal
 from .models import (
     Contribution, Loan, LoanRepayment, Expense,
     DisbursementApproval, ApprovalSignature
@@ -61,7 +62,7 @@ class LoanApplicationSerializer(serializers.ModelSerializer):
         max_digits=5, 
         decimal_places=2, 
         required=False, 
-        default=10.0,
+        default=Decimal('10.0'),
         help_text='Annual interest rate in percentage (defaults to 10% if not provided)'
     )
     
