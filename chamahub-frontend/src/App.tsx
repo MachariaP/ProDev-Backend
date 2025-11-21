@@ -46,6 +46,15 @@ import { MeetingSchedulePage } from './pages/collaboration/MeetingSchedulePage';
 import { DocumentSharingPage } from './pages/collaboration/DocumentSharingPage';
 // Admin pages
 import { AdminPanelPage } from './pages/admin/AdminPanelPage';
+import { AdminUsersPage } from './pages/admin/AdminUsersPage';
+import { AdminGroupsPage } from './pages/admin/AdminGroupsPage';
+import { AdminContributionsPage } from './pages/admin/AdminContributionsPage';
+import { AdminLoansPage } from './pages/admin/AdminLoansPage';
+import { AdminExpensesPage } from './pages/admin/AdminExpensesPage';
+import { AdminKYCPage } from './pages/admin/AdminKYCPage';
+import { AdminAuditLogsPage } from './pages/admin/AdminAuditLogsPage';
+import { AdminAnalyticsPage } from './pages/admin/AdminAnalyticsPage';
+import { AdminSettingsPage } from './pages/admin/AdminSettingsPage';
 
 // Helper component to wrap authenticated routes with layout
 function AuthenticatedRoute({ children }: { children: React.ReactNode }) {
@@ -200,10 +209,46 @@ function App() {
           element={<AuthenticatedRoute><DocumentSharingPage /></AuthenticatedRoute>}
         />
         
-        {/* Admin route */}
+        {/* Admin routes */}
         <Route
           path="/admin"
           element={<AuthenticatedRoute><AdminPanelPage /></AuthenticatedRoute>}
+        />
+        <Route
+          path="/admin/users"
+          element={<AuthenticatedRoute><AdminUsersPage /></AuthenticatedRoute>}
+        />
+        <Route
+          path="/admin/groups"
+          element={<AuthenticatedRoute><AdminGroupsPage /></AuthenticatedRoute>}
+        />
+        <Route
+          path="/admin/contributions"
+          element={<AuthenticatedRoute><AdminContributionsPage /></AuthenticatedRoute>}
+        />
+        <Route
+          path="/admin/loans"
+          element={<AuthenticatedRoute><AdminLoansPage /></AuthenticatedRoute>}
+        />
+        <Route
+          path="/admin/expenses"
+          element={<AuthenticatedRoute><AdminExpensesPage /></AuthenticatedRoute>}
+        />
+        <Route
+          path="/admin/kyc"
+          element={<AuthenticatedRoute><AdminKYCPage /></AuthenticatedRoute>}
+        />
+        <Route
+          path="/admin/audit-logs"
+          element={<AuthenticatedRoute><AdminAuditLogsPage /></AuthenticatedRoute>}
+        />
+        <Route
+          path="/admin/analytics"
+          element={<AuthenticatedRoute><AdminAnalyticsPage /></AuthenticatedRoute>}
+        />
+        <Route
+          path="/admin/settings"
+          element={<AuthenticatedRoute><AdminSettingsPage /></AuthenticatedRoute>}
         />
         
         <Route path="/" element={<Navigate to={isAuthenticated ? "/dashboard" : "/login"} />} />
