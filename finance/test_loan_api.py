@@ -7,6 +7,7 @@ from rest_framework.test import APIClient
 from rest_framework import status
 from decimal import Decimal
 from groups.models import ChamaGroup
+from finance.models import Loan
 
 User = get_user_model()
 
@@ -49,12 +50,8 @@ class LoanApplicationAPITest(TestCase):
         
         response = self.client.post('/finance/loans/', data, format='json')
         
-        print(f"Status Code: {response.status_code}")
-        print(f"Response Data: {response.data}")
-        
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         # Verify the loan was created in the database
-        from finance.models import Loan
         self.assertEqual(Loan.objects.count(), 1)
         loan = Loan.objects.first()
         self.assertEqual(loan.borrower, self.user)
@@ -73,11 +70,7 @@ class LoanApplicationAPITest(TestCase):
         
         response = self.client.post('/finance/loans/', data, format='json')
         
-        print(f"Status Code: {response.status_code}")
-        print(f"Response Data: {response.data}")
-        
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         # Verify the loan was created with the correct interest rate
-        from finance.models import Loan
         loan = Loan.objects.first()
         self.assertEqual(loan.interest_rate, Decimal('12.00'))

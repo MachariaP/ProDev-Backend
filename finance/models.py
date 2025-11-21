@@ -133,13 +133,8 @@ class Loan(models.Model):
     
     def calculate_total_amount(self):
         """Calculate total amount including interest."""
-        # Ensure all values are Decimal for proper calculation
-        principal = Decimal(str(self.principal_amount))
-        rate = Decimal(str(self.interest_rate))
-        months = Decimal(str(self.duration_months))
-        
-        interest = (principal * rate * months) / (Decimal('100') * Decimal('12'))
-        return principal + interest
+        interest = (self.principal_amount * self.interest_rate * self.duration_months) / (Decimal('100') * Decimal('12'))
+        return self.principal_amount + interest
     
     def calculate_monthly_payment(self):
         """Calculate monthly payment amount."""
