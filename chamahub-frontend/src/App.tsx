@@ -30,6 +30,7 @@ import { TransactionHistoryPage } from './pages/financial/TransactionHistoryPage
 // Tools pages
 import { VotingPage } from './pages/tools/VotingPage';
 import { ApprovalsPage } from './pages/tools/ApprovalsPage';
+import { ActionsPage } from './pages/tools/ActionsPage';
 import { StatementGenerationPage } from './pages/tools/StatementGenerationPage';
 import { WealthEnginePage } from './pages/tools/WealthEnginePage';
 import { MPesaIntegrationPage } from './pages/tools/MPesaIntegrationPage';
@@ -179,6 +180,10 @@ function App() {
         <Route
           path="/voting"
           element={<AuthenticatedRoute><VotingPage /></AuthenticatedRoute>}
+        />
+        <Route
+          path="/actions"
+          element={<AuthenticatedRoute><ActionsPage /></AuthenticatedRoute>}
         />
         
         {/* Collaboration routes */}
