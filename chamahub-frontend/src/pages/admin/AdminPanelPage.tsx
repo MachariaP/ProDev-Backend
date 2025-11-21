@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { 
   Shield, Users, Settings, BarChart3, FileText,
@@ -7,9 +8,11 @@ import {
   RefreshCw
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/card';
+import { AdminLayout } from '../../components/AdminLayout';
 import { adminApi, type AdminStats } from '../../services/adminApi';
 
 export function AdminPanelPage() {
+  const navigate = useNavigate();
   const [stats, setStats] = useState<AdminStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -50,8 +53,8 @@ export function AdminPanelPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
-      <div className="container mx-auto px-4 py-8">
+    <AdminLayout>
+      <div className="container mx-auto px-6 py-8">
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
@@ -65,7 +68,7 @@ export function AdminPanelPage() {
               </div>
               <div>
                 <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-                  Admin Panel
+                  Admin Dashboard
                 </h1>
                 <p className="text-gray-600 dark:text-gray-400 mt-1">
                   Manage and monitor your ChamaHub platform
@@ -303,7 +306,8 @@ export function AdminPanelPage() {
               transition={{ delay: 0.4 }}
               className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
             >
-              <Card className="bg-white dark:bg-gray-800 border-0 shadow-lg hover:shadow-xl transition-all cursor-pointer group">
+              <Card className="bg-white dark:bg-gray-800 border-0 shadow-lg hover:shadow-xl transition-all cursor-pointer group"
+                onClick={() => navigate('/admin/users')}>
                 <CardHeader>
                   <div className="h-12 w-12 rounded-lg bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
                     <Users className="h-6 w-6 text-white" />
@@ -319,7 +323,8 @@ export function AdminPanelPage() {
                 </CardContent>
               </Card>
 
-              <Card className="bg-white dark:bg-gray-800 border-0 shadow-lg hover:shadow-xl transition-all cursor-pointer group">
+              <Card className="bg-white dark:bg-gray-800 border-0 shadow-lg hover:shadow-xl transition-all cursor-pointer group"
+                onClick={() => navigate('/admin/groups')}>
                 <CardHeader>
                   <div className="h-12 w-12 rounded-lg bg-gradient-to-br from-green-500 to-green-600 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
                     <Building2 className="h-6 w-6 text-white" />
@@ -335,7 +340,8 @@ export function AdminPanelPage() {
                 </CardContent>
               </Card>
 
-              <Card className="bg-white dark:bg-gray-800 border-0 shadow-lg hover:shadow-xl transition-all cursor-pointer group">
+              <Card className="bg-white dark:bg-gray-800 border-0 shadow-lg hover:shadow-xl transition-all cursor-pointer group"
+                onClick={() => navigate('/admin/analytics')}>
                 <CardHeader>
                   <div className="h-12 w-12 rounded-lg bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
                     <BarChart3 className="h-6 w-6 text-white" />
@@ -351,7 +357,8 @@ export function AdminPanelPage() {
                 </CardContent>
               </Card>
 
-              <Card className="bg-white dark:bg-gray-800 border-0 shadow-lg hover:shadow-xl transition-all cursor-pointer group">
+              <Card className="bg-white dark:bg-gray-800 border-0 shadow-lg hover:shadow-xl transition-all cursor-pointer group"
+                onClick={() => navigate('/admin/audit-logs')}>
                 <CardHeader>
                   <div className="h-12 w-12 rounded-lg bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
                     <FileText className="h-6 w-6 text-white" />
@@ -367,7 +374,8 @@ export function AdminPanelPage() {
                 </CardContent>
               </Card>
 
-              <Card className="bg-white dark:bg-gray-800 border-0 shadow-lg hover:shadow-xl transition-all cursor-pointer group">
+              <Card className="bg-white dark:bg-gray-800 border-0 shadow-lg hover:shadow-xl transition-all cursor-pointer group"
+                onClick={() => navigate('/admin/settings')}>
                 <CardHeader>
                   <div className="h-12 w-12 rounded-lg bg-gradient-to-br from-red-500 to-red-600 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
                     <Settings className="h-6 w-6 text-white" />
@@ -383,7 +391,8 @@ export function AdminPanelPage() {
                 </CardContent>
               </Card>
 
-              <Card className="bg-white dark:bg-gray-800 border-0 shadow-lg hover:shadow-xl transition-all cursor-pointer group">
+              <Card className="bg-white dark:bg-gray-800 border-0 shadow-lg hover:shadow-xl transition-all cursor-pointer group"
+                onClick={() => navigate('/admin/kyc')}>
                 <CardHeader>
                   <div className="h-12 w-12 rounded-lg bg-gradient-to-br from-indigo-500 to-indigo-600 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
                     <UserCheck className="h-6 w-6 text-white" />
@@ -402,6 +411,6 @@ export function AdminPanelPage() {
           </>
         )}
       </div>
-    </div>
+    </AdminLayout>
   );
 }
