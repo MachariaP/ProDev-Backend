@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
@@ -62,14 +62,7 @@ export function InvestmentDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  useEffect(() => {
-    if (id) {
-      fetchInvestmentDetails();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [id]);
-
-  const fetchInvestmentDetails = async () => {
+  const fetchInvestmentDetails = useCallback(async () => {
     try {
       setLoading(true);
       const data = await investmentService.getInvestment(Number(id));
@@ -80,7 +73,13 @@ export function InvestmentDetailPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [id]);
+
+  useEffect(() => {
+    if (id) {
+      fetchInvestmentDetails();
+    }
+  }, [id, fetchInvestmentDetails]);
 
   const calculateROI = () => {
     if (!investment) return 0;
@@ -247,7 +246,7 @@ export function InvestmentDetailPage() {
                   <div className="p-4 bg-green-50 rounded-xl border border-green-200">
                     <p className="text-sm text-muted-foreground mb-1">Current Value</p>
                     <p className="text-2xl font-bold text-green-600">
-                      KES {parseFloat(investment.current_value).toLocaleString()}
+                      KES {parseFloat(investment.current_value || '0').toLocaleString()}
                     </p>
                   </div>
                   <div className="p-4 bg-blue-50 rounded-xl border border-blue-200">
@@ -260,7 +259,7 @@ export function InvestmentDetailPage() {
                   <div className={`p-4 rounded-xl border ${profitLoss >= 0 ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'}`}>
                     <p className="text-sm text-muted-foreground mb-1">Profit/Loss</p>
                     <p className={`text-2xl font-bold ${profitLoss >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                      {profitLoss >= 0 ? '+' : ''}KES {profitLoss.toLocaleString()}
+                      {profitLoss >= 0 ? '+' : ''}KES {Math.abs(profitLoss).toLocaleString()}
                     </p>
                   </div>
                 </div>
@@ -363,7 +362,7 @@ export function InvestmentDetailPage() {
                 <div className="pt-3 border-t">
                   <p className="text-xs text-muted-foreground mb-1">Last Updated</p>
                   <p className="text-sm text-foreground">
-                    {new Date(investment.created_at).toLocaleDateString('en-US', {
+                    {new Date(investment.updated_at || investment.created_at).toLocaleDateString('en-US', {
                       year: 'numeric',
                       month: 'long',
                       day: 'numeric',
