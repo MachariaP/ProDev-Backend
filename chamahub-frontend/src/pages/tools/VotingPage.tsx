@@ -1,19 +1,37 @@
 import { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Plus, Vote as VoteIcon, CheckCircle, XCircle } from 'lucide-react';
+import { ArrowLeft, Plus, Vote as VoteIcon, CheckCircle, XCircle, Clock, Users, TrendingUp } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/card';
 import { governanceService } from '../../services/apiService';
 import type { Vote } from '../../types/api';
 
+interface ToastMessage {
+  type: 'success' | 'error';
+  message: string;
+}
+
 export function VotingPage() {
   const [votes, setVotes] = useState<Vote[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedVote, setSelectedVote] = useState<Vote | null>(null);
+  const [castingVote, setCastingVote] = useState(false);
+  const [showVoteModal, setShowVoteModal] = useState(false);
+  const [toast, setToast] = useState<ToastMessage | null>(null);
   const navigate = useNavigate();
 
   useEffect(() => {
     fetchVotes();
   }, []);
+
+  useEffect(() => {
+    if (toast) {
+      const timer = setTimeout(() => {
+        setToast(null);
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [toast]);
 
   const fetchVotes = async () => {
     try {
@@ -24,6 +42,32 @@ export function VotingPage() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const showToast = (type: 'success' | 'error', message: string) => {
+    setToast({ type, message });
+  };
+
+  const handleCastVote = async (voteId: number, choice: 'YES' | 'NO' | 'ABSTAIN') => {
+    setCastingVote(true);
+    try {
+      await governanceService.castVote(voteId, { choice });
+      // Refresh votes to get updated counts
+      await fetchVotes();
+      setShowVoteModal(false);
+      setSelectedVote(null);
+      showToast('success', 'Vote cast successfully!');
+    } catch (err: any) {
+      const errorMessage = err.response?.data?.error || 'Failed to cast vote';
+      showToast('error', errorMessage);
+    } finally {
+      setCastingVote(false);
+    }
+  };
+
+  const openVoteModal = (vote: Vote) => {
+    setSelectedVote(vote);
+    setShowVoteModal(true);
   };
 
   const getStatusColor = (status: string) => {
@@ -37,6 +81,17 @@ export function VotingPage() {
       default:
         return 'bg-gray-100 text-gray-700';
     }
+  };
+
+  const getVotePercentage = (vote: Vote, type: 'yes' | 'no' | 'abstain') => {
+    const total = vote.total_votes_cast || 0;
+    if (total === 0) return 0;
+    
+    const count = type === 'yes' ? (vote.yes_votes || 0) : 
+                  type === 'no' ? (vote.no_votes || 0) : 
+                  (vote.abstain_votes || 0);
+    
+    return Math.round((count / total) * 100);
   };
 
   if (loading) {
@@ -113,29 +168,73 @@ export function VotingPage() {
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div className="flex items-center justify-between text-sm">
-                      <span className="text-muted-foreground">Type:</span>
-                      <span className="font-semibold capitalize">{vote.vote_type.toLowerCase().replace('_', ' ')}</span>
+                      <div className="flex items-center gap-2 text-muted-foreground">
+                        <Clock className="h-4 w-4" />
+                        <span>Type: {vote.vote_type.toLowerCase().replace('_', ' ')}</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-muted-foreground">
+                        <Users className="h-4 w-4" />
+                        <span>{vote.total_votes_cast || 0}/{vote.total_eligible_voters || 0}</span>
+                      </div>
                     </div>
+                    
                     <div className="space-y-2">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <CheckCircle className="h-4 w-4 text-green-600" />
-                          <span className="text-sm">Yes</span>
+                      <div className="space-y-1">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <CheckCircle className="h-4 w-4 text-green-600" />
+                            <span className="text-sm">Yes</span>
+                          </div>
+                          <span className="font-semibold">{vote.yes_votes || 0} ({getVotePercentage(vote, 'yes')}%)</span>
                         </div>
-                        <span className="font-semibold">{vote.yes_votes || 0}</span>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <XCircle className="h-4 w-4 text-red-600" />
-                          <span className="text-sm">No</span>
+                        <div className="w-full bg-gray-200 rounded-full h-2">
+                          <div 
+                            className="bg-green-600 h-2 rounded-full transition-all duration-300"
+                            style={{ width: `${getVotePercentage(vote, 'yes')}%` }}
+                          />
                         </div>
-                        <span className="font-semibold">{vote.no_votes || 0}</span>
                       </div>
+                      
+                      <div className="space-y-1">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <XCircle className="h-4 w-4 text-red-600" />
+                            <span className="text-sm">No</span>
+                          </div>
+                          <span className="font-semibold">{vote.no_votes || 0} ({getVotePercentage(vote, 'no')}%)</span>
+                        </div>
+                        <div className="w-full bg-gray-200 rounded-full h-2">
+                          <div 
+                            className="bg-red-600 h-2 rounded-full transition-all duration-300"
+                            style={{ width: `${getVotePercentage(vote, 'no')}%` }}
+                          />
+                        </div>
+                      </div>
+                      
+                      {(vote.abstain_votes || 0) > 0 && (
+                        <div className="space-y-1">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <TrendingUp className="h-4 w-4 text-gray-600" />
+                              <span className="text-sm">Abstain</span>
+                            </div>
+                            <span className="font-semibold">{vote.abstain_votes || 0} ({getVotePercentage(vote, 'abstain')}%)</span>
+                          </div>
+                          <div className="w-full bg-gray-200 rounded-full h-2">
+                            <div 
+                              className="bg-gray-600 h-2 rounded-full transition-all duration-300"
+                              style={{ width: `${getVotePercentage(vote, 'abstain')}%` }}
+                            />
+                          </div>
+                        </div>
+                      )}
                     </div>
+                    
                     {vote.status === 'ACTIVE' && (
                       <motion.button
                         whileHover={{ scale: 1.02 }}
                         whileTap={{ scale: 0.98 }}
+                        onClick={() => openVoteModal(vote)}
                         className="w-full py-2 rounded-lg bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-colors"
                       >
                         Cast Your Vote
@@ -148,6 +247,94 @@ export function VotingPage() {
           </div>
         )}
       </motion.div>
+
+      {/* Toast Notification */}
+      <AnimatePresence>
+        {toast && (
+          <motion.div
+            initial={{ opacity: 0, y: 50 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 50 }}
+            className="fixed bottom-4 right-4 z-50"
+          >
+            <div className={`px-6 py-4 rounded-lg shadow-lg ${
+              toast.type === 'success' ? 'bg-green-600' : 'bg-red-600'
+            } text-white flex items-center gap-3 min-w-[300px]`}>
+              {toast.type === 'success' ? (
+                <CheckCircle className="h-5 w-5" />
+              ) : (
+                <XCircle className="h-5 w-5" />
+              )}
+              <span className="font-medium">{toast.message}</span>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Vote Modal */}
+      <AnimatePresence>
+        {showVoteModal && selectedVote && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
+            onClick={() => setShowVoteModal(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              onClick={(e) => e.stopPropagation()}
+              className="bg-white rounded-lg shadow-2xl max-w-md w-full p-6 space-y-4"
+            >
+              <h2 className="text-2xl font-bold">{selectedVote.title}</h2>
+              <p className="text-muted-foreground">{selectedVote.description}</p>
+              
+              <div className="space-y-3 pt-4">
+                <motion.button
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={() => handleCastVote(selectedVote.id, 'YES')}
+                  disabled={castingVote}
+                  className="w-full py-3 rounded-lg bg-green-600 text-white font-medium hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Vote YES
+                </motion.button>
+                
+                <motion.button
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={() => handleCastVote(selectedVote.id, 'NO')}
+                  disabled={castingVote}
+                  className="w-full py-3 rounded-lg bg-red-600 text-white font-medium hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Vote NO
+                </motion.button>
+                
+                <motion.button
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={() => handleCastVote(selectedVote.id, 'ABSTAIN')}
+                  disabled={castingVote}
+                  className="w-full py-3 rounded-lg bg-gray-600 text-white font-medium hover:bg-gray-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Abstain
+                </motion.button>
+              </div>
+              
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={() => setShowVoteModal(false)}
+                className="w-full py-2 rounded-lg border border-gray-300 text-gray-700 font-medium hover:bg-gray-50 transition-colors"
+              >
+                Cancel
+              </motion.button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

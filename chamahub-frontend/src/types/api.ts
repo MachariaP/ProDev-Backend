@@ -209,19 +209,24 @@ export interface ApprovalSignature {
 export interface Vote {
   id: number;
   group: number;
+  group_name?: string;
   title: string;
   description: string;
-  vote_type: 'SIMPLE' | 'SUPER_MAJORITY' | 'UNANIMOUS';
-  status: 'DRAFT' | 'ACTIVE' | 'CLOSED';
+  vote_type: 'SIMPLE' | 'TWO_THIRDS' | 'UNANIMOUS';
+  status: 'DRAFT' | 'ACTIVE' | 'CLOSED' | 'CANCELLED';
+  allow_proxy: boolean;
   start_date: string;
   end_date: string;
+  total_eligible_voters: number;
+  total_votes_cast: number;
+  yes_votes: number;
+  no_votes: number;
+  abstain_votes: number;
   created_by: number;
   created_by_name?: string;
   created_at: string;
-  yes_votes?: number;
-  no_votes?: number;
-  abstain_votes?: number;
-  total_votes?: number;
+  updated_at: string;
+  is_passed?: boolean;
 }
 
 export interface VoteBallot {
