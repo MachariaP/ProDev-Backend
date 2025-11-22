@@ -271,8 +271,27 @@ export const governanceService = {
     return response.data;
   },
 
-  async castVote(data: Partial<VoteBallot>): Promise<VoteBallot> {
-    const response = await api.post('/governance/ballots/', data);
+  async activateVote(id: number): Promise<Vote> {
+    const response = await api.post(`/governance/votes/${id}/activate/`);
+    return response.data;
+  },
+
+  async closeVote(id: number): Promise<Vote> {
+    const response = await api.post(`/governance/votes/${id}/close/`);
+    return response.data;
+  },
+
+  async castVote(voteId: number, data: { choice: 'YES' | 'NO' | 'ABSTAIN'; comments?: string }): Promise<{
+    ballot: VoteBallot;
+    vote: Vote;
+    message: string;
+  }> {
+    const response = await api.post(`/governance/votes/${voteId}/cast_vote/`, data);
+    return response.data;
+  },
+
+  async castVoteBallot(data: Partial<VoteBallot>): Promise<VoteBallot> {
+    const response = await api.post('/governance/vote-ballots/', data);
     return response.data;
   },
 
