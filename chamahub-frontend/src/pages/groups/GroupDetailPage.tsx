@@ -71,17 +71,75 @@ export function GroupDetailPage() {
 
   const fetchGroupDetails = async () => {
     try {
-      const [groupRes, membersRes, transactionsRes] = await Promise.all([
-        api.get(`/groups/chama-groups/${id}/`),
-        api.get(`/groups/memberships/?group=${id}`),
-        api.get(`/finance/transactions/?group=${id}&limit=10`),
-      ]);
-      setGroup(groupRes.data);
-      setMembers(membersRes.data.results || membersRes.data);
-      setTransactions(transactionsRes.data.results || transactionsRes.data);
+      setLoading(true);
+      setError('');
+      
+      // Fetch group details
+      const groupRes = await api.get(`/groups/chama-groups/${id}/`);
+      const groupData = groupRes.data;
+      
+      // Calculate stats from group data
+      const dashboardData = {
+        id: groupData.id,
+        name: groupData.name,
+        description: groupData.description || groupData.objectives,
+        member_count: 0,
+        total_contributions: 0,
+        total_loans: 0,
+        balance: Number(groupData.total_balance || 0),
+        created_at: groupData.created_at,
+        contribution_frequency: groupData.contribution_frequency,
+        contribution_amount: Number(groupData.minimum_contribution || 0),
+        is_active: groupData.is_active,
+      };
+      
+      // Fetch members
+      let membersList: Member[] = [];
+      try {
+        const membersRes = await api.get(`/groups/memberships/?group=${id}`);
+        const membersData = membersRes.data.results || membersRes.data;
+        membersList = Array.isArray(membersData) ? membersData : [];
+        dashboardData.member_count = membersList.length;
+        
+        // Calculate total contributions from members
+        dashboardData.total_contributions = membersList.reduce(
+          (sum: number, m: Member) => sum + Number(m.total_contributions || 0), 
+          0
+        );
+      } catch (err) {
+        console.error('Failed to fetch members:', err);
+      }
+      
+      // Fetch transactions
+      let transactionsList: Transaction[] = [];
+      try {
+        const transactionsRes = await api.get(`/finance/transactions/?group=${id}&limit=10`);
+        const transData = transactionsRes.data.results || transactionsRes.data;
+        transactionsList = Array.isArray(transData) ? transData : [];
+      } catch (err) {
+        console.error('Failed to fetch transactions:', err);
+      }
+      
+      // Try to get loan data
+      try {
+        const loansRes = await api.get(`/finance/loans/?group=${id}&status=ACTIVE`);
+        const loansData = loansRes.data.results || loansRes.data;
+        if (Array.isArray(loansData)) {
+          dashboardData.total_loans = loansData.reduce(
+            (sum: number, loan: any) => sum + Number(loan.amount || 0),
+            0
+          );
+        }
+      } catch (err) {
+        console.error('Failed to fetch loans:', err);
+      }
+      
+      setGroup(dashboardData);
+      setMembers(membersList);
+      setTransactions(transactionsList);
     } catch (err) {
       setError('Failed to load group details');
-      console.error(err);
+      console.error('Group details error:', err);
     } finally {
       setLoading(false);
     }
@@ -206,6 +264,45 @@ export function GroupDetailPage() {
             icon={TrendingUp}
             iconClassName="bg-purple-100 text-purple-600"
           />
+        </motion.div>
+
+        {/* Group Info Card */}
+        <motion.div
+          variants={containerVariants}
+          initial="hidden"
+          animate="visible"
+          className="mb-8"
+        >
+          <Card className="bg-gradient-to-br from-primary/5 to-secondary/5 border-2">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-2xl">
+                <Activity className="h-6 w-6 text-primary" />
+                Group Information
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="space-y-2">
+                  <p className="text-sm text-muted-foreground">Contribution Frequency</p>
+                  <p className="text-lg font-semibold capitalize">
+                    {group.contribution_frequency.toLowerCase()}
+                  </p>
+                </div>
+                <div className="space-y-2">
+                  <p className="text-sm text-muted-foreground">Minimum Contribution</p>
+                  <p className="text-lg font-semibold">
+                    KES {group.contribution_amount.toLocaleString()}
+                  </p>
+                </div>
+                <div className="space-y-2">
+                  <p className="text-sm text-muted-foreground">Group Status</p>
+                  <p className={`text-lg font-semibold ${group.is_active ? 'text-green-600' : 'text-red-600'}`}>
+                    {group.is_active ? '🟢 Active' : '🔴 Inactive'}
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </motion.div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
