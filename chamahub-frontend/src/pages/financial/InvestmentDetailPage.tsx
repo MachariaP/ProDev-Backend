@@ -66,6 +66,7 @@ export function InvestmentDetailPage() {
     if (id) {
       fetchInvestmentDetails();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
   const fetchInvestmentDetails = async () => {
