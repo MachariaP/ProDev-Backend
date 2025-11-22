@@ -10,9 +10,7 @@ import {
   X,
   Sparkles,
   Building,
-  User,
   Hash,
-  Calendar,
   AlertCircle,
   CheckCircle,
   Loader
@@ -68,10 +66,16 @@ export function NewContributionPage() {
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<{
+    group: string;
+    amount: string;
+    payment_method: 'MPESA' | 'BANK' | 'CASH' | 'OTHER';
+    reference_number: string;
+    notes: string;
+  }>({
     group: '',
     amount: '',
-    payment_method: '' as '' | 'MPESA' | 'BANK' | 'CASH' | 'OTHER',
+    payment_method: 'MPESA',
     reference_number: '',
     notes: '',
   });

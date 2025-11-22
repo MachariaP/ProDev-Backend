@@ -3,31 +3,31 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { 
   ArrowLeft, Plus, DollarSign, CheckCircle, AlertCircle, XCircle, 
-  Download, Filter, Search, TrendingUp, Users, Calendar, Eye, MoreHorizontal,
-  Sparkles, Crown, Zap, BarChart3, RefreshCw, Clock, User, CreditCard,
-  Shield, Target, PiggyBank, ArrowUpRight, ArrowDownLeft
+  Download, Search, TrendingUp, Users, Calendar, Eye, MoreHorizontal,
+  Sparkles, RefreshCw, Clock, User, CreditCard,
+  Shield
 } from 'lucide-react';
 
 // Simple card components as fallback
-const Card = ({ children, className = '' }) => (
+const Card = ({ children, className = '' }: { children: React.ReactNode; className?: string }) => (
   <div className={`bg-white rounded-2xl border border-gray-200 shadow-sm ${className}`}>
     {children}
   </div>
 );
 
-const CardHeader = ({ children, className = '' }) => (
+const CardHeader = ({ children, className = '' }: { children: React.ReactNode; className?: string }) => (
   <div className={`p-6 pb-4 ${className}`}>{children}</div>
 );
 
-const CardTitle = ({ children, className = '' }) => (
+const CardTitle = ({ children, className = '' }: { children: React.ReactNode; className?: string }) => (
   <h3 className={`text-lg font-semibold ${className}`}>{children}</h3>
 );
 
-const CardDescription = ({ children, className = '' }) => (
+const CardDescription = ({ children, className = '' }: { children: React.ReactNode; className?: string }) => (
   <p className={`text-sm text-gray-600 mt-1 ${className}`}>{children}</p>
 );
 
-const CardContent = ({ children, className = '' }) => (
+const CardContent = ({ children, className = '' }: { children: React.ReactNode; className?: string }) => (
   <div className={`p-6 ${className}`}>{children}</div>
 );
 
@@ -91,14 +91,14 @@ const financeService = {
 
 // Mock API
 const api = {
-  post: async (url: string) => {
+  post: async (_url: string) => {
     // Simulate API call
     return new Promise(resolve => setTimeout(resolve, 1000));
   }
 };
 
 // Floating Background Elements
-const FloatingElement = ({ children, delay = 0 }) => (
+const FloatingElement = ({ children, delay = 0 }: { children: React.ReactNode; delay?: number }) => (
   <motion.div
     initial={{ y: 0 }}
     animate={{ 
@@ -230,8 +230,9 @@ export function ContributionsPage() {
       setContributions(response.results || []);
     } catch (err) { 
       console.error(err);
-      // Fallback to mock data
-      setContributions(financeService.getContributions().then(res => res.results));
+      // Fallback to mock data - use the mock service directly
+      const mockResponse = await financeService.getContributions();
+      setContributions(mockResponse.results || []);
     } finally { 
       setLoading(false); 
     }
