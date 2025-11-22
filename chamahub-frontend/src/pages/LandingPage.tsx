@@ -22,7 +22,8 @@ import {
   Clock,
   Award,
   Sparkles,
-  PlayCircle
+  PlayCircle,
+  Globe // Add this import
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
@@ -88,7 +89,7 @@ export function LandingPage() {
     { icon: Clock, text: 'Mobile-first design', color: 'text-pink-500' },
     { icon: BarChart3, text: 'Customizable reports', color: 'text-indigo-500' },
     { icon: Calendar, text: 'Meeting scheduling', color: 'text-teal-500' },
-    { icon: Globe, text: 'Multi-language support', color: 'text-amber-500' }
+    { icon: Globe, text: 'Multi-language support', color: 'text-amber-500' } // Now Globe is imported
   ];
 
   const stats = [
