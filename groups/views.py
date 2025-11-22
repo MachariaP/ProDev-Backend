@@ -47,6 +47,14 @@ class ChamaGroupViewSet(viewsets.ModelViewSet):
         groups = [m.group for m in memberships]
         serializer = self.get_serializer(groups, many=True)
         return Response(serializer.data)
+    
+    @action(detail=True, methods=['get'])
+    def members(self, request, pk=None):
+        """Get all members of a specific group."""
+        group = self.get_object()
+        memberships = GroupMembership.objects.filter(group=group).select_related('user')
+        serializer = GroupMembershipSerializer(memberships, many=True, context={'request': request})
+        return Response(serializer.data)
 
 
 class GroupMembershipViewSet(viewsets.ModelViewSet):

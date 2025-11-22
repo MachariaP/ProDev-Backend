@@ -155,6 +155,42 @@ class ChamaGroupViewSetTest(TestCase):
         self.assertEqual(response.data['member_count'], 3)
         self.assertEqual(response.data['total_balance'], '100000.00')
     
+    def test_members_endpoint(self):
+        """Test getting group members via nested endpoint."""
+        group = ChamaGroup.objects.create(
+            name='Members Test Group',
+            group_type='SAVINGS',
+            objectives='Test',
+            created_by=self.user
+        )
+        
+        # Add some members
+        members_data = []
+        for i in range(3):
+            user = User.objects.create_user(
+                email=f'testmember{i}@example.com',
+                password='testpass123',
+                first_name=f'Member{i}',
+                last_name='User',
+                phone_number=f'+25470000100{i+1}'
+            )
+            membership = GroupMembership.objects.create(
+                group=group,
+                user=user,
+                role='MEMBER',
+                status='ACTIVE'
+            )
+            members_data.append(membership)
+        
+        url = reverse('chamagroup-members', kwargs={'pk': group.pk})
+        response = self.client.get(url)
+        
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 3)
+        # Verify that user details are included
+        self.assertIn('user_details', response.data[0])
+        self.assertEqual(response.data[0]['group'], group.id)
+    
     def test_unauthenticated_access(self):
         """Test that unauthenticated users cannot access endpoints."""
         self.client.force_authenticate(user=None)
