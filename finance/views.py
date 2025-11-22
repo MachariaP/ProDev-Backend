@@ -3,7 +3,9 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from django_filters.rest_framework import DjangoFilterBackend
 from django.utils import timezone
+from django.http import HttpResponse
 from decimal import Decimal
+import csv
 from .models import (
     Contribution, Loan, LoanRepayment, Expense,
     DisbursementApproval, ApprovalSignature
@@ -37,6 +39,45 @@ class ContributionViewSet(viewsets.ModelViewSet):
         
         serializer = self.get_serializer(contribution)
         return Response(serializer.data)
+    
+    @action(detail=False, methods=['get'], permission_classes=[permissions.IsAuthenticated])
+    def export(self, request):
+        """Export contributions to CSV."""
+        # Get filtered queryset
+        queryset = self.filter_queryset(self.get_queryset())
+        
+        # Create the HttpResponse object with CSV header
+        response = HttpResponse(content_type='text/csv')
+        response['Content-Disposition'] = f'attachment; filename="contributions_{timezone.now().strftime("%Y%m%d_%H%M%S")}.csv"'
+        
+        # Create CSV writer
+        writer = csv.writer(response)
+        
+        # Write header row
+        writer.writerow([
+            'ID', 'Group', 'Member', 'Amount (KES)', 'Payment Method', 
+            'Reference Number', 'Status', 'Reconciled By', 'Reconciled At', 
+            'Notes', 'Created At', 'Updated At'
+        ])
+        
+        # Write data rows
+        for contribution in queryset:
+            writer.writerow([
+                contribution.id,
+                contribution.group.name,
+                contribution.member.get_full_name(),
+                contribution.amount,
+                contribution.get_payment_method_display(),
+                contribution.reference_number or '',
+                contribution.get_status_display(),
+                contribution.reconciled_by.get_full_name() if contribution.reconciled_by else '',
+                contribution.reconciled_at.strftime('%Y-%m-%d %H:%M:%S') if contribution.reconciled_at else '',
+                contribution.notes or '',
+                contribution.created_at.strftime('%Y-%m-%d %H:%M:%S'),
+                contribution.updated_at.strftime('%Y-%m-%d %H:%M:%S')
+            ])
+        
+        return response
 
 
 class LoanViewSet(viewsets.ModelViewSet):

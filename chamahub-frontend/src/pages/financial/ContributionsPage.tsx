@@ -214,6 +214,7 @@ export function ContributionsPage() {
   const [reconciling, setReconciling] = useState<number | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState<string>('ALL');
+  const [exporting, setExporting] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => { 
@@ -245,6 +246,46 @@ export function ContributionsPage() {
       console.error(err); 
     } finally { 
       setReconciling(null); 
+    }
+  };
+
+  const handleExport = async () => {
+    setExporting(true);
+    try {
+      // Build query parameters based on current filters
+      const params = new URLSearchParams();
+      if (filterStatus !== 'ALL') {
+        params.append('status', filterStatus);
+      }
+      
+      // Make API call to export endpoint
+      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/finance/contributions/export/?${params.toString()}`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('access_token')}`
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error('Export failed');
+      }
+      
+      // Create blob from response
+      const blob = await response.blob();
+      
+      // Create download link
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `contributions_${new Date().toISOString().split('T')[0]}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    } catch (err) {
+      console.error('Error exporting contributions:', err);
+      alert('Failed to export contributions. Please try again.');
+    } finally {
+      setExporting(false);
     }
   };
 
@@ -354,10 +395,12 @@ export function ContributionsPage() {
             <motion.button 
               whileHover={{ scale: 1.05, y: -2 }}
               whileTap={{ scale: 0.95 }}
-              className="flex items-center gap-2 px-5 py-3 bg-white text-gray-700 font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all border border-gray-200 hover:border-green-300"
+              onClick={handleExport}
+              disabled={exporting}
+              className="flex items-center gap-2 px-5 py-3 bg-white text-gray-700 font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all border border-gray-200 hover:border-green-300 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <Download className="h-4 w-4" />
-              Export Report
+              <Download className={`h-4 w-4 ${exporting ? 'animate-bounce' : ''}`} />
+              {exporting ? 'Exporting...' : 'Export Report'}
             </motion.button>
             <motion.button 
               whileHover={{ scale: 1.05, y: -2 }}
