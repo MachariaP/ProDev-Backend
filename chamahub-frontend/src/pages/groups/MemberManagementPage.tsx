@@ -21,7 +21,8 @@ import api from '../../services/api';
 
 interface Member {
   id: number;
-  user: {
+  user: number;
+  user_details: {
     id: number;
     first_name: string;
     last_name: string;
@@ -29,17 +30,17 @@ interface Member {
     phone_number?: string;
   };
   role: string;
+  status: string;
   joined_at: string;
   total_contributions: number;
-  is_active: boolean;
-  can_approve: boolean;
 }
 
 const roles = [
-  { value: 'admin', label: 'Administrator', icon: Crown, color: 'text-yellow-600' },
-  { value: 'treasurer', label: 'Treasurer', icon: Shield, color: 'text-blue-600' },
-  { value: 'secretary', label: 'Secretary', icon: Shield, color: 'text-green-600' },
-  { value: 'member', label: 'Member', icon: Users, color: 'text-gray-600' },
+  { value: 'ADMIN', label: 'Administrator', icon: Crown, color: 'text-yellow-600' },
+  { value: 'CHAIRPERSON', label: 'Chairperson', icon: Crown, color: 'text-purple-600' },
+  { value: 'TREASURER', label: 'Treasurer', icon: Shield, color: 'text-blue-600' },
+  { value: 'SECRETARY', label: 'Secretary', icon: Shield, color: 'text-green-600' },
+  { value: 'MEMBER', label: 'Member', icon: Users, color: 'text-gray-600' },
 ];
 
 export function MemberManagementPage() {
@@ -51,7 +52,7 @@ export function MemberManagementPage() {
   const [selectedRole, setSelectedRole] = useState<string>('all');
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [inviteEmail, setInviteEmail] = useState('');
-  const [inviteRole, setInviteRole] = useState('member');
+  const [inviteRole, setInviteRole] = useState('MEMBER');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
@@ -63,8 +64,8 @@ export function MemberManagementPage() {
     try {
       setLoading(true);
       setError('');
-      const response = await api.get(`/groups/memberships/?group=${id}`);
-      const membersData = response.data.results || response.data;
+      const response = await api.get(`/groups/chama-groups/${id}/members/`);
+      const membersData = response.data;
       setMembers(Array.isArray(membersData) ? membersData : []);
     } catch (err) {
       setError('Failed to load members');
@@ -89,7 +90,7 @@ export function MemberManagementPage() {
       setSuccess('Invitation sent successfully!');
       setShowInviteModal(false);
       setInviteEmail('');
-      setInviteRole('member');
+      setInviteRole('MEMBER');
       fetchMembers();
       setTimeout(() => setSuccess(''), 3000);
     } catch (err: unknown) {
@@ -127,9 +128,9 @@ export function MemberManagementPage() {
 
   const filteredMembers = members.filter((member) => {
     const matchesSearch =
-      member.user.first_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      member.user.last_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      member.user.email.toLowerCase().includes(searchTerm.toLowerCase());
+      member.user_details.first_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      member.user_details.last_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      member.user_details.email.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesRole = selectedRole === 'all' || member.role === selectedRole;
     return matchesSearch && matchesRole;
   });
@@ -253,20 +254,20 @@ export function MemberManagementPage() {
                   <CardHeader>
                     <div className="flex items-center justify-between mb-4">
                       <div className="h-16 w-16 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-white text-2xl font-bold">
-                        {member.user.first_name?.[0]}{member.user.last_name?.[0]}
+                        {member.user_details.first_name?.[0]}{member.user_details.last_name?.[0]}
                       </div>
                       <div className="flex items-center gap-2">
                         <RoleIcon className={`h-5 w-5 ${roleInfo.color}`} />
                       </div>
                     </div>
                     <CardTitle className="text-xl">
-                      {member.user.first_name} {member.user.last_name}
+                      {member.user_details.first_name} {member.user_details.last_name}
                     </CardTitle>
                     <CardDescription className="flex items-center gap-2">
                       <span className={`px-2 py-1 rounded text-xs font-medium ${
-                        member.is_active ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+                        member.status === 'ACTIVE' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
                       }`}>
-                        {member.is_active ? 'Active' : 'Inactive'}
+                        {member.status === 'ACTIVE' ? 'Active' : member.status}
                       </span>
                     </CardDescription>
                   </CardHeader>
@@ -274,12 +275,12 @@ export function MemberManagementPage() {
                     <div className="space-y-3 mb-4">
                       <div className="flex items-center gap-2 text-sm text-muted-foreground">
                         <Mail className="h-4 w-4" />
-                        <span className="truncate">{member.user.email}</span>
+                        <span className="truncate">{member.user_details.email}</span>
                       </div>
-                      {member.user.phone_number && (
+                      {member.user_details.phone_number && (
                         <div className="flex items-center gap-2 text-sm text-muted-foreground">
                           <Phone className="h-4 w-4" />
-                          <span>{member.user.phone_number}</span>
+                          <span>{member.user_details.phone_number}</span>
                         </div>
                       )}
                       <div className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -307,7 +308,7 @@ export function MemberManagementPage() {
                         ))}
                       </select>
 
-                      {member.role !== 'admin' && (
+                      {member.role !== 'ADMIN' && (
                         <motion.button
                           whileHover={{ scale: 1.02 }}
                           whileTap={{ scale: 0.98 }}

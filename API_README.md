@@ -200,6 +200,7 @@ GET    /api/v1/groups/chama-groups/                    # List all groups
 POST   /api/v1/groups/chama-groups/                    # Create group
 GET    /api/v1/groups/chama-groups/{id}/               # Get group details
 GET    /api/v1/groups/chama-groups/{id}/dashboard/    # Group dashboard
+GET    /api/v1/groups/chama-groups/{id}/members/      # Get group members
 GET    /api/v1/groups/chama-groups/my_groups/         # User's groups
 GET    /api/v1/groups/memberships/                     # List memberships
 POST   /api/v1/groups/memberships/                     # Join group
