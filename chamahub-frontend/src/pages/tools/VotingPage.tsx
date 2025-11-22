@@ -94,6 +94,22 @@ export function VotingPage() {
     return Math.round((count / total) * 100);
   };
 
+  const calculateParticipationPercentage = (votesList: Vote[]) => {
+    if (votesList.length === 0) return 0;
+    
+    const { totalVotesCast, totalEligibleVoters } = votesList.reduce(
+      (acc, vote) => ({
+        totalVotesCast: acc.totalVotesCast + (vote.total_votes_cast || 0),
+        totalEligibleVoters: acc.totalEligibleVoters + (vote.total_eligible_voters || 1),
+      }),
+      { totalVotesCast: 0, totalEligibleVoters: 0 }
+    );
+    
+    return totalEligibleVoters > 0 
+      ? Math.round((totalVotesCast / totalEligibleVoters) * 100)
+      : 0;
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-violet-50 via-purple-50 to-fuchsia-50 dark:from-gray-900 dark:via-purple-900/20 dark:to-fuchsia-900/20">
@@ -228,9 +244,7 @@ export function VotingPage() {
                 <div>
                   <p className="text-violet-100 text-sm font-medium">Participation</p>
                   <p className="text-3xl font-bold mt-1">
-                    {votes.length > 0 
-                      ? Math.round((votes.reduce((acc, v) => acc + (v.total_votes_cast || 0), 0) / votes.reduce((acc, v) => acc + (v.total_eligible_voters || 1), 0)) * 100)
-                      : 0}%
+                    {calculateParticipationPercentage(votes)}%
                   </p>
                 </div>
                 <Users className="h-12 w-12 text-violet-200" />
