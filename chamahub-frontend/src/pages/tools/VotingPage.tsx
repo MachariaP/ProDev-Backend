@@ -72,6 +72,22 @@ export function VotingPage() {
 
   const handleCreateVote = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Validate date range
+    const startDate = new Date(createFormData.start_date);
+    const endDate = new Date(createFormData.end_date);
+    const now = new Date();
+    
+    if (startDate < now) {
+      showToast('error', 'Start date cannot be in the past');
+      return;
+    }
+    
+    if (endDate <= startDate) {
+      showToast('error', 'End date must be after start date');
+      return;
+    }
+    
     setCreatingVote(true);
     try {
       await governanceService.createVote({
@@ -97,8 +113,9 @@ export function VotingPage() {
         end_date: '',
       });
       showToast('success', 'Vote created successfully!');
-    } catch (err: any) {
-      const errorMessage = err.response?.data?.error || err.response?.data?.detail || 'Failed to create vote';
+    } catch (err: unknown) {
+      const error = err as { response?: { data?: { error?: string; detail?: string } } };
+      const errorMessage = error?.response?.data?.error || error?.response?.data?.detail || 'Failed to create vote';
       showToast('error', errorMessage);
     } finally {
       setCreatingVote(false);
@@ -114,8 +131,9 @@ export function VotingPage() {
       setShowVoteModal(false);
       setSelectedVote(null);
       showToast('success', 'Vote cast successfully!');
-    } catch (err: any) {
-      const errorMessage = err.response?.data?.error || 'Failed to cast vote';
+    } catch (err: unknown) {
+      const error = err as { response?: { data?: { error?: string } } };
+      const errorMessage = error?.response?.data?.error || 'Failed to cast vote';
       showToast('error', errorMessage);
     } finally {
       setCastingVote(false);
@@ -677,7 +695,7 @@ export function VotingPage() {
                     required
                     className="w-full px-4 py-3 rounded-xl border-2 border-purple-200 dark:border-purple-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:border-purple-500 dark:focus:border-purple-400 focus:outline-none transition-colors"
                   >
-                    <option value="SIMPLE">Simple Majority (&gt;50%)</option>
+                    <option value="SIMPLE">Simple Majority ({'>'}50%)</option>
                     <option value="TWO_THIRDS">Two-Thirds Majority (≥66.67%)</option>
                     <option value="UNANIMOUS">Unanimous (100%)</option>
                   </select>
