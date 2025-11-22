@@ -268,21 +268,29 @@ export interface Investment {
   id: number;
   group: number;
   group_name?: string;
-  investment_type: 'TREASURY_BILLS' | 'STOCKS' | 'BONDS' | 'REAL_ESTATE' | 'OTHER';
+  investment_type: 'TREASURY_BILL' | 'TREASURY_BILLS' | 'MONEY_MARKET' | 'STOCKS' | 'BONDS' | 'REAL_ESTATE' | 'FIXED_DEPOSIT' | 'OTHER';
   name: string;
   description: string;
-  amount_invested: string;
+  principal_amount: string;
+  amount_invested: string; // Alias for compatibility
   current_value: string;
-  expected_return: string;
+  expected_return_rate: string;
+  expected_return: string; // Alias for compatibility
   status: 'ACTIVE' | 'MATURED' | 'SOLD' | 'CANCELLED';
-  investment_date: string;
+  purchase_date: string;
+  investment_date: string; // Alias for compatibility
   maturity_date?: string;
   created_by: number;
   created_by_name?: string;
   created_at: string;
+  updated_at?: string;
+  notes?: string;
+  certificate?: string;
   // Additional fields for portfolio
   returns?: number;
+  roi?: string;
   roi_percentage?: number;
+  profit_loss?: string;
 }
 
 export interface StockHolding {

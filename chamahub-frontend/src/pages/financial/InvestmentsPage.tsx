@@ -117,7 +117,7 @@ export function InvestmentsPage() {
                   <CardContent className="space-y-4">
                     <div className="flex items-center justify-between">
                       <span className="text-sm text-muted-foreground">Invested</span>
-                      <span className="font-semibold">KES {Number(investment.amount_invested).toLocaleString()}</span>
+                      <span className="font-semibold">KES {Number(investment.principal_amount || investment.amount_invested).toLocaleString()}</span>
                     </div>
                     <div className="flex items-center justify-between">
                       <span className="text-sm text-muted-foreground">Current Value</span>
@@ -129,12 +129,13 @@ export function InvestmentsPage() {
                       <span className="text-sm text-muted-foreground">Expected Return</span>
                       <div className="flex items-center gap-1 text-green-600">
                         <TrendingUp className="h-4 w-4" />
-                        <span className="font-semibold">{investment.expected_return}%</span>
+                        <span className="font-semibold">{investment.expected_return_rate || investment.expected_return}%</span>
                       </div>
                     </div>
                     <motion.button
                       whileHover={{ scale: 1.02 }}
                       whileTap={{ scale: 0.98 }}
+                      onClick={() => navigate(`/investments/${investment.id}`)}
                       className="w-full mt-4 py-2 rounded-lg border border-primary text-primary hover:bg-primary hover:text-primary-foreground transition-colors font-medium"
                     >
                       View Details
