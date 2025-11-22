@@ -3,8 +3,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Plus, Vote as VoteIcon, CheckCircle, XCircle, Clock, Users, TrendingUp, Award, BarChart3, Sparkles } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/card';
-import { governanceService } from '../../services/apiService';
-import type { Vote } from '../../types/api';
+import { governanceService, groupsService } from '../../services/apiService';
+import type { Vote, ChamaGroup } from '../../types/api';
 
 interface ToastMessage {
   type: 'success' | 'error';
@@ -17,11 +17,24 @@ export function VotingPage() {
   const [selectedVote, setSelectedVote] = useState<Vote | null>(null);
   const [castingVote, setCastingVote] = useState(false);
   const [showVoteModal, setShowVoteModal] = useState(false);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [creatingVote, setCreatingVote] = useState(false);
+  const [groups, setGroups] = useState<ChamaGroup[]>([]);
   const [toast, setToast] = useState<ToastMessage | null>(null);
+  const [createFormData, setCreateFormData] = useState({
+    group: '',
+    title: '',
+    description: '',
+    vote_type: 'SIMPLE' as 'SIMPLE' | 'TWO_THIRDS' | 'UNANIMOUS',
+    allow_proxy: true,
+    start_date: '',
+    end_date: '',
+  });
   const navigate = useNavigate();
 
   useEffect(() => {
     fetchVotes();
+    fetchGroups();
   }, []);
 
   useEffect(() => {
@@ -44,8 +57,52 @@ export function VotingPage() {
     }
   };
 
+  const fetchGroups = async () => {
+    try {
+      const response = await groupsService.getMyGroups();
+      setGroups(response);
+    } catch (err) {
+      console.error('Error fetching groups:', err);
+    }
+  };
+
   const showToast = (type: 'success' | 'error', message: string) => {
     setToast({ type, message });
+  };
+
+  const handleCreateVote = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setCreatingVote(true);
+    try {
+      await governanceService.createVote({
+        group: Number(createFormData.group),
+        title: createFormData.title,
+        description: createFormData.description,
+        vote_type: createFormData.vote_type,
+        allow_proxy: createFormData.allow_proxy,
+        start_date: createFormData.start_date,
+        end_date: createFormData.end_date,
+      });
+      // Refresh votes list
+      await fetchVotes();
+      setShowCreateModal(false);
+      // Reset form
+      setCreateFormData({
+        group: '',
+        title: '',
+        description: '',
+        vote_type: 'SIMPLE',
+        allow_proxy: true,
+        start_date: '',
+        end_date: '',
+      });
+      showToast('success', 'Vote created successfully!');
+    } catch (err: any) {
+      const errorMessage = err.response?.data?.error || err.response?.data?.detail || 'Failed to create vote';
+      showToast('error', errorMessage);
+    } finally {
+      setCreatingVote(false);
+    }
   };
 
   const handleCastVote = async (voteId: number, choice: 'YES' | 'NO' | 'ABSTAIN') => {
@@ -200,6 +257,7 @@ export function VotingPage() {
           <motion.button
             whileHover={{ scale: 1.05, rotate: 5 }}
             whileTap={{ scale: 0.95 }}
+            onClick={() => setShowCreateModal(true)}
             className="flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-purple-600 to-fuchsia-600 text-white font-semibold shadow-lg hover:shadow-2xl transition-all border border-purple-400"
           >
             <Plus className="h-5 w-5" />
@@ -517,6 +575,192 @@ export function VotingPage() {
               >
                 Cancel
               </motion.button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Create Vote Modal */}
+      <AnimatePresence>
+        {showCreateModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 overflow-y-auto"
+            onClick={() => setShowCreateModal(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.8, opacity: 0, y: 50 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.8, opacity: 0, y: 50 }}
+              onClick={(e) => e.stopPropagation()}
+              className="bg-gradient-to-br from-white to-purple-50 dark:from-gray-800 dark:to-purple-900/20 rounded-2xl shadow-2xl max-w-2xl w-full p-8 space-y-6 border-2 border-purple-200 dark:border-purple-700 my-8"
+            >
+              <div className="text-center">
+                <motion.div
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  transition={{ type: "spring", stiffness: 200, damping: 15 }}
+                  className="w-16 h-16 bg-gradient-to-br from-purple-500 to-fuchsia-500 rounded-full flex items-center justify-center mx-auto mb-4"
+                >
+                  <Plus className="h-8 w-8 text-white" />
+                </motion.div>
+                <h2 className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-fuchsia-600 bg-clip-text text-transparent">
+                  Create New Vote
+                </h2>
+                <p className="text-gray-600 dark:text-gray-300 mt-2 text-base">
+                  Set up a new vote for your group to make collective decisions
+                </p>
+              </div>
+              
+              <form onSubmit={handleCreateVote} className="space-y-4">
+                {/* Group Selection */}
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                    Select Group *
+                  </label>
+                  <select
+                    value={createFormData.group}
+                    onChange={(e) => setCreateFormData({ ...createFormData, group: e.target.value })}
+                    required
+                    className="w-full px-4 py-3 rounded-xl border-2 border-purple-200 dark:border-purple-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:border-purple-500 dark:focus:border-purple-400 focus:outline-none transition-colors"
+                  >
+                    <option value="">Choose a group...</option>
+                    {groups.map((group) => (
+                      <option key={group.id} value={group.id}>
+                        {group.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Title */}
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                    Vote Title *
+                  </label>
+                  <input
+                    type="text"
+                    value={createFormData.title}
+                    onChange={(e) => setCreateFormData({ ...createFormData, title: e.target.value })}
+                    required
+                    maxLength={200}
+                    placeholder="e.g., Approve new loan policy"
+                    className="w-full px-4 py-3 rounded-xl border-2 border-purple-200 dark:border-purple-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:border-purple-500 dark:focus:border-purple-400 focus:outline-none transition-colors"
+                  />
+                </div>
+
+                {/* Description */}
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                    Description *
+                  </label>
+                  <textarea
+                    value={createFormData.description}
+                    onChange={(e) => setCreateFormData({ ...createFormData, description: e.target.value })}
+                    required
+                    rows={4}
+                    placeholder="Provide details about what members are voting on..."
+                    className="w-full px-4 py-3 rounded-xl border-2 border-purple-200 dark:border-purple-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:border-purple-500 dark:focus:border-purple-400 focus:outline-none transition-colors resize-none"
+                  />
+                </div>
+
+                {/* Vote Type */}
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                    Vote Type *
+                  </label>
+                  <select
+                    value={createFormData.vote_type}
+                    onChange={(e) => setCreateFormData({ ...createFormData, vote_type: e.target.value as 'SIMPLE' | 'TWO_THIRDS' | 'UNANIMOUS' })}
+                    required
+                    className="w-full px-4 py-3 rounded-xl border-2 border-purple-200 dark:border-purple-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:border-purple-500 dark:focus:border-purple-400 focus:outline-none transition-colors"
+                  >
+                    <option value="SIMPLE">Simple Majority (&gt;50%)</option>
+                    <option value="TWO_THIRDS">Two-Thirds Majority (≥66.67%)</option>
+                    <option value="UNANIMOUS">Unanimous (100%)</option>
+                  </select>
+                </div>
+
+                {/* Date Range */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                      Start Date *
+                    </label>
+                    <input
+                      type="datetime-local"
+                      value={createFormData.start_date}
+                      onChange={(e) => setCreateFormData({ ...createFormData, start_date: e.target.value })}
+                      required
+                      className="w-full px-4 py-3 rounded-xl border-2 border-purple-200 dark:border-purple-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:border-purple-500 dark:focus:border-purple-400 focus:outline-none transition-colors"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                      End Date *
+                    </label>
+                    <input
+                      type="datetime-local"
+                      value={createFormData.end_date}
+                      onChange={(e) => setCreateFormData({ ...createFormData, end_date: e.target.value })}
+                      required
+                      className="w-full px-4 py-3 rounded-xl border-2 border-purple-200 dark:border-purple-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:border-purple-500 dark:focus:border-purple-400 focus:outline-none transition-colors"
+                    />
+                  </div>
+                </div>
+
+                {/* Allow Proxy */}
+                <div className="flex items-center gap-3 p-4 bg-purple-50 dark:bg-purple-900/20 rounded-xl">
+                  <input
+                    type="checkbox"
+                    id="allow_proxy"
+                    checked={createFormData.allow_proxy}
+                    onChange={(e) => setCreateFormData({ ...createFormData, allow_proxy: e.target.checked })}
+                    className="w-5 h-5 text-purple-600 rounded border-2 border-purple-300 focus:ring-2 focus:ring-purple-500"
+                  />
+                  <label htmlFor="allow_proxy" className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                    Allow proxy voting (members can vote on behalf of others)
+                  </label>
+                </div>
+
+                {/* Action Buttons */}
+                <div className="flex gap-3 pt-4">
+                  <motion.button
+                    type="button"
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    onClick={() => setShowCreateModal(false)}
+                    className="flex-1 py-3 rounded-xl border-2 border-purple-300 dark:border-purple-600 text-purple-700 dark:text-purple-300 font-bold hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-all"
+                  >
+                    Cancel
+                  </motion.button>
+                  <motion.button
+                    type="submit"
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    disabled={creatingVote}
+                    className="flex-1 py-3 rounded-xl bg-gradient-to-r from-purple-600 to-fuchsia-600 text-white font-bold hover:from-purple-700 hover:to-fuchsia-700 transition-all shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                  >
+                    {creatingVote ? (
+                      <>
+                        <motion.div
+                          animate={{ rotate: 360 }}
+                          transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                          className="w-5 h-5 border-2 border-white border-t-transparent rounded-full"
+                        />
+                        Creating...
+                      </>
+                    ) : (
+                      <>
+                        <Plus className="h-5 w-5" />
+                        Create Vote
+                      </>
+                    )}
+                  </motion.button>
+                </div>
+              </form>
             </motion.div>
           </motion.div>
         )}
