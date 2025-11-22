@@ -14,6 +14,8 @@ import {
   Activity,
   Target,
   PieChart,
+  Calendar,
+  CheckCircle2,
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/card';
 import { StatsCard } from '../../components/StatsCard';
@@ -56,12 +58,24 @@ interface Transaction {
   user_name: string;
 }
 
+interface GroupGoal {
+  id: number;
+  title: string;
+  description: string;
+  target_amount: number;
+  current_amount: number;
+  target_date: string;
+  status: string;
+  progress_percentage?: number;
+}
+
 export function GroupDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [group, setGroup] = useState<GroupDetail | null>(null);
   const [members, setMembers] = useState<Member[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [goals, setGoals] = useState<GroupGoal[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -132,6 +146,24 @@ export function GroupDetailPage() {
         }
       } catch (err) {
         console.error('Failed to fetch loans:', err);
+      }
+      
+      // Fetch group goals
+      try {
+        const goalsRes = await api.get(`/groups/goals/?group=${id}`);
+        const goalsData = goalsRes.data.results || goalsRes.data;
+        if (Array.isArray(goalsData)) {
+          // Calculate progress percentage for each goal
+          const goalsWithProgress = goalsData.map((goal: GroupGoal) => ({
+            ...goal,
+            progress_percentage: goal.target_amount > 0 
+              ? Math.min((Number(goal.current_amount) / Number(goal.target_amount)) * 100, 100)
+              : 0
+          }));
+          setGoals(goalsWithProgress);
+        }
+      } catch (err) {
+        console.error('Failed to fetch goals:', err);
       }
       
       setGroup(dashboardData);
@@ -453,6 +485,100 @@ export function GroupDetailPage() {
             </Card>
           </motion.div>
         </div>
+
+        {/* Group Goals Section */}
+        {goals.length > 0 && (
+          <motion.div
+            variants={containerVariants}
+            initial="hidden"
+            animate="visible"
+            className="mt-8"
+          >
+            <Card className="shadow-lg">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-2xl">
+                  <Target className="h-6 w-6 text-primary" />
+                  Group Goals
+                </CardTitle>
+                <CardDescription>Track progress towards financial objectives</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-6">
+                  {goals.map((goal, index) => (
+                    <motion.div
+                      key={goal.id}
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: index * 0.1 }}
+                      className="p-6 rounded-lg bg-gradient-to-br from-primary/5 to-secondary/5 border border-border"
+                    >
+                      <div className="flex items-start justify-between mb-4">
+                        <div className="flex-1">
+                          <h3 className="text-lg font-semibold mb-2 flex items-center gap-2">
+                            {goal.title}
+                            {goal.status === 'ACHIEVED' && (
+                              <CheckCircle2 className="h-5 w-5 text-green-600" />
+                            )}
+                          </h3>
+                          <p className="text-sm text-muted-foreground mb-3">{goal.description}</p>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-sm text-muted-foreground">Target Date</p>
+                          <p className="text-sm font-semibold flex items-center gap-1">
+                            <Calendar className="h-4 w-4" />
+                            {new Date(goal.target_date).toLocaleDateString()}
+                          </p>
+                        </div>
+                      </div>
+                      
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between text-sm">
+                          <span className="text-muted-foreground">Progress</span>
+                          <span className="font-semibold">
+                            {goal.progress_percentage?.toFixed(1)}%
+                          </span>
+                        </div>
+                        
+                        {/* Progress bar */}
+                        <div className="w-full bg-secondary rounded-full h-3 overflow-hidden">
+                          <motion.div
+                            initial={{ width: 0 }}
+                            animate={{ width: `${goal.progress_percentage}%` }}
+                            transition={{ duration: 1, delay: index * 0.1 }}
+                            className={`h-full rounded-full ${
+                              goal.status === 'ACHIEVED'
+                                ? 'bg-green-600'
+                                : goal.progress_percentage! >= 75
+                                ? 'bg-blue-600'
+                                : goal.progress_percentage! >= 50
+                                ? 'bg-yellow-600'
+                                : 'bg-orange-600'
+                            }`}
+                          />
+                        </div>
+                        
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="text-xs text-muted-foreground">Current Amount</p>
+                            <p className="text-lg font-bold text-primary">
+                              KES {Number(goal.current_amount).toLocaleString()}
+                            </p>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-xs text-muted-foreground">Target Amount</p>
+                            <p className="text-lg font-bold">
+                              KES {Number(goal.target_amount).toLocaleString()}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    </motion.div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
+        )}
       </div>
     </div>
   );
