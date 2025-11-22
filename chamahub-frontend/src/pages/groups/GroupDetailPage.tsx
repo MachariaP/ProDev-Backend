@@ -64,7 +64,7 @@ interface GroupGoal {
   description: string;
   target_amount: number;
   current_amount: number;
-  target_date: string;
+  deadline: string;
   status: string;
   progress_percentage?: number;
 }
@@ -526,7 +526,7 @@ export function GroupDetailPage() {
                           <p className="text-sm text-muted-foreground">Target Date</p>
                           <p className="text-sm font-semibold flex items-center gap-1">
                             <Calendar className="h-4 w-4" />
-                            {new Date(goal.target_date).toLocaleDateString()}
+                            {new Date(goal.deadline).toLocaleDateString()}
                           </p>
                         </div>
                       </div>
@@ -535,7 +535,7 @@ export function GroupDetailPage() {
                         <div className="flex items-center justify-between text-sm">
                           <span className="text-muted-foreground">Progress</span>
                           <span className="font-semibold">
-                            {goal.progress_percentage?.toFixed(1)}%
+                            {(goal.progress_percentage ?? 0).toFixed(1)}%
                           </span>
                         </div>
                         
@@ -543,14 +543,14 @@ export function GroupDetailPage() {
                         <div className="w-full bg-secondary rounded-full h-3 overflow-hidden">
                           <motion.div
                             initial={{ width: 0 }}
-                            animate={{ width: `${goal.progress_percentage}%` }}
+                            animate={{ width: `${goal.progress_percentage ?? 0}%` }}
                             transition={{ duration: 1, delay: index * 0.1 }}
                             className={`h-full rounded-full ${
                               goal.status === 'ACHIEVED'
                                 ? 'bg-green-600'
-                                : goal.progress_percentage! >= 75
+                                : (goal.progress_percentage ?? 0) >= 75
                                 ? 'bg-blue-600'
-                                : goal.progress_percentage! >= 50
+                                : (goal.progress_percentage ?? 0) >= 50
                                 ? 'bg-yellow-600'
                                 : 'bg-orange-600'
                             }`}
