@@ -61,11 +61,14 @@ export function MemberManagementPage() {
 
   const fetchMembers = async () => {
     try {
+      setLoading(true);
+      setError('');
       const response = await api.get(`/groups/memberships/?group=${id}`);
-      setMembers(response.data.results || response.data);
+      const membersData = response.data.results || response.data;
+      setMembers(Array.isArray(membersData) ? membersData : []);
     } catch (err) {
       setError('Failed to load members');
-      console.error(err);
+      console.error('Members fetch error:', err);
     } finally {
       setLoading(false);
     }

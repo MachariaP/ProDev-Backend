@@ -158,7 +158,7 @@ export function GroupsListPage() {
                 transition={{ delay: index * 0.1 }}
               >
                 <Card
-                  className="shadow-lg hover:shadow-2xl transition-all cursor-pointer group"
+                  className="shadow-lg hover:shadow-2xl transition-all cursor-pointer group border-2 hover:border-primary/50 bg-gradient-to-br from-card to-card/95"
                   onClick={() => navigate(`/groups/${group.id}`)}
                 >
                   <CardHeader>
