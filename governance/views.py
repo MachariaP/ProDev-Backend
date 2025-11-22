@@ -1,9 +1,11 @@
 from rest_framework import viewsets, permissions, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
+from rest_framework.exceptions import ValidationError
 from django_filters.rest_framework import DjangoFilterBackend
 from django.utils import timezone
 from django.db import transaction
+from groups.models import GroupMembership
 from .models import (
     GroupConstitution, Fine, Vote, VoteBallot,
     Document, ComplianceRecord
@@ -56,13 +58,46 @@ class VoteViewSet(viewsets.ModelViewSet):
         """Set created_by to current user and calculate total eligible voters."""
         vote = serializer.save(created_by=self.request.user)
         # Set total eligible voters to the number of active members in the group
-        from groups.models import GroupMembership
         eligible_voters = GroupMembership.objects.filter(
             group=vote.group,
             status='ACTIVE'
         ).count()
         vote.total_eligible_voters = eligible_voters
         vote.save()
+    
+    def _validate_vote_eligibility(self, vote, user):
+        """Validate if user is eligible to vote."""
+        # Validate vote is active
+        if vote.status != 'ACTIVE':
+            return False, 'This vote is not active'
+        
+        # Validate voting period
+        now = timezone.now()
+        if now < vote.start_date:
+            return False, 'Voting has not started yet'
+        if now > vote.end_date:
+            return False, 'Voting period has ended'
+        
+        # Check if user is a member of the group
+        membership = GroupMembership.objects.filter(
+            group=vote.group,
+            user=user,
+            status='ACTIVE'
+        ).first()
+        
+        if not membership:
+            return False, 'You must be an active member to vote'
+        
+        # Check if user has already voted
+        existing_ballot = VoteBallot.objects.filter(
+            vote=vote,
+            voter=user
+        ).first()
+        
+        if existing_ballot:
+            return False, 'You have already voted on this item'
+        
+        return True, None
     
     @action(detail=True, methods=['post'])
     def activate(self, request, pk=None):
@@ -103,50 +138,12 @@ class VoteViewSet(viewsets.ModelViewSet):
         """Cast a vote on this voting item."""
         vote = self.get_object()
         
-        # Validate vote is active
-        if vote.status != 'ACTIVE':
+        # Validate eligibility
+        is_valid, error_message = self._validate_vote_eligibility(vote, request.user)
+        if not is_valid:
             return Response(
-                {'error': 'This vote is not active'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-        
-        # Validate voting period
-        now = timezone.now()
-        if now < vote.start_date:
-            return Response(
-                {'error': 'Voting has not started yet'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-        if now > vote.end_date:
-            return Response(
-                {'error': 'Voting period has ended'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-        
-        # Check if user is a member of the group
-        from groups.models import GroupMembership
-        membership = GroupMembership.objects.filter(
-            group=vote.group,
-            user=request.user,
-            status='ACTIVE'
-        ).first()
-        
-        if not membership:
-            return Response(
-                {'error': 'You must be an active member to vote'},
-                status=status.HTTP_403_FORBIDDEN
-            )
-        
-        # Check if user has already voted
-        existing_ballot = VoteBallot.objects.filter(
-            vote=vote,
-            voter=request.user
-        ).first()
-        
-        if existing_ballot:
-            return Response(
-                {'error': 'You have already voted on this item'},
-                status=status.HTTP_400_BAD_REQUEST
+                {'error': error_message},
+                status=status.HTTP_400_BAD_REQUEST if 'not active' in error_message or 'already voted' in error_message else status.HTTP_403_FORBIDDEN
             )
         
         # Get choice from request
@@ -210,16 +207,13 @@ class VoteBallotViewSet(viewsets.ModelViewSet):
         
         # Validate vote is active
         if vote.status != 'ACTIVE':
-            from rest_framework.exceptions import ValidationError
             raise ValidationError('This vote is not active')
         
         # Validate voting period
         now = timezone.now()
         if now < vote.start_date:
-            from rest_framework.exceptions import ValidationError
             raise ValidationError('Voting has not started yet')
         if now > vote.end_date:
-            from rest_framework.exceptions import ValidationError
             raise ValidationError('Voting period has ended')
         
         # Check if user has already voted
@@ -229,7 +223,6 @@ class VoteBallotViewSet(viewsets.ModelViewSet):
         ).first()
         
         if existing_ballot:
-            from rest_framework.exceptions import ValidationError
             raise ValidationError('You have already voted on this item')
         
         # Create ballot and update vote counts atomically

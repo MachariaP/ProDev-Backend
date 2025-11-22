@@ -6,17 +6,32 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../..
 import { governanceService } from '../../services/apiService';
 import type { Vote } from '../../types/api';
 
+interface ToastMessage {
+  type: 'success' | 'error';
+  message: string;
+}
+
 export function VotingPage() {
   const [votes, setVotes] = useState<Vote[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedVote, setSelectedVote] = useState<Vote | null>(null);
   const [castingVote, setCastingVote] = useState(false);
   const [showVoteModal, setShowVoteModal] = useState(false);
+  const [toast, setToast] = useState<ToastMessage | null>(null);
   const navigate = useNavigate();
 
   useEffect(() => {
     fetchVotes();
   }, []);
+
+  useEffect(() => {
+    if (toast) {
+      const timer = setTimeout(() => {
+        setToast(null);
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [toast]);
 
   const fetchVotes = async () => {
     try {
@@ -29,6 +44,10 @@ export function VotingPage() {
     }
   };
 
+  const showToast = (type: 'success' | 'error', message: string) => {
+    setToast({ type, message });
+  };
+
   const handleCastVote = async (voteId: number, choice: 'YES' | 'NO' | 'ABSTAIN') => {
     setCastingVote(true);
     try {
@@ -37,11 +56,10 @@ export function VotingPage() {
       await fetchVotes();
       setShowVoteModal(false);
       setSelectedVote(null);
-      // Show success message
-      alert('Vote cast successfully!');
+      showToast('success', 'Vote cast successfully!');
     } catch (err: any) {
       const errorMessage = err.response?.data?.error || 'Failed to cast vote';
-      alert(errorMessage);
+      showToast('error', errorMessage);
     } finally {
       setCastingVote(false);
     }
@@ -229,6 +247,29 @@ export function VotingPage() {
           </div>
         )}
       </motion.div>
+
+      {/* Toast Notification */}
+      <AnimatePresence>
+        {toast && (
+          <motion.div
+            initial={{ opacity: 0, y: 50 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 50 }}
+            className="fixed bottom-4 right-4 z-50"
+          >
+            <div className={`px-6 py-4 rounded-lg shadow-lg ${
+              toast.type === 'success' ? 'bg-green-600' : 'bg-red-600'
+            } text-white flex items-center gap-3 min-w-[300px]`}>
+              {toast.type === 'success' ? (
+                <CheckCircle className="h-5 w-5" />
+              ) : (
+                <XCircle className="h-5 w-5" />
+              )}
+              <span className="font-medium">{toast.message}</span>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Vote Modal */}
       <AnimatePresence>
