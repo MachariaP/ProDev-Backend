@@ -21,6 +21,7 @@ import { GroupDetailPage } from './pages/groups/GroupDetailPage';
 import { MemberManagementPage } from './pages/groups/MemberManagementPage';
 // Financial pages
 import { ContributionsPage } from './pages/financial/ContributionsPage';
+import { NewContributionPage } from './pages/financial/NewContributionPage';
 import { ExpensesPage } from './pages/financial/ExpensesPage';
 import { LoansPage } from './pages/financial/LoansPage';
 import { LoanApplicationPage } from './pages/financial/LoanApplicationPage';
@@ -137,6 +138,10 @@ function App() {
         <Route
           path="/contributions"
           element={<AuthenticatedRoute><ContributionsPage /></AuthenticatedRoute>}
+        />
+        <Route
+          path="/contributions/new"
+          element={<AuthenticatedRoute><NewContributionPage /></AuthenticatedRoute>}
         />
         <Route
           path="/transactions"

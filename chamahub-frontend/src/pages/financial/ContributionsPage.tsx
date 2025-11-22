@@ -3,31 +3,31 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { 
   ArrowLeft, Plus, DollarSign, CheckCircle, AlertCircle, XCircle, 
-  Download, Filter, Search, TrendingUp, Users, Calendar, Eye, MoreHorizontal,
-  Sparkles, Crown, Zap, BarChart3, RefreshCw, Clock, User, CreditCard,
-  Shield, Target, PiggyBank, ArrowUpRight, ArrowDownLeft
+  Download, Search, TrendingUp, Users, Calendar, Eye, MoreHorizontal,
+  Sparkles, RefreshCw, Clock, User, CreditCard,
+  Shield
 } from 'lucide-react';
 
 // Simple card components as fallback
-const Card = ({ children, className = '' }) => (
+const Card = ({ children, className = '' }: { children: React.ReactNode; className?: string }) => (
   <div className={`bg-white rounded-2xl border border-gray-200 shadow-sm ${className}`}>
     {children}
   </div>
 );
 
-const CardHeader = ({ children, className = '' }) => (
+const CardHeader = ({ children, className = '' }: { children: React.ReactNode; className?: string }) => (
   <div className={`p-6 pb-4 ${className}`}>{children}</div>
 );
 
-const CardTitle = ({ children, className = '' }) => (
+const CardTitle = ({ children, className = '' }: { children: React.ReactNode; className?: string }) => (
   <h3 className={`text-lg font-semibold ${className}`}>{children}</h3>
 );
 
-const CardDescription = ({ children, className = '' }) => (
+const CardDescription = ({ children, className = '' }: { children: React.ReactNode; className?: string }) => (
   <p className={`text-sm text-gray-600 mt-1 ${className}`}>{children}</p>
 );
 
-const CardContent = ({ children, className = '' }) => (
+const CardContent = ({ children, className = '' }: { children: React.ReactNode; className?: string }) => (
   <div className={`p-6 ${className}`}>{children}</div>
 );
 
@@ -91,14 +91,14 @@ const financeService = {
 
 // Mock API
 const api = {
-  post: async (url: string) => {
+  post: async (_url: string) => {
     // Simulate API call
     return new Promise(resolve => setTimeout(resolve, 1000));
   }
 };
 
 // Floating Background Elements
-const FloatingElement = ({ children, delay = 0 }) => (
+const FloatingElement = ({ children, delay = 0 }: { children: React.ReactNode; delay?: number }) => (
   <motion.div
     initial={{ y: 0 }}
     animate={{ 
@@ -214,6 +214,8 @@ export function ContributionsPage() {
   const [reconciling, setReconciling] = useState<number | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState<string>('ALL');
+  const [exporting, setExporting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
 
   useEffect(() => { 
@@ -229,8 +231,9 @@ export function ContributionsPage() {
       setContributions(response.results || []);
     } catch (err) { 
       console.error(err);
-      // Fallback to mock data
-      setContributions(financeService.getContributions().then(res => res.results));
+      // Fallback to mock data - use the mock service directly
+      const mockResponse = await financeService.getContributions();
+      setContributions(mockResponse.results || []);
     } finally { 
       setLoading(false); 
     }
@@ -245,6 +248,51 @@ export function ContributionsPage() {
       console.error(err); 
     } finally { 
       setReconciling(null); 
+    }
+  };
+
+  const handleExport = async () => {
+    setExporting(true);
+    setError(null);
+    try {
+      // Build query parameters based on current filters
+      const params = new URLSearchParams();
+      if (filterStatus !== 'ALL') {
+        params.append('status', filterStatus);
+      }
+      
+      // Get base URL from the api configuration
+      const baseURL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1';
+      const token = localStorage.getItem('access_token');
+      
+      // Make API call to export endpoint
+      const response = await fetch(`${baseURL}/finance/contributions/export/?${params.toString()}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error('Export failed');
+      }
+      
+      // Create blob from response
+      const blob = await response.blob();
+      
+      // Create download link
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `contributions_${new Date().toISOString().split('T')[0]}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    } catch (err) {
+      console.error('Error exporting contributions:', err);
+      setError('Failed to export contributions. Please try again.');
+    } finally {
+      setExporting(false);
     }
   };
 
@@ -354,10 +402,12 @@ export function ContributionsPage() {
             <motion.button 
               whileHover={{ scale: 1.05, y: -2 }}
               whileTap={{ scale: 0.95 }}
-              className="flex items-center gap-2 px-5 py-3 bg-white text-gray-700 font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all border border-gray-200 hover:border-green-300"
+              onClick={handleExport}
+              disabled={exporting}
+              className="flex items-center gap-2 px-5 py-3 bg-white text-gray-700 font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all border border-gray-200 hover:border-green-300 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <Download className="h-4 w-4" />
-              Export Report
+              <Download className={`h-4 w-4 ${exporting ? 'animate-bounce' : ''}`} />
+              {exporting ? 'Exporting...' : 'Export Report'}
             </motion.button>
             <motion.button 
               whileHover={{ scale: 1.05, y: -2 }}
@@ -370,6 +420,27 @@ export function ContributionsPage() {
             </motion.button>
           </motion.div>
         </motion.div>
+
+        {/* Error Message */}
+        {error && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="p-4 rounded-xl bg-red-50 border border-red-200 flex items-start gap-3"
+          >
+            <AlertCircle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
+            <div className="flex-1">
+              <p className="font-semibold text-red-900">Error</p>
+              <p className="text-sm text-red-700">{error}</p>
+            </div>
+            <button
+              onClick={() => setError(null)}
+              className="text-red-600 hover:text-red-800 transition-colors"
+            >
+              <XCircle className="h-5 w-5" />
+            </button>
+          </motion.div>
+        )}
 
         {/* Enhanced Stats Section */}
         <motion.div 
