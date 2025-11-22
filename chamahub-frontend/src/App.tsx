@@ -26,6 +26,7 @@ import { LoansPage } from './pages/financial/LoansPage';
 import { LoanApplicationPage } from './pages/financial/LoanApplicationPage';
 import { InvestmentsPage } from './pages/financial/InvestmentsPage';
 import { InvestmentPortfolioPage } from './pages/financial/InvestmentPortfolioPage';
+import { NewInvestmentPage } from './pages/financial/NewInvestmentPage';
 import { TransactionHistoryPage } from './pages/financial/TransactionHistoryPage';
 // Tools pages
 import { VotingPage } from './pages/tools/VotingPage';
@@ -159,6 +160,10 @@ function App() {
         <Route
           path="/investments"
           element={<AuthenticatedRoute><InvestmentsPage /></AuthenticatedRoute>}
+        />
+        <Route
+          path="/investments/new"
+          element={<AuthenticatedRoute><NewInvestmentPage /></AuthenticatedRoute>}
         />
         <Route
           path="/investments/portfolio"
