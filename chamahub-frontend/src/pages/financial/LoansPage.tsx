@@ -53,7 +53,7 @@ export function LoansPage() {
   const filteredLoans = loans.filter(loan => {
     const matchesSearch = loan.borrower_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          loan.purpose?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         loan.id?.toLowerCase().includes(searchTerm.toLowerCase());
+                         loan.id?.toString().toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = statusFilter === 'ALL' || loan.status === statusFilter;
     return matchesSearch && matchesStatus;
   });

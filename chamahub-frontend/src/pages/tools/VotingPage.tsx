@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Plus, Vote as VoteIcon, CheckCircle, XCircle, Clock, Users, TrendingUp } from 'lucide-react';
+import { ArrowLeft, Plus, Vote as VoteIcon, CheckCircle, XCircle, Clock, Users, TrendingUp, Award, BarChart3, Sparkles } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/card';
 import { governanceService } from '../../services/apiService';
 import type { Vote } from '../../types/api';
@@ -73,13 +73,13 @@ export function VotingPage() {
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'ACTIVE':
-        return 'bg-green-100 text-green-700';
+        return 'bg-gradient-to-r from-green-400 to-emerald-500 text-white shadow-lg';
       case 'CLOSED':
-        return 'bg-gray-100 text-gray-700';
+        return 'bg-gradient-to-r from-gray-400 to-gray-500 text-white shadow-lg';
       case 'DRAFT':
-        return 'bg-yellow-100 text-yellow-700';
+        return 'bg-gradient-to-r from-yellow-400 to-amber-500 text-white shadow-lg';
       default:
-        return 'bg-gray-100 text-gray-700';
+        return 'bg-gradient-to-r from-gray-400 to-gray-500 text-white shadow-lg';
     }
   };
 
@@ -94,136 +94,297 @@ export function VotingPage() {
     return Math.round((count / total) * 100);
   };
 
+  const calculateParticipationPercentage = (votesList: Vote[]) => {
+    if (votesList.length === 0) return 0;
+    
+    const { totalVotesCast, totalEligibleVoters } = votesList.reduce(
+      (acc, vote) => ({
+        totalVotesCast: acc.totalVotesCast + (vote.total_votes_cast || 0),
+        totalEligibleVoters: acc.totalEligibleVoters + (vote.total_eligible_voters || 1),
+      }),
+      { totalVotesCast: 0, totalEligibleVoters: 0 }
+    );
+    
+    return totalEligibleVoters > 0 
+      ? Math.round((totalVotesCast / totalEligibleVoters) * 100)
+      : 0;
+  };
+
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/10 via-background to-secondary/10">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-violet-50 via-purple-50 to-fuchsia-50 dark:from-gray-900 dark:via-purple-900/20 dark:to-fuchsia-900/20">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
-          <p className="mt-4 text-muted-foreground">Loading votes...</p>
+          <motion.div
+            animate={{ rotate: 360 }}
+            transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+            className="rounded-full h-16 w-16 border-4 border-t-purple-600 border-r-fuchsia-600 border-b-violet-600 border-l-transparent mx-auto"
+          />
+          <motion.p
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.2 }}
+            className="mt-6 text-lg font-medium bg-gradient-to-r from-purple-600 to-fuchsia-600 bg-clip-text text-transparent"
+          >
+            Loading votes...
+          </motion.p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary/10 via-background to-secondary/10 p-6">
+    <div className="min-h-screen bg-gradient-to-br from-violet-50 via-purple-50 to-fuchsia-50 dark:from-gray-900 dark:via-purple-900/20 dark:to-fuchsia-900/20 p-6">
+      {/* Decorative background elements */}
+      <div className="fixed inset-0 overflow-hidden pointer-events-none">
+        <motion.div
+          animate={{
+            scale: [1, 1.2, 1],
+            rotate: [0, 90, 0],
+          }}
+          transition={{
+            duration: 20,
+            repeat: Infinity,
+            ease: "linear",
+          }}
+          className="absolute -top-40 -right-40 w-80 h-80 bg-gradient-to-br from-purple-400/20 to-fuchsia-400/20 rounded-full blur-3xl"
+        />
+        <motion.div
+          animate={{
+            scale: [1, 1.3, 1],
+            rotate: [0, -90, 0],
+          }}
+          transition={{
+            duration: 15,
+            repeat: Infinity,
+            ease: "linear",
+          }}
+          className="absolute -bottom-40 -left-40 w-80 h-80 bg-gradient-to-tr from-violet-400/20 to-purple-400/20 rounded-full blur-3xl"
+        />
+      </div>
+
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="max-w-7xl mx-auto space-y-6"
+        className="max-w-7xl mx-auto space-y-6 relative z-10"
       >
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
             <motion.button
-              whileHover={{ scale: 1.05 }}
+              whileHover={{ scale: 1.05, x: -5 }}
               whileTap={{ scale: 0.95 }}
               onClick={() => navigate('/dashboard')}
-              className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
+              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm shadow-lg hover:shadow-xl transition-all text-gray-700 dark:text-gray-200 border border-purple-100 dark:border-purple-800"
             >
               <ArrowLeft className="h-5 w-5" />
-              Back
+              <span className="font-medium">Back</span>
             </motion.button>
             <div>
-              <h1 className="text-4xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
+              <motion.h1
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                className="text-5xl font-bold bg-gradient-to-r from-purple-600 via-fuchsia-600 to-violet-600 bg-clip-text text-transparent flex items-center gap-3"
+              >
+                <Sparkles className="h-10 w-10 text-purple-600 animate-pulse" />
                 Voting & Polls
-              </h1>
-              <p className="text-muted-foreground mt-2">Participate in group decisions</p>
+              </motion.h1>
+              <motion.p
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.2 }}
+                className="text-gray-600 dark:text-gray-300 mt-2 text-lg font-medium"
+              >
+                Participate in group decisions and shape the future together
+              </motion.p>
             </div>
           </div>
           <motion.button
-            whileHover={{ scale: 1.05 }}
+            whileHover={{ scale: 1.05, rotate: 5 }}
             whileTap={{ scale: 0.95 }}
-            className="flex items-center gap-2 px-6 py-3 rounded-lg bg-primary text-primary-foreground font-semibold hover:bg-primary/90 transition-colors"
+            className="flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-purple-600 to-fuchsia-600 text-white font-semibold shadow-lg hover:shadow-2xl transition-all border border-purple-400"
           >
             <Plus className="h-5 w-5" />
             Create Vote
           </motion.button>
         </div>
 
-        {votes.length === 0 ? (
-          <Card className="shadow-2xl">
-            <CardContent className="py-16 text-center">
-              <VoteIcon className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
-              <h3 className="text-xl font-semibold mb-2">No Active Votes</h3>
-              <p className="text-muted-foreground">Create a vote to make group decisions</p>
+        {/* Stats Overview */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+          className="grid grid-cols-1 md:grid-cols-3 gap-4"
+        >
+          <Card className="bg-gradient-to-br from-purple-500 to-purple-600 text-white border-0 shadow-lg hover:shadow-xl transition-shadow">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-purple-100 text-sm font-medium">Total Votes</p>
+                  <p className="text-3xl font-bold mt-1">{votes.length}</p>
+                </div>
+                <BarChart3 className="h-12 w-12 text-purple-200" />
+              </div>
             </CardContent>
           </Card>
+          <Card className="bg-gradient-to-br from-fuchsia-500 to-fuchsia-600 text-white border-0 shadow-lg hover:shadow-xl transition-shadow">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-fuchsia-100 text-sm font-medium">Active Votes</p>
+                  <p className="text-3xl font-bold mt-1">
+                    {votes.filter(v => v.status === 'ACTIVE').length}
+                  </p>
+                </div>
+                <Award className="h-12 w-12 text-fuchsia-200" />
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="bg-gradient-to-br from-violet-500 to-violet-600 text-white border-0 shadow-lg hover:shadow-xl transition-shadow">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-violet-100 text-sm font-medium">Participation</p>
+                  <p className="text-3xl font-bold mt-1">
+                    {calculateParticipationPercentage(votes)}%
+                  </p>
+                </div>
+                <Users className="h-12 w-12 text-violet-200" />
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
+
+        {votes.length === 0 ? (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 0.2 }}
+          >
+            <Card className="shadow-2xl bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border-purple-100 dark:border-purple-800">
+              <CardContent className="py-20 text-center">
+                <motion.div
+                  animate={{
+                    scale: [1, 1.1, 1],
+                  }}
+                  transition={{
+                    duration: 2,
+                    repeat: Infinity,
+                    ease: "easeInOut",
+                  }}
+                >
+                  <VoteIcon className="h-20 w-20 mx-auto text-purple-400 mb-6" />
+                </motion.div>
+                <h3 className="text-2xl font-bold mb-3 bg-gradient-to-r from-purple-600 to-fuchsia-600 bg-clip-text text-transparent">
+                  No Active Votes
+                </h3>
+                <p className="text-gray-600 dark:text-gray-300 text-lg">
+                  Create a vote to make group decisions and engage members
+                </p>
+              </CardContent>
+            </Card>
+          </motion.div>
         ) : (
-          <div className="grid gap-6 md:grid-cols-2">
-            {votes.map((vote) => (
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-2">
+            {votes.map((vote, index) => (
               <motion.div
                 key={vote.id}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.1 }}
+                whileHover={{ scale: 1.02, y: -5 }}
               >
-                <Card className="shadow-lg hover:shadow-2xl transition-all">
+                <Card className="shadow-xl hover:shadow-2xl transition-all bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm border-purple-100 dark:border-purple-800 overflow-hidden group">
+                  {/* Gradient top border */}
+                  <div className="h-2 bg-gradient-to-r from-purple-500 via-fuchsia-500 to-violet-500"></div>
+                  
                   <CardHeader>
                     <div className="flex items-start justify-between">
-                      <CardTitle className="text-xl">{vote.title}</CardTitle>
-                      <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(vote.status)}`}>
+                      <CardTitle className="text-xl font-bold text-gray-800 dark:text-white group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors">
+                        {vote.title}
+                      </CardTitle>
+                      <motion.span
+                        whileHover={{ scale: 1.1 }}
+                        className={`px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wide shadow-md ${getStatusColor(vote.status)}`}
+                      >
                         {vote.status}
-                      </span>
+                      </motion.span>
                     </div>
-                    <CardDescription className="mt-2">{vote.description}</CardDescription>
+                    <CardDescription className="mt-3 text-gray-600 dark:text-gray-300 text-base">
+                      {vote.description}
+                    </CardDescription>
                   </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="flex items-center justify-between text-sm">
-                      <div className="flex items-center gap-2 text-muted-foreground">
-                        <Clock className="h-4 w-4" />
-                        <span>Type: {vote.vote_type.toLowerCase().replace('_', ' ')}</span>
+                  <CardContent className="space-y-5">
+                    <div className="flex items-center justify-between text-sm bg-gradient-to-r from-purple-50 to-fuchsia-50 dark:from-purple-900/20 dark:to-fuchsia-900/20 p-3 rounded-lg">
+                      <div className="flex items-center gap-2 text-gray-700 dark:text-gray-300 font-medium">
+                        <Clock className="h-4 w-4 text-purple-600" />
+                        <span>{vote.vote_type.toLowerCase().replace('_', ' ')}</span>
                       </div>
-                      <div className="flex items-center gap-2 text-muted-foreground">
-                        <Users className="h-4 w-4" />
+                      <div className="flex items-center gap-2 text-gray-700 dark:text-gray-300 font-medium">
+                        <Users className="h-4 w-4 text-fuchsia-600" />
                         <span>{vote.total_votes_cast || 0}/{vote.total_eligible_voters || 0}</span>
                       </div>
                     </div>
                     
-                    <div className="space-y-2">
-                      <div className="space-y-1">
+                    <div className="space-y-3">
+                      {/* YES votes */}
+                      <div className="space-y-2">
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-2">
-                            <CheckCircle className="h-4 w-4 text-green-600" />
-                            <span className="text-sm">Yes</span>
+                            <CheckCircle className="h-5 w-5 text-green-600" />
+                            <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">Yes</span>
                           </div>
-                          <span className="font-semibold">{vote.yes_votes || 0} ({getVotePercentage(vote, 'yes')}%)</span>
+                          <span className="font-bold text-green-600 text-lg">
+                            {vote.yes_votes || 0} ({getVotePercentage(vote, 'yes')}%)
+                          </span>
                         </div>
-                        <div className="w-full bg-gray-200 rounded-full h-2">
-                          <div 
-                            className="bg-green-600 h-2 rounded-full transition-all duration-300"
-                            style={{ width: `${getVotePercentage(vote, 'yes')}%` }}
+                        <div className="relative w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3 overflow-hidden shadow-inner">
+                          <motion.div 
+                            initial={{ width: 0 }}
+                            animate={{ width: `${getVotePercentage(vote, 'yes')}%` }}
+                            transition={{ duration: 1, ease: "easeOut" }}
+                            className="bg-gradient-to-r from-green-500 to-green-600 h-3 rounded-full shadow-lg"
                           />
                         </div>
                       </div>
                       
-                      <div className="space-y-1">
+                      {/* NO votes */}
+                      <div className="space-y-2">
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-2">
-                            <XCircle className="h-4 w-4 text-red-600" />
-                            <span className="text-sm">No</span>
+                            <XCircle className="h-5 w-5 text-red-600" />
+                            <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">No</span>
                           </div>
-                          <span className="font-semibold">{vote.no_votes || 0} ({getVotePercentage(vote, 'no')}%)</span>
+                          <span className="font-bold text-red-600 text-lg">
+                            {vote.no_votes || 0} ({getVotePercentage(vote, 'no')}%)
+                          </span>
                         </div>
-                        <div className="w-full bg-gray-200 rounded-full h-2">
-                          <div 
-                            className="bg-red-600 h-2 rounded-full transition-all duration-300"
-                            style={{ width: `${getVotePercentage(vote, 'no')}%` }}
+                        <div className="relative w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3 overflow-hidden shadow-inner">
+                          <motion.div 
+                            initial={{ width: 0 }}
+                            animate={{ width: `${getVotePercentage(vote, 'no')}%` }}
+                            transition={{ duration: 1, ease: "easeOut", delay: 0.1 }}
+                            className="bg-gradient-to-r from-red-500 to-red-600 h-3 rounded-full shadow-lg"
                           />
                         </div>
                       </div>
                       
+                      {/* ABSTAIN votes */}
                       {(vote.abstain_votes || 0) > 0 && (
-                        <div className="space-y-1">
+                        <div className="space-y-2">
                           <div className="flex items-center justify-between">
                             <div className="flex items-center gap-2">
-                              <TrendingUp className="h-4 w-4 text-gray-600" />
-                              <span className="text-sm">Abstain</span>
+                              <TrendingUp className="h-5 w-5 text-gray-600" />
+                              <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">Abstain</span>
                             </div>
-                            <span className="font-semibold">{vote.abstain_votes || 0} ({getVotePercentage(vote, 'abstain')}%)</span>
+                            <span className="font-bold text-gray-600 text-lg">
+                              {vote.abstain_votes || 0} ({getVotePercentage(vote, 'abstain')}%)
+                            </span>
                           </div>
-                          <div className="w-full bg-gray-200 rounded-full h-2">
-                            <div 
-                              className="bg-gray-600 h-2 rounded-full transition-all duration-300"
-                              style={{ width: `${getVotePercentage(vote, 'abstain')}%` }}
+                          <div className="relative w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3 overflow-hidden shadow-inner">
+                            <motion.div 
+                              initial={{ width: 0 }}
+                              animate={{ width: `${getVotePercentage(vote, 'abstain')}%` }}
+                              transition={{ duration: 1, ease: "easeOut", delay: 0.2 }}
+                              className="bg-gradient-to-r from-gray-500 to-gray-600 h-3 rounded-full shadow-lg"
                             />
                           </div>
                         </div>
@@ -232,11 +393,12 @@ export function VotingPage() {
                     
                     {vote.status === 'ACTIVE' && (
                       <motion.button
-                        whileHover={{ scale: 1.02 }}
-                        whileTap={{ scale: 0.98 }}
+                        whileHover={{ scale: 1.03 }}
+                        whileTap={{ scale: 0.97 }}
                         onClick={() => openVoteModal(vote)}
-                        className="w-full py-2 rounded-lg bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-colors"
+                        className="w-full py-3 rounded-xl bg-gradient-to-r from-purple-600 to-fuchsia-600 text-white font-bold text-lg hover:from-purple-700 hover:to-fuchsia-700 transition-all shadow-lg hover:shadow-xl flex items-center justify-center gap-2"
                       >
+                        <VoteIcon className="h-5 w-5" />
                         Cast Your Vote
                       </motion.button>
                     )}
@@ -252,20 +414,27 @@ export function VotingPage() {
       <AnimatePresence>
         {toast && (
           <motion.div
-            initial={{ opacity: 0, y: 50 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 50 }}
-            className="fixed bottom-4 right-4 z-50"
+            initial={{ opacity: 0, y: 50, scale: 0.3 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 50, scale: 0.5 }}
+            className="fixed bottom-6 right-6 z-50"
           >
-            <div className={`px-6 py-4 rounded-lg shadow-lg ${
-              toast.type === 'success' ? 'bg-green-600' : 'bg-red-600'
-            } text-white flex items-center gap-3 min-w-[300px]`}>
-              {toast.type === 'success' ? (
-                <CheckCircle className="h-5 w-5" />
-              ) : (
-                <XCircle className="h-5 w-5" />
-              )}
-              <span className="font-medium">{toast.message}</span>
+            <div className={`px-6 py-4 rounded-xl shadow-2xl ${
+              toast.type === 'success' 
+                ? 'bg-gradient-to-r from-green-500 to-emerald-600' 
+                : 'bg-gradient-to-r from-red-500 to-rose-600'
+            } text-white flex items-center gap-3 min-w-[300px] border-2 border-white/20`}>
+              <motion.div
+                animate={{ rotate: toast.type === 'success' ? [0, 360] : [0, -10, 10, -10, 0] }}
+                transition={{ duration: 0.5 }}
+              >
+                {toast.type === 'success' ? (
+                  <CheckCircle className="h-6 w-6" />
+                ) : (
+                  <XCircle className="h-6 w-6" />
+                )}
+              </motion.div>
+              <span className="font-semibold text-lg">{toast.message}</span>
             </div>
           </motion.div>
         )}
@@ -278,56 +447,73 @@ export function VotingPage() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4"
             onClick={() => setShowVoteModal(false)}
           >
             <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
+              initial={{ scale: 0.8, opacity: 0, y: 50 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.8, opacity: 0, y: 50 }}
               onClick={(e) => e.stopPropagation()}
-              className="bg-white rounded-lg shadow-2xl max-w-md w-full p-6 space-y-4"
+              className="bg-gradient-to-br from-white to-purple-50 dark:from-gray-800 dark:to-purple-900/20 rounded-2xl shadow-2xl max-w-md w-full p-8 space-y-6 border-2 border-purple-200 dark:border-purple-700"
             >
-              <h2 className="text-2xl font-bold">{selectedVote.title}</h2>
-              <p className="text-muted-foreground">{selectedVote.description}</p>
+              <div className="text-center">
+                <motion.div
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  transition={{ type: "spring", stiffness: 200, damping: 15 }}
+                  className="w-16 h-16 bg-gradient-to-br from-purple-500 to-fuchsia-500 rounded-full flex items-center justify-center mx-auto mb-4"
+                >
+                  <VoteIcon className="h-8 w-8 text-white" />
+                </motion.div>
+                <h2 className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-fuchsia-600 bg-clip-text text-transparent">
+                  {selectedVote.title}
+                </h2>
+                <p className="text-gray-600 dark:text-gray-300 mt-3 text-base">
+                  {selectedVote.description}
+                </p>
+              </div>
               
-              <div className="space-y-3 pt-4">
+              <div className="space-y-3 pt-2">
                 <motion.button
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
+                  whileHover={{ scale: 1.03, x: 5 }}
+                  whileTap={{ scale: 0.97 }}
                   onClick={() => handleCastVote(selectedVote.id, 'YES')}
                   disabled={castingVote}
-                  className="w-full py-3 rounded-lg bg-green-600 text-white font-medium hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full py-4 rounded-xl bg-gradient-to-r from-green-500 to-emerald-600 text-white font-bold text-lg hover:from-green-600 hover:to-emerald-700 transition-all shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 border-2 border-green-400"
                 >
+                  <CheckCircle className="h-5 w-5" />
                   Vote YES
                 </motion.button>
                 
                 <motion.button
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
+                  whileHover={{ scale: 1.03, x: 5 }}
+                  whileTap={{ scale: 0.97 }}
                   onClick={() => handleCastVote(selectedVote.id, 'NO')}
                   disabled={castingVote}
-                  className="w-full py-3 rounded-lg bg-red-600 text-white font-medium hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full py-4 rounded-xl bg-gradient-to-r from-red-500 to-rose-600 text-white font-bold text-lg hover:from-red-600 hover:to-rose-700 transition-all shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 border-2 border-red-400"
                 >
+                  <XCircle className="h-5 w-5" />
                   Vote NO
                 </motion.button>
                 
                 <motion.button
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
+                  whileHover={{ scale: 1.03, x: 5 }}
+                  whileTap={{ scale: 0.97 }}
                   onClick={() => handleCastVote(selectedVote.id, 'ABSTAIN')}
                   disabled={castingVote}
-                  className="w-full py-3 rounded-lg bg-gray-600 text-white font-medium hover:bg-gray-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full py-4 rounded-xl bg-gradient-to-r from-gray-500 to-gray-600 text-white font-bold text-lg hover:from-gray-600 hover:to-gray-700 transition-all shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 border-2 border-gray-400"
                 >
+                  <TrendingUp className="h-5 w-5" />
                   Abstain
                 </motion.button>
               </div>
               
               <motion.button
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
+                whileHover={{ scale: 1.03 }}
+                whileTap={{ scale: 0.97 }}
                 onClick={() => setShowVoteModal(false)}
-                className="w-full py-2 rounded-lg border border-gray-300 text-gray-700 font-medium hover:bg-gray-50 transition-colors"
+                className="w-full py-3 rounded-xl border-2 border-purple-300 dark:border-purple-600 text-purple-700 dark:text-purple-300 font-bold hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-all"
               >
                 Cancel
               </motion.button>
