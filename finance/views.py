@@ -42,7 +42,13 @@ class ContributionViewSet(viewsets.ModelViewSet):
     
     @action(detail=False, methods=['get'], permission_classes=[permissions.IsAuthenticated])
     def export(self, request):
-        """Export contributions to CSV."""
+        """
+        Export contributions to CSV.
+        
+        Note: In production, consider restricting this to admin/treasurer roles
+        to prevent unauthorized data access. This can be done by creating a custom
+        permission class like IsAdminOrTreasurer and adding it to permission_classes.
+        """
         # Get filtered queryset
         queryset = self.filter_queryset(self.get_queryset())
         

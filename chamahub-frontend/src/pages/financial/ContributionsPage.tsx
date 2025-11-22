@@ -215,6 +215,7 @@ export function ContributionsPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState<string>('ALL');
   const [exporting, setExporting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
 
   useEffect(() => { 
@@ -252,6 +253,7 @@ export function ContributionsPage() {
 
   const handleExport = async () => {
     setExporting(true);
+    setError(null);
     try {
       // Build query parameters based on current filters
       const params = new URLSearchParams();
@@ -259,10 +261,14 @@ export function ContributionsPage() {
         params.append('status', filterStatus);
       }
       
+      // Get base URL from the api configuration
+      const baseURL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1';
+      const token = localStorage.getItem('access_token');
+      
       // Make API call to export endpoint
-      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/finance/contributions/export/?${params.toString()}`, {
+      const response = await fetch(`${baseURL}/finance/contributions/export/?${params.toString()}`, {
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('access_token')}`
+          'Authorization': `Bearer ${token}`
         }
       });
       
@@ -284,7 +290,7 @@ export function ContributionsPage() {
       document.body.removeChild(a);
     } catch (err) {
       console.error('Error exporting contributions:', err);
-      alert('Failed to export contributions. Please try again.');
+      setError('Failed to export contributions. Please try again.');
     } finally {
       setExporting(false);
     }
@@ -414,6 +420,27 @@ export function ContributionsPage() {
             </motion.button>
           </motion.div>
         </motion.div>
+
+        {/* Error Message */}
+        {error && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="p-4 rounded-xl bg-red-50 border border-red-200 flex items-start gap-3"
+          >
+            <AlertCircle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
+            <div className="flex-1">
+              <p className="font-semibold text-red-900">Error</p>
+              <p className="text-sm text-red-700">{error}</p>
+            </div>
+            <button
+              onClick={() => setError(null)}
+              className="text-red-600 hover:text-red-800 transition-colors"
+            >
+              <XCircle className="h-5 w-5" />
+            </button>
+          </motion.div>
+        )}
 
         {/* Enhanced Stats Section */}
         <motion.div 
