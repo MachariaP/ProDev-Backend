@@ -130,11 +130,17 @@ export function NewInvestmentPage() {
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
   ) => {
     const { name, value } = e.target;
-    setFormData({ ...formData, [name]: value });
     
-    // Auto-set current value same as principal if not set
-    if (name === 'principal_amount' && !formData.current_value) {
-      setFormData(prev => ({ ...prev, [name]: value, current_value: value }));
+    // Auto-set current value same as principal when principal changes and current_value hasn't been manually set
+    if (name === 'principal_amount') {
+      setFormData(prev => ({ 
+        ...prev, 
+        [name]: value,
+        // Only auto-update current_value if it matches the old principal_amount or is empty
+        current_value: (!prev.current_value || prev.current_value === prev.principal_amount) ? value : prev.current_value
+      }));
+    } else {
+      setFormData({ ...formData, [name]: value });
     }
   };
 
@@ -145,7 +151,9 @@ export function NewInvestmentPage() {
     const maturityDate = formData.maturity_date ? new Date(formData.maturity_date) : null;
     
     if (principal > 0 && rate > 0 && maturityDate) {
-      const months = (maturityDate.getTime() - purchaseDate.getTime()) / (1000 * 60 * 60 * 24 * 30);
+      // Calculate days and convert to months (more accurate than using 30 days/month)
+      const days = (maturityDate.getTime() - purchaseDate.getTime()) / (1000 * 60 * 60 * 24);
+      const months = days / 30.44; // Average days per month
       const years = months / 12;
       const projectedValue = principal * (1 + (rate / 100) * years);
       const projectedReturns = projectedValue - principal;
