@@ -28,8 +28,18 @@ trap cleanup EXIT INT TERM
 
 # Start backend
 echo "🔧 Starting Django backend on port 8000..."
-source venv/bin/activate 2>/dev/null || . venv/Scripts/activate 2>/dev/null
-python manage.py runserver > /tmp/backend.log 2>&1 &
+if [ -f "venv/bin/activate" ]; then
+    source venv/bin/activate
+elif [ -f "venv/Scripts/activate" ]; then
+    . venv/Scripts/activate
+else
+    echo "❌ Virtual environment not found. Run ./setup_dashboard.sh first"
+    exit 1
+fi
+
+# Create log directory
+LOG_DIR="${TMPDIR:-/tmp}"
+python manage.py runserver > "${LOG_DIR}/backend.log" 2>&1 &
 BACKEND_PID=$!
 
 # Wait for backend to start
@@ -37,15 +47,15 @@ sleep 3
 
 # Check if backend is running
 if ! kill -0 $BACKEND_PID 2>/dev/null; then
-    echo "❌ Backend failed to start. Check /tmp/backend.log for details."
-    cat /tmp/backend.log
+    echo "❌ Backend failed to start. Check ${LOG_DIR}/backend.log for details."
+    cat "${LOG_DIR}/backend.log"
     exit 1
 fi
 
 # Start frontend
 echo "🎨 Starting React frontend on port 5173..."
 cd chamahub-frontend
-npm run dev > /tmp/frontend.log 2>&1 &
+npm run dev > "${LOG_DIR}/frontend.log" 2>&1 &
 FRONTEND_PID=$!
 cd ..
 
@@ -54,8 +64,8 @@ sleep 5
 
 # Check if frontend is running
 if ! kill -0 $FRONTEND_PID 2>/dev/null; then
-    echo "❌ Frontend failed to start. Check /tmp/frontend.log for details."
-    cat /tmp/frontend.log
+    echo "❌ Frontend failed to start. Check ${LOG_DIR}/frontend.log for details."
+    cat "${LOG_DIR}/frontend.log"
     exit 1
 fi
 
@@ -73,8 +83,8 @@ echo "     Email:    test@example.com"
 echo "     Password: password123"
 echo ""
 echo "  📝 Logs:"
-echo "     Backend:  /tmp/backend.log"
-echo "     Frontend: /tmp/frontend.log"
+echo "     Backend:  ${LOG_DIR}/backend.log"
+echo "     Frontend: ${LOG_DIR}/frontend.log"
 echo ""
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo ""

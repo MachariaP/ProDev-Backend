@@ -44,7 +44,10 @@ if [ ! -d "venv" ]; then
     echo -e "${GREEN}✓${NC} Virtual environment created"
 fi
 
-source venv/bin/activate 2>/dev/null || . venv/Scripts/activate 2>/dev/null
+source venv/bin/activate 2>/dev/null || . venv/Scripts/activate 2>/dev/null || {
+    echo -e "${RED}✗${NC} Failed to activate virtual environment"
+    exit 1
+}
 pip install -q -r requirements.txt
 echo -e "${GREEN}✓${NC} Python dependencies installed"
 
@@ -57,40 +60,47 @@ echo -e "${GREEN}✓${NC} Database migrations complete"
 # Step 5: Create test user
 echo ""
 echo "👤 Step 5: Creating test user..."
-python manage.py shell << 'EOF'
+python manage.py shell << 'EOF' || {
+    echo -e "${YELLOW}⚠${NC} Failed to create test user via shell. You may need to create one manually."
+}
 from accounts.models import User
 from groups.models import ChamaGroup, GroupMembership
 
-# Create test user if doesn't exist
-user, created = User.objects.get_or_create(
-    email='test@example.com',
-    defaults={
-        'phone_number': '+254700000000',
-        'first_name': 'Test',
-        'last_name': 'User',
-        'is_active': True
-    }
-)
-if created:
-    user.set_password('password123')
-    user.save()
-
-# Create test group if doesn't exist
-group, created = ChamaGroup.objects.get_or_create(
-    name='Test Chama',
-    defaults={
-        'group_type': 'SAVINGS',
-        'description': 'Test savings group',
-        'created_by': user
-    }
-)
-if created:
-    GroupMembership.objects.create(
-        group=group,
-        user=user,
-        role='ADMIN',
-        status='ACTIVE'
+try:
+    # Create test user if doesn't exist
+    user, created = User.objects.get_or_create(
+        email='test@example.com',
+        defaults={
+            'phone_number': '+254700000000',
+            'first_name': 'Test',
+            'last_name': 'User',
+            'is_active': True
+        }
     )
+    if created:
+        user.set_password('password123')
+        user.save()
+
+    # Create test group if doesn't exist
+    group, created = ChamaGroup.objects.get_or_create(
+        name='Test Chama',
+        defaults={
+            'group_type': 'SAVINGS',
+            'description': 'Test savings group',
+            'created_by': user
+        }
+    )
+    if created:
+        GroupMembership.objects.create(
+            group=group,
+            user=user,
+            role='ADMIN',
+            status='ACTIVE'
+        )
+except Exception as e:
+    print(f"Error creating test data: {e}")
+    import sys
+    sys.exit(1)
 EOF
 echo -e "${GREEN}✓${NC} Test user created"
 
@@ -107,7 +117,7 @@ fi
 
 # Install Node dependencies
 if [ ! -d "node_modules" ]; then
-    npm install --silent
+    npm install --loglevel=error
     echo -e "${GREEN}✓${NC} Node dependencies installed"
 else
     echo -e "${GREEN}✓${NC} Node dependencies already installed"
