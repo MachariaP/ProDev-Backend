@@ -44,10 +44,12 @@ if [ ! -d "venv" ]; then
     echo -e "${GREEN}✓${NC} Virtual environment created"
 fi
 
-source venv/bin/activate 2>/dev/null || . venv/Scripts/activate 2>/dev/null || {
+source venv/bin/activate 2>/dev/null || . venv/Scripts/activate 2>/dev/null
+if [ $? -ne 0 ]; then
     echo -e "${RED}✗${NC} Failed to activate virtual environment"
+    echo "   Try running: source venv/bin/activate (Linux/Mac) or venv\\Scripts\\activate (Windows)"
     exit 1
-}
+fi
 pip install -q -r requirements.txt
 echo -e "${GREEN}✓${NC} Python dependencies installed"
 
@@ -61,8 +63,12 @@ echo -e "${GREEN}✓${NC} Database migrations complete"
 echo ""
 echo "👤 Step 5: Creating test user..."
 python manage.py shell << 'EOF' || {
-    echo -e "${YELLOW}⚠${NC} Failed to create test user via shell. You may need to create one manually."
+    echo -e "${YELLOW}⚠${NC} Failed to create test user via shell."
+    echo "   You can create one manually with:"
+    echo "   python manage.py createsuperuser"
+    echo "   Or see DASHBOARD_TROUBLESHOOTING.md for detailed instructions"
 }
+import sys
 from accounts.models import User
 from groups.models import ChamaGroup, GroupMembership
 
@@ -99,7 +105,6 @@ try:
         )
 except Exception as e:
     print(f"Error creating test data: {e}")
-    import sys
     sys.exit(1)
 EOF
 echo -e "${GREEN}✓${NC} Test user created"

@@ -11,7 +11,13 @@ echo ""
 # Check if setup has been run
 if [ ! -d "venv" ] || [ ! -f "chamahub-frontend/.env" ]; then
     echo "⚠️  Initial setup required. Running setup first..."
-    ./setup_dashboard.sh
+    if [ -x "./setup_dashboard.sh" ]; then
+        ./setup_dashboard.sh
+    else
+        echo "❌ setup_dashboard.sh not found or not executable"
+        echo "   Please run: chmod +x setup_dashboard.sh"
+        exit 1
+    fi
     echo ""
 fi
 
@@ -38,7 +44,7 @@ else
 fi
 
 # Create log directory
-LOG_DIR="${TMPDIR:-/tmp}"
+LOG_DIR="${TMPDIR:-${TEMP:-/tmp}}"
 python manage.py runserver > "${LOG_DIR}/backend.log" 2>&1 &
 BACKEND_PID=$!
 
