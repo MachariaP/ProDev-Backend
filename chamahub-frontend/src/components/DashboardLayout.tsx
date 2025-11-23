@@ -145,9 +145,9 @@ function Sidebar({
     <div
       className={`${
         isMobile ? 'w-full' : sidebarOpen ? 'w-64' : 'w-16'
-      } bg-card border-r border-border flex flex-col transition-all duration-300`}
+      } bg-card border-r border-border flex flex-col h-full transition-all duration-300`}
     >
-      {/* Logo & Toggle */}
+      {/* Logo & Toggle - Fixed at top */}
       <div className="p-4 border-b border-border flex items-center justify-between flex-shrink-0">
         {(sidebarOpen || isMobile) && (
           <h1 className="text-lg font-bold text-primary">
@@ -165,66 +165,68 @@ function Sidebar({
         )}
       </div>
 
-      {/* Navigation */}
-      <nav className="flex-1 overflow-y-auto p-3 space-y-1 scrollbar-thin scrollbar-thumb-primary/20 scrollbar-track-transparent">
-        {navigationSections
-          .filter((section) => !section.adminOnly || isAdmin)
-          .map((section) => (
-          <div key={section.title} className="space-y-1">
-            {(sidebarOpen || isMobile) && (
-              <button
-                onClick={() => toggleSection(section.title)}
-                className="flex items-center justify-between w-full px-3 py-2 text-xs font-bold uppercase tracking-wide bg-primary/10 hover:bg-primary/20 text-primary rounded transition-all"
-              >
-                <span>{section.title}</span>
-                <ChevronDown
-                  className={`h-3.5 w-3.5 transition-transform duration-200 ${
-                    expandedSections.has(section.title) ? 'rotate-0' : '-rotate-90'
-                  }`}
-                />
-              </button>
-            )}
-            <AnimatePresence>
-              {(expandedSections.has(section.title) || !sidebarOpen) && (
-                <motion.div
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: 'auto' }}
-                  exit={{ opacity: 0, height: 0 }}
-                  transition={{ duration: 0.2 }}
-                  className="space-y-0.5 py-1"
+      {/* Navigation - Scrollable area */}
+      <div className="flex-1 flex flex-col min-h-0">
+        <nav className="flex-1 overflow-y-auto p-3 space-y-1 scrollbar-thin scrollbar-thumb-primary/20 scrollbar-track-transparent">
+          {navigationSections
+            .filter((section) => !section.adminOnly || isAdmin)
+            .map((section) => (
+            <div key={section.title} className="space-y-1">
+              {(sidebarOpen || isMobile) && (
+                <button
+                  onClick={() => toggleSection(section.title)}
+                  className="flex items-center justify-between w-full px-3 py-2 text-xs font-bold uppercase tracking-wide bg-primary/10 hover:bg-primary/20 text-primary rounded transition-all"
                 >
-                  {section.items
-                    .filter((item) => !item.adminOnly || isAdmin)
-                    .map((item) => {
-                    const Icon = item.icon;
-                    const isActive = isActivePath(item.path);
-                    return (
-                      <Link
-                        key={item.path}
-                        to={item.path}
-                        onClick={() => isMobile && setMobileMenuOpen(false)}
-                        className={`flex items-center gap-3 px-3 py-2 rounded transition-all duration-150 ${
-                          isActive
-                            ? 'bg-primary text-primary-foreground font-medium'
-                            : 'hover:bg-accent text-foreground/90 hover:text-foreground'
-                        } ${!sidebarOpen && !isMobile ? 'justify-center' : ''}`}
-                        title={!sidebarOpen && !isMobile ? item.name : undefined}
-                      >
-                        <Icon className={`h-4 w-4 flex-shrink-0`} />
-                        {(sidebarOpen || isMobile) && (
-                          <span className="text-sm">{item.name}</span>
-                        )}
-                      </Link>
-                    );
-                  })}
-                </motion.div>
+                  <span>{section.title}</span>
+                  <ChevronDown
+                    className={`h-3.5 w-3.5 transition-transform duration-200 ${
+                      expandedSections.has(section.title) ? 'rotate-0' : '-rotate-90'
+                    }`}
+                  />
+                </button>
               )}
-            </AnimatePresence>
-          </div>
-        ))}
-      </nav>
+              <AnimatePresence>
+                {(expandedSections.has(section.title) || !sidebarOpen) && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    exit={{ opacity: 0, height: 0 }}
+                    transition={{ duration: 0.2 }}
+                    className="space-y-0.5 py-1"
+                  >
+                    {section.items
+                      .filter((item) => !item.adminOnly || isAdmin)
+                      .map((item) => {
+                      const Icon = item.icon;
+                      const isActive = isActivePath(item.path);
+                      return (
+                        <Link
+                          key={item.path}
+                          to={item.path}
+                          onClick={() => isMobile && setMobileMenuOpen(false)}
+                          className={`flex items-center gap-3 px-3 py-2 rounded transition-all duration-150 ${
+                            isActive
+                              ? 'bg-primary text-primary-foreground font-medium'
+                              : 'hover:bg-accent text-foreground/90 hover:text-foreground'
+                          } ${!sidebarOpen && !isMobile ? 'justify-center' : ''}`}
+                          title={!sidebarOpen && !isMobile ? item.name : undefined}
+                        >
+                          <Icon className={`h-4 w-4 flex-shrink-0`} />
+                          {(sidebarOpen || isMobile) && (
+                            <span className="text-sm">{item.name}</span>
+                          )}
+                        </Link>
+                      );
+                    })}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          ))}
+        </nav>
+      </div>
 
-      {/* Logout Button */}
+      {/* Logout Button - Fixed at bottom */}
       <div className="p-3 border-t border-border flex-shrink-0">
         <button
           onClick={handleLogout}
@@ -288,7 +290,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   return (
     <div className="flex h-screen bg-background overflow-hidden">
       {/* Desktop Sidebar */}
-      <div className="hidden lg:flex lg:flex-col h-screen flex-shrink-0">
+      <div className="hidden lg:flex lg:flex-col h-full flex-shrink-0">
         <Sidebar
           sidebarOpen={sidebarOpen}
           setSidebarOpen={setSidebarOpen}
@@ -336,7 +338,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
       </AnimatePresence>
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col h-screen overflow-hidden">
+      <div className="flex-1 flex flex-col h-full overflow-hidden">
         {/* Mobile Header */}
         <div className="lg:hidden border-b border-border bg-card p-4 flex items-center justify-between flex-shrink-0">
           <button
