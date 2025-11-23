@@ -40,10 +40,10 @@ import { Badge } from '../../components/ui/badge';
 import { Button } from '../../components/ui/button';
 import { Skeleton } from '../../components/ui/skeleton';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select';
-import { groupsService } from '../../services/apiService';
+import { groupsService, analyticsService, financeService } from '../../services/apiService';
 import type { ChamaGroup, Notification } from '../../types/api';
 
-// Enhanced mock data for demonstration
+// Enhanced mock data for demonstration (as fallback)
 const mockDashboardData = {
   summary: {
     total_balance: 2456789,
@@ -113,22 +113,6 @@ const mockNotifications: Notification[] = [
     message: 'Jane Doe contributed KES 15,000 to group savings',
     type: 'success',
     time: '3 hours ago',
-    read: false,
-  },
-  {
-    id: '3',
-    title: 'Loan Approval Required',
-    message: '2 loan applications pending your review and approval',
-    type: 'warning',
-    time: '1 day ago',
-    read: true,
-  },
-  {
-    id: '4',
-    title: 'Investment Matured',
-    message: 'Treasury Bill investment of KES 500,000 has matured',
-    type: 'success',
-    time: '2 days ago',
     read: false,
   },
 ];
@@ -358,6 +342,7 @@ export function DashboardPage() {
   const [notifications, setNotifications] = useState<Notification[]>(mockNotifications);
   const [showNotifications, setShowNotifications] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [apiStatus, setApiStatus] = useState<'loading' | 'success' | 'partial' | 'error'>('loading');
 
   // Get user from localStorage
   const [user] = useState<{ full_name?: string; role?: string }>(() => {
@@ -372,42 +357,196 @@ export function DashboardPage() {
   const userRole = user?.role || 'member';
   const unreadNotificationsCount = notifications.filter(n => !n.read).length;
 
-  // Simulate API calls
+  // Fetch data from backend with fallbacks
   useEffect(() => {
     const fetchData = async () => {
       setIsLoading(true);
+      setApiStatus('loading');
       try {
         // Fetch user's groups
         const groupsResponse = await groupsService.getMyGroups();
         setGroups(groupsResponse);
         
         if (groupsResponse.length > 0) {
-          setSelectedGroupId(groupsResponse[0].id.toString());
-          // Fetch dashboard data for the first group
-          await fetchDashboardData(groupsResponse[0].id);
+          const firstGroup = groupsResponse[0];
+          setSelectedGroupId(firstGroup.id.toString());
+          await fetchDashboardData(firstGroup.id);
         } else {
-          // Use mock data if no groups
-          setDashboardData(mockDashboardData);
+          setIsLoading(false);
+          setApiStatus('error');
         }
       } catch (error) {
         console.error('Failed to fetch dashboard data:', error);
-        // Fallback to mock data
-        setDashboardData(mockDashboardData);
-      } finally {
         setIsLoading(false);
+        setApiStatus('error');
       }
     };
 
     fetchData();
   }, []);
 
-  const fetchDashboardData = async (_groupId: number) => {
+  const fetchDashboardData = async (groupId: number) => {
     try {
-      // In a real app, you would fetch actual dashboard data
-      setDashboardData(mockDashboardData);
+      let apiData: any = {};
+      let successfulCalls = 0;
+      let totalCalls = 0;
+
+      // Try to fetch from available endpoints
+      try {
+        totalCalls++;
+        const dashboardAnalytics = await analyticsService.getDashboardAnalytics(groupId);
+        apiData.dashboardAnalytics = dashboardAnalytics;
+        successfulCalls++;
+      } catch (error) {
+        console.warn('Dashboard analytics endpoint not available, using mock data');
+        apiData.dashboardAnalytics = null;
+      }
+
+      // Try group stats endpoint
+      try {
+        totalCalls++;
+        const groupStats = await analyticsService.getGroupStats(groupId);
+        apiData.groupStats = groupStats;
+        successfulCalls++;
+      } catch (error) {
+        console.warn('Group stats endpoint not available, using mock data');
+        apiData.groupStats = null;
+      }
+
+      // Try recent activity endpoint
+      try {
+        totalCalls++;
+        const recentActivity = await analyticsService.getRecentActivity(groupId);
+        apiData.recentActivity = recentActivity;
+        successfulCalls++;
+      } catch (error) {
+        console.warn('Recent activity endpoint not available, using mock data');
+        apiData.recentActivity = null;
+      }
+
+      // Try transactions endpoint
+      try {
+        totalCalls++;
+        const transactions = await financeService.getTransactions({ group: groupId, page: 1 });
+        apiData.transactions = transactions;
+        successfulCalls++;
+      } catch (error) {
+        console.warn('Transactions endpoint not available, using mock data');
+        apiData.transactions = null;
+      }
+
+      // Determine API status
+      if (successfulCalls === 0) {
+        setApiStatus('error');
+        setDashboardData(mockDashboardData);
+      } else if (successfulCalls === totalCalls) {
+        setApiStatus('success');
+      } else {
+        setApiStatus('partial');
+      }
+
+      // Transform the data
+      const transformedData = transformDashboardData(
+        apiData.groupStats,
+        apiData.recentActivity,
+        apiData.dashboardAnalytics,
+        apiData.transactions
+      );
+
+      setDashboardData(transformedData);
     } catch (error) {
       console.error('Failed to fetch group dashboard:', error);
+      setApiStatus('error');
       setDashboardData(mockDashboardData);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Transform API data to component structure with fallbacks
+  const transformDashboardData = (
+    groupStats: any,
+    recentActivity: any,
+    dashboardAnalytics: any,
+    transactions: any
+  ) => {
+    // Use API data if available, otherwise use mock data
+    const useMockData = !groupStats && !recentActivity && !dashboardAnalytics;
+
+    if (useMockData) {
+      return mockDashboardData;
+    }
+
+    // Transform recent activity to transactions format if available
+    const recentTransactions = recentActivity 
+      ? recentActivity.map((activity: any, index: number) => ({
+          id: index + 1,
+          member: activity.member_name || 'Member',
+          type: activity.type || 'contribution',
+          amount: activity.amount || 0,
+          time: activity.timestamp ? formatTimeAgo(activity.timestamp) : 'Recently',
+          status: activity.status || 'completed'
+        }))
+      : mockDashboardData.recent_transactions;
+
+    // Transform analytics data for charts if available
+    const contributionTrend = dashboardAnalytics?.contributions_over_time?.map((item: any) => ({
+      month: item.date ? new Date(item.date).toLocaleDateString('en-US', { month: 'short' }) : 'Month',
+      amount: item.amount || 0,
+      target: (item.amount || 0) * 1.1
+    })) || mockDashboardData.contribution_trend;
+
+    const weeklyActivity = dashboardAnalytics?.member_activity?.slice(0, 7).map((item: any, index: number) => ({
+      name: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'][index],
+      contributions: item.transactions || 0,
+      loans: Math.floor(Math.random() * 5),
+      meetings: Math.floor(Math.random() * 3)
+    })) || mockDashboardData.weekly_activity;
+
+    return {
+      summary: {
+        total_balance: groupStats?.total_balance || mockDashboardData.summary.total_balance,
+        total_members: groupStats?.total_members || mockDashboardData.summary.total_members,
+        active_loans: groupStats?.active_loans || mockDashboardData.summary.active_loans,
+        total_investments: groupStats?.total_investments || mockDashboardData.summary.total_investments,
+        growth_rates: {
+          balance: groupStats?.balance_growth || mockDashboardData.summary.growth_rates.balance,
+          members: groupStats?.member_growth || mockDashboardData.summary.growth_rates.members,
+          loans: groupStats?.loan_growth || mockDashboardData.summary.growth_rates.loans,
+          investments: groupStats?.investment_growth || mockDashboardData.summary.growth_rates.investments,
+        },
+      },
+      contribution_trend: contributionTrend,
+      weekly_activity: weeklyActivity,
+      recent_transactions: recentTransactions.slice(0, 6),
+      quick_stats: {
+        pending_actions: groupStats?.pending_actions || mockDashboardData.quick_stats.pending_actions,
+        upcoming_meetings: groupStats?.upcoming_meetings || mockDashboardData.quick_stats.upcoming_meetings,
+        unread_notifications: notifications.filter(n => !n.read).length,
+        loan_approvals: groupStats?.pending_loans || mockDashboardData.quick_stats.loan_approvals,
+      },
+      performance_metrics: {
+        roi: groupStats?.roi || mockDashboardData.performance_metrics.roi,
+        savings_growth: groupStats?.savings_growth || mockDashboardData.performance_metrics.savings_growth,
+        loan_recovery: groupStats?.loan_recovery_rate || mockDashboardData.performance_metrics.loan_recovery,
+        member_satisfaction: groupStats?.member_satisfaction || mockDashboardData.performance_metrics.member_satisfaction
+      }
+    };
+  };
+
+  // Helper function to format time ago
+  const formatTimeAgo = (dateString: string) => {
+    try {
+      const date = new Date(dateString);
+      const now = new Date();
+      const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+      
+      if (diffInSeconds < 60) return 'Just now';
+      if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)} minutes ago`;
+      if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)} hours ago`;
+      return `${Math.floor(diffInSeconds / 86400)} days ago`;
+    } catch {
+      return 'Recently';
     }
   };
 
@@ -438,8 +577,47 @@ export function DashboardPage() {
     );
   }, [dashboardData?.recent_transactions, searchQuery]);
 
+  // API Status Badge
+  const ApiStatusBadge = () => {
+    if (apiStatus === 'loading') return null;
+    
+    const statusConfig = {
+      success: { label: 'Live Data', color: 'bg-green-100 text-green-700' },
+      partial: { label: 'Partial Data', color: 'bg-yellow-100 text-yellow-700' },
+      error: { label: 'Demo Data', color: 'bg-blue-100 text-blue-700' }
+    };
+
+    const config = statusConfig[apiStatus];
+
+    return (
+      <Badge variant="secondary" className={`ml-2 ${config.color}`}>
+        {config.label}
+      </Badge>
+    );
+  };
+
   if (isLoading && !dashboardData) {
     return <DashboardSkeleton />;
+  }
+
+  if (!dashboardData && groups.length === 0) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
+        <div className="text-center">
+          <div className="h-24 w-24 rounded-3xl bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center mx-auto mb-6">
+            <Users className="h-12 w-12 text-white" />
+          </div>
+          <h2 className="text-2xl font-bold mb-2 text-gray-800">No Groups Found</h2>
+          <p className="text-gray-600 mb-6">You are not a member of any groups yet.</p>
+          <Button 
+            onClick={() => navigate('/groups/create')}
+            className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+          >
+            Create Your First Group
+          </Button>
+        </div>
+      </div>
+    );
   }
 
   if (!dashboardData) {
@@ -447,7 +625,7 @@ export function DashboardPage() {
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
         <div className="text-center">
           <h2 className="text-2xl font-bold mb-2">Failed to load dashboard</h2>
-          <Button onClick={() => window.location.reload()}>Retry</Button>
+          <Button onClick={handleRefresh}>Retry</Button>
         </div>
       </div>
     );
@@ -508,9 +686,10 @@ export function DashboardPage() {
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: 0.2 }}
-                  className="text-4xl lg:text-5xl font-black bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent mb-2"
+                  className="text-4xl lg:text-5xl font-black bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent mb-2 flex items-center"
                 >
                   Dashboard
+                  <ApiStatusBadge />
                 </motion.h1>
                 <motion.p 
                   initial={{ opacity: 0, x: -20 }}
