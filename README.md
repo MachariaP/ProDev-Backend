@@ -37,7 +37,17 @@
 
 ### ⚡ Quick Start
 
-Run both backend and frontend in 2 minutes:
+**Option 1: Automated Setup (Recommended)**
+
+```bash
+# One command to set up everything
+./setup_dashboard.sh
+
+# Then start both servers
+./start.sh
+```
+
+**Option 2: Manual Setup**
 
 ```bash
 # Terminal 1: Start Django Backend
@@ -54,7 +64,8 @@ npm run dev
 
 Visit: **http://localhost:5173** 🎨
 
-📖 **[Full Quick Start Guide](./QUICK_START.md)**
+📖 **[Full Quick Start Guide](./QUICK_START.md)**  
+🔧 **[Dashboard Troubleshooting](./DASHBOARD_TROUBLESHOOTING.md)** - If dashboard fails to load
 
 ---
 
