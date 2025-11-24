@@ -4,8 +4,8 @@
 The Investment Portfolio page (`/investments/portfolio`) provides a comprehensive view of all group investments with analytics, visualizations, and detailed tracking.
 
 ## URL
-- **Frontend**: `http://localhost:5173/investments/portfolio`
-- **Production**: `https://your-domain.com/investments/portfolio`
+- **Development**: `http://localhost:5173/investments/portfolio`
+- **Production**: `https://[YOUR_PRODUCTION_DOMAIN]/investments/portfolio`
 
 ## Features
 
@@ -210,8 +210,9 @@ While data is being fetched:
 
 ### API Errors
 - Caught in try-catch block
-- Logged to console
-- User-friendly error state (to be enhanced)
+- Logged to console for debugging
+- Gracefully handles failures without breaking UI
+- Future enhancement: Add user-friendly error messages
 
 ### Data Validation
 - Type checking with TypeScript
@@ -246,14 +247,14 @@ While data is being fetched:
 ## Testing
 
 ### Manual Testing Checklist
-- [ ] Page loads without errors
-- [ ] Statistics calculate correctly
-- [ ] Charts render properly
-- [ ] Navigation buttons work
-- [ ] Responsive design on all devices
-- [ ] Loading states display correctly
-- [ ] Empty states show appropriate messages
-- [ ] API integration works as expected
+- [ ] Page loads without errors (Check browser console for errors)
+- [ ] Statistics calculate correctly (Total Invested = sum of all principal_amount values)
+- [ ] Charts render properly (Pie chart shows all investment types, Area chart displays data)
+- [ ] Navigation buttons work (Back button returns to /investments, New Investment goes to /investments/new)
+- [ ] Responsive design on all devices (Test on mobile 375px, tablet 768px, desktop 1024px+)
+- [ ] Loading states display correctly (Spinner shows during API call, disappears when data loads)
+- [ ] Empty states show appropriate messages (No investments message appears when data is empty)
+- [ ] API integration works as expected (Data from /api/v1/investments/investments/ displays correctly)
 
 ### Test Data Setup
 1. Create a test group
