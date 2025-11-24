@@ -1,4 +1,4 @@
-import { motion, useMotionValue, useTransform, animate } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { 
   Users, 
   TrendingUp, 
@@ -8,14 +8,12 @@ import {
   BarChart3, 
   Vote, 
   ArrowRight,
-  CheckCircle2,
   Star,
   Calendar,
   Smartphone,
   Crown,
   Gem,
   Rocket,
-  Target,
   HeartHandshake,
   Coins,
   Building,
@@ -23,9 +21,10 @@ import {
   Award,
   Sparkles,
   PlayCircle,
-  Globe // Add this import
+  Globe,
+  LogIn
 } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 
 export function LandingPage() {
@@ -89,7 +88,7 @@ export function LandingPage() {
     { icon: Clock, text: 'Mobile-first design', color: 'text-pink-500' },
     { icon: BarChart3, text: 'Customizable reports', color: 'text-indigo-500' },
     { icon: Calendar, text: 'Meeting scheduling', color: 'text-teal-500' },
-    { icon: Globe, text: 'Multi-language support', color: 'text-amber-500' } // Now Globe is imported
+    { icon: Globe, text: 'Multi-language support', color: 'text-amber-500' }
   ];
 
   const stats = [
@@ -186,14 +185,13 @@ export function LandingPage() {
               animate={{ opacity: 1, x: 0 }}
               className="flex gap-4 items-center"
             >
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={() => navigate('/auth/login')}
-                className="px-6 py-2.5 text-gray-700 font-semibold hover:text-blue-600 transition-colors hidden md:block"
+              <Link
+                to="/login"
+                className="px-6 py-2.5 text-gray-700 font-semibold hover:text-blue-600 transition-colors hidden md:block flex items-center gap-2"
               >
+                <LogIn className="h-4 w-4" />
                 Sign In
-              </motion.button>
+              </Link>
               <motion.button
                 whileHover={{ 
                   scale: 1.05,
