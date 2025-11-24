@@ -4,8 +4,11 @@ from rest_framework.response import Response
 from django_filters.rest_framework import DjangoFilterBackend
 from django.utils import timezone
 from django.http import HttpResponse
+from django.db.models import Q
 from decimal import Decimal
 import csv
+from itertools import chain
+from operator import attrgetter
 from .models import (
     Contribution, Loan, LoanRepayment, Expense,
     DisbursementApproval, ApprovalSignature
@@ -187,4 +190,148 @@ class ApprovalSignatureViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         """Set approver to current user."""
         serializer.save(approver=self.request.user)
+
+
+class TransactionViewSet(viewsets.ReadOnlyModelViewSet):
+    """ViewSet for unified transaction history."""
+    
+    permission_classes = [permissions.IsAuthenticated]
+    
+    def list(self, request):
+        """Return unified transaction history from all financial activities."""
+        # Get filter parameters
+        transaction_type = request.query_params.get('type', None)
+        status_filter = request.query_params.get('status', None)
+        date_from = request.query_params.get('date_from', None)
+        date_to = request.query_params.get('date_to', None)
+        
+        transactions = []
+        
+        # Helper function to add transaction
+        def add_transaction(id, type, category, amount, description, created_at, group_name, user_name, status, balance_after=0):
+            transactions.append({
+                'id': id,
+                'type': type,
+                'category': category,
+                'amount': float(amount),
+                'balance_after': balance_after,
+                'description': description,
+                'created_at': created_at.isoformat() if created_at else None,
+                'group_name': group_name,
+                'user_name': user_name,
+                'status': status,
+            })
+        
+        # Fetch contributions
+        if not transaction_type or transaction_type == 'contribution':
+            contributions = Contribution.objects.select_related('group', 'member').all()
+            if status_filter:
+                contributions = contributions.filter(status__iexact=status_filter)
+            if date_from:
+                contributions = contributions.filter(created_at__gte=date_from)
+            if date_to:
+                contributions = contributions.filter(created_at__lte=date_to)
+            
+            for c in contributions:
+                add_transaction(
+                    id=f"contribution-{c.id}",
+                    type='contribution',
+                    category=c.get_payment_method_display(),
+                    amount=c.amount,
+                    description=f"Contribution via {c.get_payment_method_display()}",
+                    created_at=c.created_at,
+                    group_name=c.group.name,
+                    user_name=c.member.get_full_name() if c.member else 'Unknown',
+                    status=c.status.lower(),
+                )
+        
+        # Fetch loans
+        if not transaction_type or transaction_type == 'loan':
+            loans = Loan.objects.select_related('group', 'borrower').all()
+            if status_filter:
+                loans = loans.filter(status__iexact=status_filter)
+            if date_from:
+                loans = loans.filter(applied_at__gte=date_from)
+            if date_to:
+                loans = loans.filter(applied_at__lte=date_to)
+            
+            for l in loans:
+                add_transaction(
+                    id=f"loan-{l.id}",
+                    type='loan',
+                    category='Loan Disbursement',
+                    amount=l.principal_amount,
+                    description=f"Loan: {l.purpose[:50]}..." if len(l.purpose) > 50 else f"Loan: {l.purpose}",
+                    created_at=l.disbursed_at or l.applied_at,
+                    group_name=l.group.name,
+                    user_name=l.borrower.get_full_name() if l.borrower else 'Unknown',
+                    status=l.status.lower(),
+                )
+        
+        # Fetch expenses
+        if not transaction_type or transaction_type == 'expense':
+            expenses = Expense.objects.select_related('group', 'requested_by').all()
+            if status_filter:
+                expenses = expenses.filter(status__iexact=status_filter)
+            if date_from:
+                expenses = expenses.filter(requested_at__gte=date_from)
+            if date_to:
+                expenses = expenses.filter(requested_at__lte=date_to)
+            
+            for e in expenses:
+                add_transaction(
+                    id=f"expense-{e.id}",
+                    type='expense',
+                    category=e.get_category_display(),
+                    amount=e.amount,
+                    description=e.description[:100] if len(e.description) > 100 else e.description,
+                    created_at=e.requested_at,
+                    group_name=e.group.name,
+                    user_name=e.requested_by.get_full_name() if e.requested_by else 'Unknown',
+                    status=e.status.lower(),
+                )
+        
+        # Sort transactions by date (newest first)
+        transactions.sort(key=lambda x: x['created_at'] if x['created_at'] else '', reverse=True)
+        
+        return Response({
+            'count': len(transactions),
+            'results': transactions
+        })
+    
+    @action(detail=False, methods=['get'], permission_classes=[permissions.IsAuthenticated])
+    def export(self, request):
+        """Export transactions to CSV."""
+        # Get all transactions
+        transactions_response = self.list(request)
+        transactions = transactions_response.data.get('results', [])
+        
+        # Create the HttpResponse object with CSV header
+        response = HttpResponse(content_type='text/csv')
+        response['Content-Disposition'] = f'attachment; filename="transactions_{timezone.now().strftime("%Y%m%d_%H%M%S")}.csv"'
+        
+        # Create CSV writer
+        writer = csv.writer(response)
+        
+        # Write header row
+        writer.writerow([
+            'ID', 'Type', 'Category', 'Amount (KES)', 'Description',
+            'Group', 'User', 'Status', 'Date'
+        ])
+        
+        # Write data rows
+        for transaction in transactions:
+            writer.writerow([
+                transaction['id'],
+                transaction['type'],
+                transaction['category'],
+                transaction['amount'],
+                transaction['description'],
+                transaction['group_name'],
+                transaction['user_name'],
+                transaction['status'],
+                transaction['created_at']
+            ])
+        
+        return response
 
