@@ -49,7 +49,17 @@ export function InvestmentPortfolioPage() {
   const fetchInvestments = async () => {
     try {
       const response = await api.get('/investments/investments/');
-      const data = response.data.results || response.data || [];
+      const rawData = response.data.results || response.data || [];
+      
+      // Parse string values to numbers
+      const data = rawData.map((inv: any) => ({
+        ...inv,
+        principal_amount: parseFloat(inv.principal_amount) || 0,
+        current_value: parseFloat(inv.current_value) || 0,
+        roi: parseFloat(inv.roi) || 0,
+        profit_loss: parseFloat(inv.profit_loss) || 0,
+      }));
+      
       setInvestments(data);
 
       // Calculate stats
