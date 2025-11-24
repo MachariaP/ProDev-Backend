@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { CheckCircle, AlertCircle, RefreshCw, ArrowRight } from 'lucide-react';
+import { CheckCircle, AlertCircle, RefreshCw, ArrowRight, Crown, Sparkles, Mail } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/card';
 import api from '../../services/api';
 
@@ -16,6 +16,23 @@ export function VerifyEmailPage() {
 
   const token = searchParams.get('token');
   const uid = searchParams.get('uid');
+
+  const FloatingShape = ({ delay = 0, className = "" }) => (
+    <motion.div
+      initial={{ y: 0, opacity: 0 }}
+      animate={{ 
+        y: [0, -30, 0],
+        opacity: [0, 1, 0]
+      }}
+      transition={{
+        duration: 6,
+        delay,
+        repeat: Infinity,
+        ease: "easeInOut"
+      }}
+      className={`absolute ${className}`}
+    />
+  );
 
   useEffect(() => {
     if (token && uid) {
@@ -55,131 +72,230 @@ export function VerifyEmailPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/10 via-background to-secondary/10 p-4">
-      <motion.div
-        initial={{ opacity: 0, scale: 0.9 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.5 }}
-        className="w-full max-w-md"
-      >
-        <Card className="shadow-2xl">
-          <CardHeader className="text-center">
-            <motion.div
-              initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
-              transition={{ delay: 0.2, type: 'spring' }}
-              className="mx-auto mb-4"
-            >
-              {verifying ? (
-                <div className="h-20 w-20 mx-auto">
-                  <div className="animate-spin rounded-full h-20 w-20 border-b-4 border-primary"></div>
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-600 via-blue-600 to-purple-600 p-4 relative overflow-hidden">
+      {/* Animated Background Elements */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <FloatingShape 
+          delay={0} 
+          className="top-20 left-10 w-72 h-72 bg-white/10 rounded-full blur-3xl" 
+        />
+        <FloatingShape 
+          delay={2} 
+          className="top-40 right-20 w-96 h-96 bg-white/5 rounded-full blur-3xl" 
+        />
+        <FloatingShape 
+          delay={4} 
+          className="bottom-20 left-1/4 w-64 h-64 bg-white/10 rounded-full blur-3xl" 
+        />
+        <FloatingShape 
+          delay={1} 
+          className="bottom-40 right-1/3 w-80 h-80 bg-white/5 rounded-full blur-3xl" 
+        />
+      </div>
+
+      {/* Main Content */}
+      <div className="w-full max-w-6xl grid grid-cols-1 lg:grid-cols-2 gap-8 items-center relative z-10">
+        {/* Left Side - Branding */}
+        <motion.div
+          initial={{ opacity: 0, x: -50 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.8 }}
+          className="text-center lg:text-left text-white"
+        >
+          <motion.div
+            initial={{ scale: 0, rotate: -180 }}
+            animate={{ scale: 1, rotate: 0 }}
+            transition={{ delay: 0.3, type: 'spring', stiffness: 200 }}
+            className="flex items-center gap-3 justify-center lg:justify-start mb-8"
+          >
+            <div className="w-16 h-16 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center shadow-2xl border border-white/30">
+              <Crown className="h-8 w-8 text-white" />
+            </div>
+            <div>
+              <h1 className="text-4xl font-black">ChamaHub</h1>
+              <p className="text-white/80 font-medium">Modern Chama Management</p>
+            </div>
+          </motion.div>
+
+          <motion.h2
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.5 }}
+            className="text-5xl lg:text-6xl font-black mb-6 leading-tight"
+          >
+            {verifying
+              ? 'Verifying Your Email'
+              : success
+              ? 'Welcome to ChamaHub!'
+              : 'Verification Needed'}
+          </motion.h2>
+
+          <motion.p
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.7 }}
+            className="text-xl mb-8 text-white/90 max-w-lg mx-auto lg:mx-0 leading-relaxed"
+          >
+            {verifying
+              ? "We're verifying your email address to secure your chama account..."
+              : success
+              ? "Your email has been verified! You're now ready to start managing your chama with powerful tools and insights."
+              : "We need to verify your email address to complete your registration and secure your account."}
+          </motion.p>
+
+          {/* Status Features */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.9 }}
+            className="space-y-4 mb-8"
+          >
+            {[
+              { icon: Mail, text: 'Secure email verification' },
+              { icon: Sparkles, text: 'Full platform access upon verification' },
+              { icon: CheckCircle, text: 'Instant account activation' }
+            ].map((feature, index) => (
+              <motion.div
+                key={feature.text}
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 1 + index * 0.1 }}
+                className="flex items-center gap-3 text-white/90"
+              >
+                <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center">
+                  <feature.icon className="h-4 w-4" />
                 </div>
-              ) : success ? (
+                <span className="font-medium">{feature.text}</span>
+              </motion.div>
+            ))}
+          </motion.div>
+
+          {/* Trust Badge */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 1.2 }}
+            className="inline-flex items-center gap-3 px-6 py-3 rounded-2xl bg-white/10 backdrop-blur-sm border border-white/20"
+          >
+            <div className="flex items-center gap-1">
+              {[1, 2, 3, 4, 5].map((i) => (
+                <Sparkles key={i} className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+              ))}
+            </div>
+            <span className="font-bold text-sm">Join 500+ Successful Chamas</span>
+          </motion.div>
+        </motion.div>
+
+        {/* Right Side - Verification Card */}
+        <motion.div
+          initial={{ opacity: 0, x: 50 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.8, delay: 0.2 }}
+          className="flex justify-center"
+        >
+          <Card className="w-full max-w-md shadow-2xl border-0 bg-white/10 backdrop-blur-xl rounded-3xl">
+            <CardHeader className="space-y-3 text-center pb-8">
+              <motion.div
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                transition={{ delay: 0.4, type: 'spring', stiffness: 200 }}
+                className="mx-auto bg-white/20 p-4 rounded-2xl w-fit"
+              >
+                {verifying ? (
+                  <motion.div
+                    animate={{ rotate: 360 }}
+                    transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+                    className="w-8 h-8 border-2 border-white border-t-transparent rounded-full"
+                  />
+                ) : success ? (
+                  <CheckCircle className="h-8 w-8 text-green-400" />
+                ) : (
+                  <AlertCircle className="h-8 w-8 text-yellow-400" />
+                )}
+              </motion.div>
+              <CardTitle className="text-3xl font-black text-white">
+                {verifying
+                  ? 'Verifying Email...'
+                  : success
+                  ? 'Email Verified!'
+                  : 'Verification Failed'}
+              </CardTitle>
+              <CardDescription className="text-white/80 text-lg">
+                {verifying
+                  ? 'Please wait while we verify your email address'
+                  : success
+                  ? "Your email has been successfully verified. You'll be redirected to login shortly."
+                  : error}
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {!verifying && !success && (
+                <div className="space-y-4">
+                  <motion.button
+                    whileHover={{ 
+                      scale: 1.02,
+                      boxShadow: "0 20px 40px rgba(255, 255, 255, 0.2)"
+                    }}
+                    whileTap={{ scale: 0.98 }}
+                    onClick={handleResendVerification}
+                    disabled={resending || resent}
+                    className="w-full py-4 rounded-2xl bg-white text-green-600 font-bold text-lg hover:bg-white/90 transition-all disabled:opacity-50 flex items-center justify-center gap-3 shadow-2xl"
+                  >
+                    {resending ? (
+                      <>
+                        <motion.div
+                          animate={{ rotate: 360 }}
+                          transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                          className="w-5 h-5 border-2 border-green-600 border-t-transparent rounded-full"
+                        />
+                        Sending...
+                      </>
+                    ) : resent ? (
+                      <>
+                        <CheckCircle className="h-5 w-5" />
+                        Email Sent!
+                      </>
+                    ) : (
+                      <>
+                        <RefreshCw className="h-5 w-5" />
+                        Resend Verification Email
+                      </>
+                    )}
+                  </motion.button>
+                  <motion.button
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    onClick={() => navigate('/login')}
+                    className="w-full py-4 rounded-2xl border border-white/20 bg-transparent text-white font-bold text-lg hover:bg-white/10 transition-all flex items-center justify-center gap-3"
+                  >
+                    Back to Login
+                    <ArrowRight className="h-5 w-5" />
+                  </motion.button>
+                </div>
+              )}
+              {success && (
                 <motion.div
-                  initial={{ scale: 0 }}
-                  animate={{ scale: 1 }}
-                  transition={{ type: 'spring', stiffness: 200 }}
-                  className="h-20 w-20 rounded-full bg-green-100 flex items-center justify-center mx-auto"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.5 }}
+                  className="text-center space-y-4"
                 >
-                  <CheckCircle className="h-12 w-12 text-green-600" />
-                </motion.div>
-              ) : (
-                <motion.div
-                  initial={{ scale: 0 }}
-                  animate={{ scale: 1 }}
-                  transition={{ type: 'spring', stiffness: 200 }}
-                  className="h-20 w-20 rounded-full bg-red-100 flex items-center justify-center mx-auto"
-                >
-                  <AlertCircle className="h-12 w-12 text-red-600" />
+                  <p className="text-white/80">
+                    Redirecting to login page...
+                  </p>
+                  <div className="flex justify-center">
+                    <motion.div
+                      animate={{ rotate: 360 }}
+                      transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                      className="w-8 h-8 border-2 border-white border-t-transparent rounded-full"
+                    />
+                  </div>
                 </motion.div>
               )}
-            </motion.div>
-            <CardTitle className="text-3xl">
-              {verifying
-                ? 'Verifying Email...'
-                : success
-                ? 'Email Verified!'
-                : 'Verification Failed'}
-            </CardTitle>
-            <CardDescription>
-              {verifying
-                ? 'Please wait while we verify your email address'
-                : success
-                ? "Your email has been successfully verified. You'll be redirected to login shortly."
-                : error}
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {!verifying && !success && (
-              <div className="space-y-4">
-                <motion.button
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  onClick={handleResendVerification}
-                  disabled={resending || resent}
-                  className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {resending ? (
-                    <>
-                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-                      Sending...
-                    </>
-                  ) : resent ? (
-                    <>
-                      <CheckCircle className="h-5 w-5" />
-                      Email Sent!
-                    </>
-                  ) : (
-                    <>
-                      <RefreshCw className="h-5 w-5" />
-                      Resend Verification Email
-                    </>
-                  )}
-                </motion.button>
-                <motion.button
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  onClick={() => navigate('/login')}
-                  className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-secondary text-secondary-foreground rounded-lg hover:bg-secondary/90 transition-colors"
-                >
-                  Back to Login
-                  <ArrowRight className="h-5 w-5" />
-                </motion.button>
-              </div>
-            )}
-            {success && (
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.5 }}
-                className="text-center"
-              >
-                <p className="text-muted-foreground mb-4">
-                  Redirecting to login page...
-                </p>
-                <div className="flex justify-center">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-                </div>
-              </motion.div>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Decorative Elements */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.8 }}
-          className="mt-8 text-center"
-        >
-          <p className="text-muted-foreground text-sm">
-            Need help?{' '}
-            <a href="mailto:support@chamahub.com" className="text-primary hover:underline">
-              Contact Support
-            </a>
-          </p>
+            </CardContent>
+          </Card>
         </motion.div>
-      </motion.div>
+      </div>
     </div>
   );
 }
