@@ -11,4 +11,6 @@ router.register(r'cashflow-predictions', views.PredictiveCashFlowViewSet)
 urlpatterns = [
     path('', include(router.urls)),
     path('dashboard/', views.dashboard_analytics, name='dashboard-analytics'),
+    path('groups/<int:group_id>/stats/', views.group_stats, name='group-stats'),
+    path('groups/<int:group_id>/recent-activity/', views.recent_activity, name='recent-activity'),
 ]
