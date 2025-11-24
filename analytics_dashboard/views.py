@@ -236,15 +236,20 @@ def recent_activity(request, group_id: int) -> Response:
     
     activities = []
     
+    # Get recent activities from the last 90 days for better performance
+    ninety_days_ago = timezone.now() - timedelta(days=90)
+    
     # Get recent contributions
-    contributions = Contribution.objects.filter(group=group).order_by('-created_at')[:20]
+    contributions = Contribution.objects.filter(
+        group=group, 
+        created_at__gte=ninety_days_ago
+    ).order_by('-created_at')[:20]
     for contrib in contributions:
         activities.append({
             'id': f'contrib_{contrib.id}',
             'type': 'contribution',
             'description': f'{contrib.member.get_full_name()} contributed KES {contrib.amount:,.2f}',
             'amount': float(contrib.amount),
-            'user': contrib.member.get_full_name(),
             'user_id': contrib.member.id,
             'group_id': group.id,
             'timestamp': contrib.created_at.isoformat(),
@@ -254,14 +259,16 @@ def recent_activity(request, group_id: int) -> Response:
         })
     
     # Get recent loans
-    loans = Loan.objects.filter(group=group).order_by('-applied_at')[:10]
+    loans = Loan.objects.filter(
+        group=group,
+        applied_at__gte=ninety_days_ago
+    ).order_by('-applied_at')[:10]
     for loan in loans:
         activities.append({
             'id': f'loan_{loan.id}',
             'type': 'loan',
             'description': f'{loan.borrower.get_full_name()} requested loan of KES {loan.principal_amount:,.2f}',
             'amount': float(loan.principal_amount),
-            'user': loan.borrower.get_full_name(),
             'user_id': loan.borrower.id,
             'group_id': group.id,
             'timestamp': loan.applied_at.isoformat(),
@@ -272,7 +279,9 @@ def recent_activity(request, group_id: int) -> Response:
     
     # Get recent loan repayments
     repayments = LoanRepayment.objects.filter(
-        loan__group=group
+        loan__group=group,
+        paid_at__gte=ninety_days_ago,
+        status='COMPLETED'
     ).select_related('loan__borrower').order_by('-paid_at')[:10]
     for repayment in repayments:
         activities.append({
@@ -280,7 +289,6 @@ def recent_activity(request, group_id: int) -> Response:
             'type': 'loan_repayment',
             'description': f'{repayment.loan.borrower.get_full_name()} repaid KES {repayment.amount:,.2f}',
             'amount': float(repayment.amount),
-            'user': repayment.loan.borrower.get_full_name(),
             'user_id': repayment.loan.borrower.id,
             'group_id': group.id,
             'timestamp': repayment.paid_at.isoformat(),
@@ -290,14 +298,16 @@ def recent_activity(request, group_id: int) -> Response:
         })
     
     # Get recent expenses
-    expenses = Expense.objects.filter(group=group).select_related('requested_by').order_by('-requested_at')[:10]
+    expenses = Expense.objects.filter(
+        group=group,
+        requested_at__gte=ninety_days_ago
+    ).select_related('requested_by').order_by('-requested_at')[:10]
     for expense in expenses:
         activities.append({
             'id': f'expense_{expense.id}',
             'type': 'expense',
             'description': f'Expense: {expense.description} - KES {expense.amount:,.2f}',
             'amount': float(expense.amount),
-            'user': expense.requested_by.get_full_name(),
             'user_id': expense.requested_by.id,
             'group_id': group.id,
             'timestamp': expense.requested_at.isoformat(),
@@ -307,14 +317,16 @@ def recent_activity(request, group_id: int) -> Response:
         })
     
     # Get recent investments
-    investments = Investment.objects.filter(group=group).order_by('-created_at')[:10]
+    investments = Investment.objects.filter(
+        group=group,
+        created_at__gte=ninety_days_ago
+    ).order_by('-created_at')[:10]
     for investment in investments:
         activities.append({
             'id': f'investment_{investment.id}',
             'type': 'investment',
             'description': f'Investment in {investment.investment_type} - KES {investment.principal_amount:,.2f}',
             'amount': float(investment.principal_amount),
-            'user': investment.created_by.get_full_name(),
             'user_id': investment.created_by.id,
             'group_id': group.id,
             'timestamp': investment.created_at.isoformat(),
