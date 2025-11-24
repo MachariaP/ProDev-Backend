@@ -10,20 +10,10 @@ import {
   CheckCircle,
   Clock,
   Sparkles,
-  Crown,
-  Target,
   BarChart3,
   PiggyBank,
-  Eye,
-  MoreHorizontal,
   AlertCircle,
-  Filter,
-  Search,
-  Users,
   TrendingUp,
-  Shield,
-  Rocket,
-  Zap,
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/card';
 import api from '../../services/api';

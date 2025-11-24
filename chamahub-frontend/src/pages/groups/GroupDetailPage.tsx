@@ -19,13 +19,7 @@ import {
   Crown,
   Zap,
   BarChart3,
-  Eye,
-  MoreHorizontal,
-  Clock,
-  User,
-  CreditCard,
   Shield,
-  Rocket,
   PiggyBank,
   ArrowUpRight,
   AlertCircle,
@@ -33,25 +27,25 @@ import {
 } from 'lucide-react';
 
 // Simple card components as fallback
-const Card = ({ children, className = '' }) => (
+const Card = ({ children, className = '' }: { children: React.ReactNode; className?: string }) => (
   <div className={`bg-white rounded-2xl border border-gray-200 shadow-sm ${className}`}>
     {children}
   </div>
 );
 
-const CardHeader = ({ children, className = '' }) => (
+const CardHeader = ({ children, className = '' }: { children: React.ReactNode; className?: string }) => (
   <div className={`p-6 pb-4 ${className}`}>{children}</div>
 );
 
-const CardTitle = ({ children, className = '' }) => (
+const CardTitle = ({ children, className = '' }: { children: React.ReactNode; className?: string }) => (
   <h3 className={`text-lg font-semibold ${className}`}>{children}</h3>
 );
 
-const CardDescription = ({ children, className = '' }) => (
+const CardDescription = ({ children, className = '' }: { children: React.ReactNode; className?: string }) => (
   <p className={`text-sm text-gray-600 mt-1 ${className}`}>{children}</p>
 );
 
-const CardContent = ({ children, className = '' }) => (
+const CardContent = ({ children, className = '' }: { children: React.ReactNode; className?: string }) => (
   <div className={`p-6 ${className}`}>{children}</div>
 );
 
@@ -225,7 +219,7 @@ const api = {
 };
 
 // Floating Background Elements
-const FloatingElement = ({ children, delay = 0 }) => (
+const FloatingElement = ({ children, delay = 0 }: { children: React.ReactNode; delay?: number }) => (
   <motion.div
     initial={{ y: 0 }}
     animate={{ 
@@ -296,7 +290,7 @@ const StatsCard = ({
 );
 
 // Progress Bar Component
-const ProgressBar = ({ percentage, color = 'from-blue-500 to-cyan-600', delay = 0 }) => (
+const ProgressBar = ({ percentage, color = 'from-blue-500 to-cyan-600', delay = 0 }: { percentage: number; color?: string; delay?: number }) => (
   <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
     <motion.div
       initial={{ width: 0 }}

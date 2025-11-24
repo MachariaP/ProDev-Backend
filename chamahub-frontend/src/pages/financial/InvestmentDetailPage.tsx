@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
   ArrowLeft,
@@ -17,7 +17,6 @@ import {
   XCircle,
   Clock,
   Target,
-  Sparkles,
   Crown,
   Gem,
   Zap,
@@ -25,7 +24,6 @@ import {
   Rocket,
   PieChart,
   Award,
-  TrendingDown,
   Clock3,
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/card';

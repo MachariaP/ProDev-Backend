@@ -80,8 +80,6 @@ function AdminRoute({ children }: { children: React.ReactNode }) {
 }
 
 function App() {
-  const isAuthenticated = !!localStorage.getItem('access_token');
-
   return (
     <Router>
       <Routes>

@@ -3,20 +3,13 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { 
   ArrowLeft, Plus, Receipt, DollarSign, CheckCircle, Clock, XCircle, 
-  AlertCircle, Download, Filter, Search, Users, Sparkles, Crown,
-  Wallet, Target, BarChart3, PiggyBank, Eye, MoreHorizontal, Calendar,
-  TrendingUp, TrendingDown, FileText, Shield, CreditCard
+  AlertCircle, Download, Filter, Search, Users, Sparkles,
+  BarChart3, PiggyBank, Eye, MoreHorizontal, Calendar,
+  TrendingUp, Shield, CreditCard
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../../components/ui/card';
 import { financeService } from '../../services/apiService';
 import type { Expense } from '../../types/api';
-
-// Simple card components as fallback (if needed)
-const SimpleCard = ({ children, className = '' }: { children: React.ReactNode; className?: string }) => (
-  <div className={`bg-white rounded-2xl border border-gray-200 shadow-sm ${className}`}>
-    {children}
-  </div>
-);
 
 // Floating Background Elements
 const FloatingElement = ({ children, delay = 0 }: { children: React.ReactNode; delay?: number }) => (

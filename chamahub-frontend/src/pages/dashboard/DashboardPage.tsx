@@ -1,4 +1,4 @@
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, type Variants } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import {
   Wallet,
@@ -17,24 +17,15 @@ import {
   Crown,
   Zap,
   Sparkles,
-  Target,
-  Calendar,
   DollarSign,
-  Gem,
-  Rocket,
-  PieChart,
-  LineChart,
-  Activity,
   Award,
-  Clock,
   TrendingDown,
   CheckCircle2,
-  XCircle,
-  MoreHorizontal
+  XCircle
 } from 'lucide-react';
 import { StatsCard } from '../../components/StatsCard';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../../components/ui/card';
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, PieChart as RechartsPieChart, Pie, Cell, LineChart as RechartsLineChart, Line } from 'recharts';
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, PieChart as RechartsPieChart, Pie, Cell } from 'recharts';
 import { useState, useEffect, useMemo } from 'react';
 import { Badge } from '../../components/ui/badge';
 import { Button } from '../../components/ui/button';
@@ -117,7 +108,7 @@ const mockNotifications: Notification[] = [
   },
 ];
 
-const containerVariants = {
+const containerVariants: Variants = {
   hidden: { opacity: 0 },
   visible: {
     opacity: 1,
@@ -127,13 +118,13 @@ const containerVariants = {
   }
 };
 
-const itemVariants = {
+const itemVariants: Variants = {
   hidden: { opacity: 0, y: 20 },
   visible: {
     opacity: 1,
     y: 0,
     transition: {
-      type: 'spring',
+      type: 'spring' as const,
       stiffness: 100
     }
   }
@@ -163,11 +154,10 @@ const ChartTooltip = ({ active, payload, label }: any) => {
 };
 
 // Enhanced Quick Stat Card Component
-function QuickStatCard({ title, value, icon: Icon, color, gradient, onClick }: {
+function QuickStatCard({ title, value, icon: Icon, gradient, onClick }: {
   title: string;
   value: number;
   icon: any;
-  color: string;
   gradient: string;
   onClick: () => void;
 }) {
@@ -314,7 +304,7 @@ function TransactionRow({ transaction, index, onClick }: {
 }
 
 // Floating Background Elements
-const FloatingElement = ({ children, delay = 0 }) => (
+const FloatingElement = ({ children, delay = 0 }: { children: React.ReactNode; delay?: number }) => (
   <motion.div
     initial={{ y: 0 }}
     animate={{ 
@@ -468,7 +458,7 @@ export function DashboardPage() {
     groupStats: any,
     recentActivity: any,
     dashboardAnalytics: any,
-    transactions: any
+    _transactions: any
   ) => {
     // Use API data if available, otherwise use mock data
     const useMockData = !groupStats && !recentActivity && !dashboardAnalytics;
@@ -872,7 +862,6 @@ export function DashboardPage() {
             title="Pending Actions"
             value={dashboardData.quick_stats.pending_actions}
             icon={LayoutDashboard}
-            color="text-orange-600"
             gradient="from-orange-500 to-amber-500"
             onClick={() => navigate('/actions')}
           />
@@ -880,7 +869,6 @@ export function DashboardPage() {
             title="Upcoming Meetings"
             value={dashboardData.quick_stats.upcoming_meetings}
             icon={Users}
-            color="text-blue-600"
             gradient="from-blue-500 to-cyan-500"
             onClick={() => navigate('/meetings')}
           />
@@ -888,7 +876,6 @@ export function DashboardPage() {
             title="Loan Approvals"
             value={dashboardData.quick_stats.loan_approvals}
             icon={TrendingUp}
-            color="text-purple-600"
             gradient="from-purple-500 to-pink-500"
             onClick={() => navigate('/loans')}
           />
@@ -896,7 +883,6 @@ export function DashboardPage() {
             title="Unread Notifications"
             value={dashboardData.quick_stats.unread_notifications}
             icon={Bell}
-            color="text-red-600"
             gradient="from-red-500 to-pink-500"
             onClick={() => setShowNotifications(true)}
           />
@@ -910,7 +896,6 @@ export function DashboardPage() {
             icon={Wallet}
             trend={dashboardData.summary.growth_rates.balance}
             iconClassName="bg-gradient-to-br from-green-500 to-emerald-500 text-white shadow-lg"
-            gradient="from-green-50 to-emerald-50"
           />
           <StatsCard
             title="Total Members"
@@ -918,7 +903,6 @@ export function DashboardPage() {
             icon={Users}
             trend={dashboardData.summary.growth_rates.members}
             iconClassName="bg-gradient-to-br from-blue-500 to-cyan-500 text-white shadow-lg"
-            gradient="from-blue-50 to-cyan-50"
           />
           <StatsCard
             title="Active Loans"
@@ -926,7 +910,6 @@ export function DashboardPage() {
             icon={TrendingUp}
             trend={dashboardData.summary.growth_rates.loans}
             iconClassName="bg-gradient-to-br from-orange-500 to-amber-500 text-white shadow-lg"
-            gradient="from-orange-50 to-amber-50"
           />
           <StatsCard
             title="Investments"
@@ -934,7 +917,6 @@ export function DashboardPage() {
             icon={PiggyBank}
             trend={dashboardData.summary.growth_rates.investments}
             iconClassName="bg-gradient-to-br from-purple-500 to-pink-500 text-white shadow-lg"
-            gradient="from-purple-50 to-pink-50"
           />
         </motion.div>
 
