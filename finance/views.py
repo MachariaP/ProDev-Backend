@@ -6,6 +6,7 @@ from django.utils import timezone
 from django.http import HttpResponse
 from django.db.models import Q
 from decimal import Decimal
+from datetime import datetime
 import csv
 from itertools import chain
 from operator import attrgetter
@@ -292,7 +293,7 @@ class TransactionViewSet(viewsets.ReadOnlyModelViewSet):
                 )
         
         # Sort transactions by date (newest first)
-        transactions.sort(key=lambda x: x['created_at'] if x['created_at'] else '', reverse=True)
+        transactions.sort(key=lambda x: x['created_at'] or datetime.min.isoformat(), reverse=True)
         
         return Response({
             'count': len(transactions),
