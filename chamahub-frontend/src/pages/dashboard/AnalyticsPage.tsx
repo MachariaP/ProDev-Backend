@@ -79,7 +79,7 @@ const COLORS = [
 ];
 
 // Constants for analytics data processing
-const ESTIMATED_AMOUNT_PER_TRANSACTION = 10000; // Estimate: avg amount per transaction
+const ESTIMATED_AMOUNT_PER_TRANSACTION = 10000; // Temporary estimate until backend provides actual amounts
 const TARGET_PERCENTAGE = 0.8; // Target set to 80% of highest growth
 
 const gradientColors = {
@@ -161,7 +161,10 @@ const processAnalyticsData = (data: RawAnalyticsData): AnalyticsData => {
     0
   );
   const activeMembers = (data.member_activity || []).length;
-  const topPerformer = (data.member_activity || [])[0]?.member_name || 'N/A';
+  
+  // Get top performer (backend already sorts by transaction count, but we'll be explicit)
+  const sortedMembers = [...(data.member_activity || [])].sort((a, b) => b.transactions - a.transactions);
+  const topPerformer = sortedMembers[0]?.member_name || 'N/A';
   
   // Calculate average growth (month-over-month percentage)
   const growthValues = (data.growth_trends || []).map((g: ApiGrowthTrend) => g.growth);
@@ -328,7 +331,7 @@ export function AnalyticsPage() {
         const response = await api.get(`/analytics/dashboard/?group_id=${selectedGroupId}`);
         const processedData = processAnalyticsData(response.data);
         setAnalyticsData(processedData);
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.error('Error fetching analytics:', err);
         setError('Failed to load analytics data. Please try again.');
         // Don't show mock data on error - keep empty state
@@ -355,7 +358,7 @@ export function AnalyticsPage() {
         const response = await api.get(`/analytics/dashboard/?group_id=${selectedGroupId}`);
         const processedData = processAnalyticsData(response.data);
         setAnalyticsData(processedData);
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.error('Error refreshing analytics:', err);
         setError('Failed to refresh analytics data. Please try again.');
       } finally {
