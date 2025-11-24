@@ -31,7 +31,7 @@ export const authService = {
     access: string; 
     refresh: string;
   }> {
-    const response = await api.post('/api/token/', credentials);
+    const response = await api.post('/token/', credentials);
     return response.data;
   },
 
