@@ -283,3 +283,90 @@ class ContributionAPITest(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
 
+class TransactionAPITest(APITestCase):
+    """Test cases for Transaction API endpoints."""
+    
+    def setUp(self):
+        """Set up test data."""
+        self.user = User.objects.create_user(
+            email='trans_test@example.com',
+            password='testpass123',
+            first_name='Transaction',
+            last_name='Test',
+            phone_number='+254700000020'
+        )
+        self.group = ChamaGroup.objects.create(
+            name='Transaction Test Chama',
+            description='Test Description',
+            created_by=self.user,
+            minimum_contribution=Decimal('1000.00')
+        )
+        self.client = APIClient()
+        self.client.force_authenticate(user=self.user)
+        
+        # Create test data
+        self.contribution = Contribution.objects.create(
+            group=self.group,
+            member=self.user,
+            amount=Decimal('5000.00'),
+            payment_method='MPESA',
+            status='COMPLETED'
+        )
+        
+        self.loan = Loan.objects.create(
+            group=self.group,
+            borrower=self.user,
+            principal_amount=Decimal('10000.00'),
+            interest_rate=Decimal('10.00'),
+            duration_months=12,
+            purpose='Business',
+            status='DISBURSED'
+        )
+        
+        self.expense = Expense.objects.create(
+            group=self.group,
+            category='OPERATIONAL',
+            description='Office supplies',
+            amount=Decimal('2000.00'),
+            requested_by=self.user,
+            status='APPROVED'
+        )
+    
+    def test_list_transactions(self):
+        """Test listing all transactions."""
+        response = self.client.get('/api/v1/finance/transactions/')
+        
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn('results', response.data)
+        self.assertGreaterEqual(len(response.data['results']), 3)
+        
+        # Check that different transaction types are present
+        types = [t['type'] for t in response.data['results']]
+        self.assertIn('contribution', types)
+        self.assertIn('loan', types)
+        self.assertIn('expense', types)
+    
+    def test_filter_transactions_by_type(self):
+        """Test filtering transactions by type."""
+        response = self.client.get('/api/v1/finance/transactions/', {'type': 'contribution'})
+        
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        for transaction in response.data['results']:
+            self.assertEqual(transaction['type'], 'contribution')
+    
+    def test_filter_transactions_by_status(self):
+        """Test filtering transactions by status."""
+        response = self.client.get('/api/v1/finance/transactions/', {'status': 'completed'})
+        
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        for transaction in response.data['results']:
+            self.assertEqual(transaction['status'], 'completed')
+    
+    def test_transactions_require_authentication(self):
+        """Test that listing transactions requires authentication."""
+        self.client.force_authenticate(user=None)
+        response = self.client.get('/api/v1/finance/transactions/')
+        
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+
