@@ -215,9 +215,15 @@ class Command(BaseCommand):
                 created_by=created_by
             )
         elif investment.status == 'SOLD':
-            sell_date = investment.purchase_date + timedelta(
-                days=random.randint(30, (investment.maturity_date - investment.purchase_date).days)
-            )
+            days_until_maturity = (investment.maturity_date - investment.purchase_date).days
+            if days_until_maturity > 30:
+                sell_date = investment.purchase_date + timedelta(
+                    days=random.randint(30, days_until_maturity)
+                )
+            else:
+                # If maturity is within 30 days, sell halfway to maturity
+                sell_date = investment.purchase_date + timedelta(days=max(1, days_until_maturity // 2))
+            
             InvestmentTransaction.objects.create(
                 investment=investment,
                 transaction_type='SELL',

@@ -51,8 +51,20 @@ export function InvestmentPortfolioPage() {
       const response = await api.get('/investments/investments/');
       const rawData = response.data.results || response.data || [];
       
-      // Parse string values to numbers
-      const data = rawData.map((inv: any) => ({
+      // Parse string values to numbers from API response
+      interface RawInvestment {
+        id: number;
+        investment_type: string;
+        name: string;
+        principal_amount: string;
+        current_value: string;
+        roi: string;
+        profit_loss: string;
+        maturity_date: string;
+        status: string;
+      }
+      
+      const data: Investment[] = rawData.map((inv: RawInvestment) => ({
         ...inv,
         principal_amount: parseFloat(inv.principal_amount) || 0,
         current_value: parseFloat(inv.current_value) || 0,
