@@ -26,6 +26,10 @@ class ContributionViewSet(viewsets.ModelViewSet):
     filter_backends = [DjangoFilterBackend]
     filterset_fields = ['group', 'member', 'status', 'payment_method']
     
+    def perform_create(self, serializer):
+        """Set member to current user."""
+        serializer.save(member=self.request.user)
+    
     @action(detail=True, methods=['post'], permission_classes=[permissions.IsAuthenticated])
     def reconcile(self, request, pk=None):
         """Reconcile a contribution (Admin/Treasurer only)."""

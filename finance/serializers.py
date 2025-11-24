@@ -22,7 +22,7 @@ class ContributionSerializer(serializers.ModelSerializer):
             'status', 'reconciled_by', 'reconciled_by_name',
             'reconciled_at', 'notes', 'created_at', 'updated_at'
         ]
-        read_only_fields = ['id', 'reconciled_by', 'reconciled_at', 'created_at', 'updated_at']
+        read_only_fields = ['id', 'member', 'reconciled_by', 'reconciled_at', 'created_at', 'updated_at']
 
 
 class LoanSerializer(serializers.ModelSerializer):
