@@ -164,6 +164,14 @@ export const financeService = {
     return response.data;
   },
 
+  async exportContributions(params?: { status?: string }): Promise<Blob> {
+    const response = await api.get('/finance/contributions/export/', { 
+      params,
+      responseType: 'blob'
+    });
+    return response.data;
+  },
+
   // Loans
   async getLoans(params?: { group?: number; borrower?: number; status?: string; page?: number }): Promise<PaginatedResponse<Loan>> {
     const response = await api.get('/finance/loans/', { params });

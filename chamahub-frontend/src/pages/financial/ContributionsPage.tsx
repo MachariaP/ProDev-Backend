@@ -8,6 +8,52 @@ import {
   Shield
 } from 'lucide-react';
 
+// Import the real finance service from apiService
+import { financeService } from '../../services/apiService';
+import type { Contribution } from '../../types/api';
+
+// UI representation of contribution with display-friendly fields
+interface ContributionDisplay {
+  id: number;
+  member: string; // member name for display
+  amount: number; // parsed amount
+  status: string;
+  payment_method: string;
+  reference_number: string | null;
+  date: string;
+  timestamp: string; // formatted time ago
+}
+
+// Helper function to format time ago
+const formatTimeAgo = (dateString: string): string => {
+  try {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+    
+    if (diffInSeconds < 60) return 'Just now';
+    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)} minutes ago`;
+    if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)} hours ago`;
+    return `${Math.floor(diffInSeconds / 86400)} days ago`;
+  } catch {
+    return 'Recently';
+  }
+};
+
+// Transform API contribution to UI display format
+const transformContribution = (contribution: Contribution): ContributionDisplay => {
+  return {
+    id: contribution.id,
+    member: contribution.member_name || `Member #${contribution.member}`,
+    amount: parseFloat(contribution.amount),
+    status: contribution.status,
+    payment_method: contribution.payment_method,
+    reference_number: contribution.reference_number || null,
+    date: contribution.created_at,
+    timestamp: formatTimeAgo(contribution.created_at),
+  };
+};
+
 // Simple card components as fallback
 const Card = ({ children, className = '' }: { children: React.ReactNode; className?: string }) => (
   <div className={`bg-white rounded-2xl border border-gray-200 shadow-sm ${className}`}>
@@ -30,72 +76,6 @@ const CardDescription = ({ children, className = '' }: { children: React.ReactNo
 const CardContent = ({ children, className = '' }: { children: React.ReactNode; className?: string }) => (
   <div className={`p-6 ${className}`}>{children}</div>
 );
-
-// Mock service since we don't have the actual service
-const financeService = {
-  getContributions: async () => ({
-    results: [
-      {
-        id: 1,
-        member: 'Jane Doe',
-        amount: 15000,
-        status: 'COMPLETED',
-        payment_method: 'M-Pesa',
-        reference_number: 'MP123456789',
-        date: '2024-01-15',
-        timestamp: '2 hours ago'
-      },
-      {
-        id: 2,
-        member: 'John Smith',
-        amount: 20000,
-        status: 'PENDING',
-        payment_method: 'Bank Transfer',
-        reference_number: 'BT987654321',
-        date: '2024-01-15',
-        timestamp: '5 hours ago'
-      },
-      {
-        id: 3,
-        member: 'Mary Johnson',
-        amount: 12000,
-        status: 'RECONCILED',
-        payment_method: 'M-Pesa',
-        reference_number: 'MP456789123',
-        date: '2024-01-14',
-        timestamp: '1 day ago'
-      },
-      {
-        id: 4,
-        member: 'Peter Brown',
-        amount: 18000,
-        status: 'FAILED',
-        payment_method: 'Cash',
-        reference_number: null,
-        date: '2024-01-14',
-        timestamp: '1 day ago'
-      },
-      {
-        id: 5,
-        member: 'Sarah Wilson',
-        amount: 22000,
-        status: 'COMPLETED',
-        payment_method: 'M-Pesa',
-        reference_number: 'MP789123456',
-        date: '2024-01-13',
-        timestamp: '2 days ago'
-      }
-    ]
-  })
-};
-
-// Mock API
-const api = {
-  post: async (_url: string) => {
-    // Simulate API call
-    return new Promise(resolve => setTimeout(resolve, 1000));
-  }
-};
 
 // Floating Background Elements
 const FloatingElement = ({ children, delay = 0 }: { children: React.ReactNode; delay?: number }) => (
@@ -131,7 +111,7 @@ const AnimatedStatCard = ({
   change?: string; 
   color: string; 
   delay?: number;
-  icon: any;
+  icon: React.ComponentType<{ className?: string }>;
   description: string;
 }) => (
   <motion.div
@@ -209,7 +189,7 @@ const StatusBadge = ({ status }: { status: string }) => {
 };
 
 export function ContributionsPage() {
-  const [contributions, setContributions] = useState<any[]>([]);
+  const [contributions, setContributions] = useState<ContributionDisplay[]>([]);
   const [loading, setLoading] = useState(true);
   const [reconciling, setReconciling] = useState<number | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
@@ -225,15 +205,15 @@ export function ContributionsPage() {
   const fetchContributions = async () => {
     try {
       setLoading(true);
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      setError(null);
       const response = await financeService.getContributions();
-      setContributions(response.results || []);
+      // Transform API contributions to display format
+      const displayContributions = (response.results || []).map(transformContribution);
+      setContributions(displayContributions);
     } catch (err) { 
-      console.error(err);
-      // Fallback to mock data - use the mock service directly
-      const mockResponse = await financeService.getContributions();
-      setContributions(mockResponse.results || []);
+      console.error('Error fetching contributions:', err);
+      setError('Failed to load contributions. Please try again.');
+      setContributions([]);
     } finally { 
       setLoading(false); 
     }
@@ -242,10 +222,11 @@ export function ContributionsPage() {
   const handleReconcile = async (id: number) => {
     setReconciling(id);
     try {
-      await api.post(`/finance/contributions/${id}/reconcile/`);
+      await financeService.reconcileContribution(id);
       await fetchContributions();
     } catch (err) { 
-      console.error(err); 
+      console.error('Error reconciling contribution:', err);
+      setError('Failed to reconcile contribution. Please try again.');
     } finally { 
       setReconciling(null); 
     }
@@ -256,28 +237,13 @@ export function ContributionsPage() {
     setError(null);
     try {
       // Build query parameters based on current filters
-      const params = new URLSearchParams();
+      const params: { status?: string } = {};
       if (filterStatus !== 'ALL') {
-        params.append('status', filterStatus);
+        params.status = filterStatus;
       }
       
-      // Get base URL from the api configuration
-      const baseURL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1';
-      const token = localStorage.getItem('access_token');
-      
-      // Make API call to export endpoint
-      const response = await fetch(`${baseURL}/finance/contributions/export/?${params.toString()}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-      
-      if (!response.ok) {
-        throw new Error('Export failed');
-      }
-      
-      // Create blob from response
-      const blob = await response.blob();
+      // Use the financeService to export contributions
+      const blob = await financeService.exportContributions(params);
       
       // Create download link
       const url = window.URL.createObjectURL(blob);
