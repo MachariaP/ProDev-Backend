@@ -99,6 +99,66 @@ type AnalyticsData = {
   };
 };
 
+// Helper function to process raw API data into the format expected by the UI
+const processAnalyticsData = (data: any): AnalyticsData => {
+  // Add amount field to member_activity (estimate based on transactions)
+  const processedMemberActivity = (data.member_activity || []).map((member: any) => ({
+    ...member,
+    amount: member.transactions * 10000, // Estimate: avg 10k per transaction
+  }));
+  
+  // Add target field to growth_trends (set target to 80% of highest growth)
+  const maxGrowth = Math.max(...(data.growth_trends || []).map((g: any) => g.growth), 0);
+  const targetAmount = maxGrowth * 0.8;
+  const processedGrowthTrends = (data.growth_trends || []).map((trend: any) => ({
+    ...trend,
+    target: targetAmount,
+  }));
+  
+  // Add colors to category_breakdown
+  const processedCategoryBreakdown = (data.category_breakdown || []).map((cat: any, idx: number) => ({
+    ...cat,
+    color: COLORS[idx % COLORS.length],
+  }));
+  
+  // Calculate summary stats from the data
+  const totalContributions = (data.contributions_over_time || []).reduce(
+    (sum: number, item: any) => sum + (item.amount || 0), 
+    0
+  );
+  const activeMembers = (data.member_activity || []).length;
+  const topPerformer = (data.member_activity || [])[0]?.member_name || 'N/A';
+  
+  // Calculate average growth (month-over-month percentage)
+  const growthValues = (data.growth_trends || []).map((g: any) => g.growth);
+  let averageGrowth = 0;
+  if (growthValues.length > 1) {
+    const growthRates = [];
+    for (let i = 1; i < growthValues.length; i++) {
+      if (growthValues[i - 1] > 0) {
+        const rate = ((growthValues[i] - growthValues[i - 1]) / growthValues[i - 1]) * 100;
+        growthRates.push(rate);
+      }
+    }
+    if (growthRates.length > 0) {
+      averageGrowth = growthRates.reduce((a, b) => a + b, 0) / growthRates.length;
+    }
+  }
+  
+  return {
+    contributions_over_time: data.contributions_over_time || [],
+    member_activity: processedMemberActivity,
+    category_breakdown: processedCategoryBreakdown,
+    growth_trends: processedGrowthTrends,
+    summary_stats: {
+      total_contributions: totalContributions,
+      active_members: activeMembers,
+      average_growth: parseFloat(averageGrowth.toFixed(1)),
+      top_performer: topPerformer,
+    },
+  };
+};
+
 // Enhanced Tooltip Component
 const ChartTooltip = ({ active, payload, label, valueFormatter }: any) => {
   if (active && payload && payload.length) {
@@ -202,76 +262,18 @@ export function AnalyticsPage() {
     },
   });
 
-  // Enhanced mock data for demonstration
-  const mockAnalyticsData: AnalyticsData = {
-    contributions_over_time: [
-      { date: '2024-01', amount: 45000 },
-      { date: '2024-02', amount: 52000 },
-      { date: '2024-03', amount: 48000 },
-      { date: '2024-04', amount: 61000 },
-      { date: '2024-05', amount: 58000 },
-      { date: '2024-06', amount: 70000 },
-      { date: '2024-07', amount: 75000 },
-      { date: '2024-08', amount: 82000 },
-      { date: '2024-09', amount: 78000 },
-      { date: '2024-10', amount: 95000 },
-      { date: '2024-11', amount: 89000 },
-      { date: '2024-12', amount: 105000 },
-    ],
-    member_activity: [
-      { member_name: 'Jane Doe', transactions: 45, amount: 450000 },
-      { member_name: 'John Smith', transactions: 38, amount: 380000 },
-      { member_name: 'Mary Johnson', transactions: 32, amount: 320000 },
-      { member_name: 'Peter Brown', transactions: 28, amount: 280000 },
-      { member_name: 'Sarah Wilson', transactions: 25, amount: 250000 },
-    ],
-    category_breakdown: [
-      { name: 'Savings', value: 45, color: COLORS[0] },
-      { name: 'Investments', value: 25, color: COLORS[1] },
-      { name: 'Loans', value: 15, color: COLORS[2] },
-      { name: 'Emergency', value: 10, color: COLORS[3] },
-      { name: 'Operations', value: 5, color: COLORS[4] },
-    ],
-    growth_trends: [
-      { month: 'Jan', growth: 45000, target: 50000 },
-      { month: 'Feb', growth: 52000, target: 50000 },
-      { month: 'Mar', growth: 48000, target: 50000 },
-      { month: 'Apr', growth: 61000, target: 50000 },
-      { month: 'May', growth: 58000, target: 50000 },
-      { month: 'Jun', growth: 70000, target: 50000 },
-      { month: 'Jul', growth: 75000, target: 60000 },
-      { month: 'Aug', growth: 82000, target: 60000 },
-    ],
-    summary_stats: {
-      total_contributions: 2456789,
-      active_members: 67,
-      average_growth: 18.5,
-      top_performer: 'Jane Doe',
-    },
-  };
-
   // Load user's groups
   useEffect(() => {
-    // Simulate API call with mock data
     const loadGroups = async () => {
       try {
-        // Try real API first
         const res = await api.get('/groups/chama-groups/my_groups/');
         setGroups(res.data);
         if (res.data.length > 0) {
           setSelectedGroupId(res.data[0].id);
         }
       } catch (err) {
-        // Fallback to mock data
-        console.log('Using mock groups data');
-        setError('Failed to load your chamas - showing demo data');
-        setGroups([
-          { id: '1', name: 'Demo Chama Group' },
-          { id: '2', name: 'Savings Collective' },
-          { id: '3', name: 'Investment Club' }
-        ]);
-        setSelectedGroupId('1');
-        setAnalyticsData(mockAnalyticsData);
+        console.error('Failed to load groups:', err);
+        setError('Failed to load your chamas. Please try again.');
       } finally {
         setLoading(false);
       }
@@ -284,25 +286,24 @@ export function AnalyticsPage() {
   useEffect(() => {
     if (!selectedGroupId) return;
 
-    setFetching(true);
-    setError(null);
+    const fetchAnalytics = async () => {
+      setFetching(true);
+      setError(null);
 
-    // Simulate API call with timeout
-    setTimeout(() => {
       try {
-        // In a real app, this would be:
-        // api.get(`/analytics/dashboard/?group_id=${selectedGroupId}`)
-        //   .then(res => setAnalyticsData(res.data))
-        
-        // For now, use mock data
-        setAnalyticsData(mockAnalyticsData);
-      } catch (err) {
-        setError('Failed to load analytics - showing demo data');
-        setAnalyticsData(mockAnalyticsData);
+        const response = await api.get(`/analytics/dashboard/?group_id=${selectedGroupId}`);
+        const processedData = processAnalyticsData(response.data);
+        setAnalyticsData(processedData);
+      } catch (err: any) {
+        console.error('Error fetching analytics:', err);
+        setError('Failed to load analytics data. Please try again.');
+        // Don't show mock data on error - keep empty state
       } finally {
         setFetching(false);
       }
-    }, 1000);
+    };
+
+    fetchAnalytics();
   }, [selectedGroupId, timeRange]);
 
   const handleExportData = () => {
@@ -311,13 +312,21 @@ export function AnalyticsPage() {
     alert('Export functionality would be implemented here');
   };
 
-  const handleRefresh = () => {
+  const handleRefresh = async () => {
     if (selectedGroupId) {
       setFetching(true);
-      setTimeout(() => {
-        setAnalyticsData(mockAnalyticsData);
+      setError(null);
+      
+      try {
+        const response = await api.get(`/analytics/dashboard/?group_id=${selectedGroupId}`);
+        const processedData = processAnalyticsData(response.data);
+        setAnalyticsData(processedData);
+      } catch (err: any) {
+        console.error('Error refreshing analytics:', err);
+        setError('Failed to refresh analytics data. Please try again.');
+      } finally {
         setFetching(false);
-      }, 1000);
+      }
     }
   };
 
