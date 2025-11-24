@@ -78,6 +78,10 @@ const COLORS = [
   'hsl(340 90% 60%)',    // Red
 ];
 
+// Constants for analytics data processing
+const ESTIMATED_AMOUNT_PER_TRANSACTION = 10000; // Estimate: avg amount per transaction
+const TARGET_PERCENTAGE = 0.8; // Target set to 80% of highest growth
+
 const gradientColors = {
   contributions: { from: 'hsl(142 76% 36%)', to: 'hsl(162 90% 60%)' },
   growth: { from: 'hsl(217 91% 60%)', to: 'hsl(198 90% 60%)' },
@@ -86,6 +90,36 @@ const gradientColors = {
 };
 
 type Group = { id: string; name: string };
+
+// API Response types
+interface ApiMemberActivity {
+  member_name: string;
+  transactions: number;
+}
+
+interface ApiCategoryBreakdown {
+  name: string;
+  value: number;
+}
+
+interface ApiGrowthTrend {
+  month: string;
+  growth: number;
+}
+
+interface ApiContribution {
+  date: string;
+  amount: number;
+}
+
+interface RawAnalyticsData {
+  contributions_over_time: ApiContribution[];
+  member_activity: ApiMemberActivity[];
+  category_breakdown: ApiCategoryBreakdown[];
+  growth_trends: ApiGrowthTrend[];
+  generated_at?: string;
+}
+
 type AnalyticsData = {
   contributions_over_time: Array<{ date: string; amount: number }>;
   member_activity: Array<{ member_name: string; transactions: number; amount: number }>;
@@ -100,37 +134,37 @@ type AnalyticsData = {
 };
 
 // Helper function to process raw API data into the format expected by the UI
-const processAnalyticsData = (data: any): AnalyticsData => {
+const processAnalyticsData = (data: RawAnalyticsData): AnalyticsData => {
   // Add amount field to member_activity (estimate based on transactions)
-  const processedMemberActivity = (data.member_activity || []).map((member: any) => ({
+  const processedMemberActivity = (data.member_activity || []).map((member: ApiMemberActivity) => ({
     ...member,
-    amount: member.transactions * 10000, // Estimate: avg 10k per transaction
+    amount: member.transactions * ESTIMATED_AMOUNT_PER_TRANSACTION,
   }));
   
-  // Add target field to growth_trends (set target to 80% of highest growth)
-  const maxGrowth = Math.max(...(data.growth_trends || []).map((g: any) => g.growth), 0);
-  const targetAmount = maxGrowth * 0.8;
-  const processedGrowthTrends = (data.growth_trends || []).map((trend: any) => ({
+  // Add target field to growth_trends (set target to percentage of highest growth)
+  const maxGrowth = Math.max(...(data.growth_trends || []).map((g: ApiGrowthTrend) => g.growth), 0);
+  const targetAmount = maxGrowth * TARGET_PERCENTAGE;
+  const processedGrowthTrends = (data.growth_trends || []).map((trend: ApiGrowthTrend) => ({
     ...trend,
     target: targetAmount,
   }));
   
   // Add colors to category_breakdown
-  const processedCategoryBreakdown = (data.category_breakdown || []).map((cat: any, idx: number) => ({
+  const processedCategoryBreakdown = (data.category_breakdown || []).map((cat: ApiCategoryBreakdown, idx: number) => ({
     ...cat,
     color: COLORS[idx % COLORS.length],
   }));
   
   // Calculate summary stats from the data
   const totalContributions = (data.contributions_over_time || []).reduce(
-    (sum: number, item: any) => sum + (item.amount || 0), 
+    (sum: number, item: ApiContribution) => sum + (item.amount || 0), 
     0
   );
   const activeMembers = (data.member_activity || []).length;
   const topPerformer = (data.member_activity || [])[0]?.member_name || 'N/A';
   
   // Calculate average growth (month-over-month percentage)
-  const growthValues = (data.growth_trends || []).map((g: any) => g.growth);
+  const growthValues = (data.growth_trends || []).map((g: ApiGrowthTrend) => g.growth);
   let averageGrowth = 0;
   if (growthValues.length > 1) {
     const growthRates = [];
