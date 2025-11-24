@@ -107,3 +107,75 @@ class AllBackwardCompatibleURLsTest(TestCase):
                 self.assertIsNotNone(old_match)
                 self.assertIsNotNone(new_match)
                 self.assertEqual(old_match.view_name, new_match.view_name)
+
+
+class JWTTokenURLTest(TestCase):
+    """Test JWT token endpoint URLs."""
+    
+    def setUp(self):
+        """Set up test client."""
+        self.client = Client()
+    
+    def test_v1_token_endpoint_exists(self):
+        """Test that /api/v1/token/ endpoint exists (not 404)."""
+        response = self.client.post(
+            '/api/v1/token/',
+            data=json.dumps({}),
+            content_type='application/json'
+        )
+        # Should NOT return 404 (route exists)
+        # Will return 400 (validation error) since we didn't provide credentials
+        self.assertNotEqual(response.status_code, 404)
+        self.assertEqual(response.status_code, 400)
+    
+    def test_legacy_token_endpoint_exists(self):
+        """Test that legacy /api/token/ endpoint still exists (backwards compatibility)."""
+        response = self.client.post(
+            '/api/token/',
+            data=json.dumps({}),
+            content_type='application/json'
+        )
+        # Should NOT return 404 (route exists)
+        # Will return 400 (validation error) since we didn't provide credentials
+        self.assertNotEqual(response.status_code, 404)
+        self.assertEqual(response.status_code, 400)
+    
+    def test_v1_token_refresh_endpoint_exists(self):
+        """Test that /api/v1/token/refresh/ endpoint exists (not 404)."""
+        response = self.client.post(
+            '/api/v1/token/refresh/',
+            data=json.dumps({}),
+            content_type='application/json'
+        )
+        # Should NOT return 404 (route exists)
+        # Will return 400 (validation error) since we didn't provide refresh token
+        self.assertNotEqual(response.status_code, 404)
+        self.assertEqual(response.status_code, 400)
+    
+    def test_legacy_token_refresh_endpoint_exists(self):
+        """Test that legacy /api/token/refresh/ endpoint still exists (backwards compatibility)."""
+        response = self.client.post(
+            '/api/token/refresh/',
+            data=json.dumps({}),
+            content_type='application/json'
+        )
+        # Should NOT return 404 (route exists)
+        # Will return 400 (validation error) since we didn't provide refresh token
+        self.assertNotEqual(response.status_code, 404)
+        self.assertEqual(response.status_code, 400)
+    
+    def test_both_token_endpoints_same_view(self):
+        """Test that both token URLs resolve to the same view."""
+        legacy_match = resolve('/api/token/')
+        v1_match = resolve('/api/v1/token/')
+        
+        # They should resolve to the same view class
+        self.assertEqual(legacy_match.func.__name__, v1_match.func.__name__)
+    
+    def test_both_refresh_endpoints_same_view(self):
+        """Test that both refresh URLs resolve to the same view."""
+        legacy_match = resolve('/api/token/refresh/')
+        v1_match = resolve('/api/v1/token/refresh/')
+        
+        # They should resolve to the same view class
+        self.assertEqual(legacy_match.func.__name__, v1_match.func.__name__)

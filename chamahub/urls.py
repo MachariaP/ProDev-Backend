@@ -40,9 +40,13 @@ urlpatterns = [
     path('api/docs/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),
     path('api/redoc/', SpectacularRedocView.as_view(url_name='schema'), name='redoc'),
     
-    # JWT Authentication
-    path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
-    path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+    # JWT Authentication - v1 endpoints (primary)
+    path('api/v1/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
+    path('api/v1/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+    
+    # JWT Authentication - legacy endpoints (backwards compatibility)
+    path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair_legacy'),
+    path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh_legacy'),
     
     # API v1 endpoints - Core apps
     path('api/v1/accounts/', include('accounts.urls')),
