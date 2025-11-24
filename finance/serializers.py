@@ -31,7 +31,7 @@ class LoanSerializer(serializers.ModelSerializer):
     borrower_name = serializers.CharField(source='borrower.get_full_name', read_only=True)
     group_name = serializers.CharField(source='group.name', read_only=True)
     approved_by_name = serializers.CharField(source='approved_by.get_full_name', read_only=True)
-    total_paid = serializers.SerializerMethodField()
+    total_repaid = serializers.SerializerMethodField()
     
     class Meta:
         model = Loan
@@ -41,7 +41,7 @@ class LoanSerializer(serializers.ModelSerializer):
             'total_amount', 'monthly_payment', 'outstanding_balance',
             'status', 'purpose', 'applied_at', 'approved_by',
             'approved_by_name', 'approved_at', 'disbursed_at',
-            'due_date', 'completed_at', 'notes', 'total_paid'
+            'due_date', 'completed_at', 'notes', 'total_repaid'
         ]
         read_only_fields = [
             'id', 'total_amount', 'monthly_payment',
@@ -49,8 +49,8 @@ class LoanSerializer(serializers.ModelSerializer):
             'approved_at', 'disbursed_at', 'completed_at'
         ]
     
-    def get_total_paid(self, obj):
-        """Get total amount paid so far."""
+    def get_total_repaid(self, obj):
+        """Get total amount repaid so far."""
         total = obj.repayments.filter(status='COMPLETED').aggregate(total=Sum('amount'))
         return total['total'] or 0
 
