@@ -42,10 +42,14 @@ const formatTimeAgo = (dateString: string): string => {
 
 // Transform API contribution to UI display format
 const transformContribution = (contribution: Contribution): ContributionDisplay => {
+  // Parse amount with fallback to 0 if invalid
+  const parsedAmount = parseFloat(contribution.amount);
+  const amount = isNaN(parsedAmount) ? 0 : parsedAmount;
+  
   return {
     id: contribution.id,
-    member: contribution.member_name || `Member #${contribution.member}`,
-    amount: parseFloat(contribution.amount),
+    member: contribution.member_name || 'Unknown Member',
+    amount,
     status: contribution.status,
     payment_method: contribution.payment_method,
     reference_number: contribution.reference_number || null,
