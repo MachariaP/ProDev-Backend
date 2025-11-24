@@ -2,6 +2,8 @@ from django.test import TestCase
 from django.contrib.auth import get_user_model
 from django.utils import timezone
 from decimal import Decimal
+from rest_framework.test import APIClient, APITestCase
+from rest_framework import status
 from finance.models import (
     Contribution, Loan, LoanRepayment, Expense,
     DisbursementApproval, ApprovalSignature
@@ -185,4 +187,99 @@ class DisbursementApprovalTest(TestCase):
         self.assertEqual(approval.status, 'APPROVED')
         self.assertEqual(loan.status, 'APPROVED')
         self.assertIsNotNone(loan.approved_at)
+
+
+class ContributionAPITest(APITestCase):
+    """Test cases for Contribution API endpoints."""
+    
+    def setUp(self):
+        """Set up test data."""
+        self.user = User.objects.create_user(
+            email='api_test@example.com',
+            password='testpass123',
+            first_name='API',
+            last_name='Test',
+            phone_number='+254700000010'
+        )
+        self.group = ChamaGroup.objects.create(
+            name='API Test Chama',
+            description='Test Description',
+            created_by=self.user,
+            minimum_contribution=Decimal('1000.00')
+        )
+        self.client = APIClient()
+        self.client.force_authenticate(user=self.user)
+    
+    def test_create_contribution_without_member_field(self):
+        """Test creating a contribution without specifying member field."""
+        data = {
+            'group': self.group.id,
+            'amount': '5000.00',
+            'payment_method': 'MPESA',
+            'reference_number': 'TEST123'
+        }
+        response = self.client.post('/api/v1/finance/contributions/', data, format='json')
+        
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(response.data['member'], self.user.id)
+        self.assertEqual(response.data['amount'], '5000.00')
+        self.assertEqual(response.data['payment_method'], 'MPESA')
+        
+        # Verify in database
+        contribution = Contribution.objects.get(id=response.data['id'])
+        self.assertEqual(contribution.member, self.user)
+        self.assertEqual(contribution.amount, Decimal('5000.00'))
+    
+    def test_create_contribution_with_minimal_fields(self):
+        """Test creating a contribution with only required fields."""
+        data = {
+            'group': self.group.id,
+            'amount': '2000.00',
+            'payment_method': 'CASH'
+        }
+        response = self.client.post('/api/v1/finance/contributions/', data, format='json')
+        
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(response.data['member'], self.user.id)
+        self.assertEqual(response.data['amount'], '2000.00')
+        self.assertEqual(response.data['reference_number'], '')
+    
+    def test_create_contribution_member_field_ignored_if_provided(self):
+        """Test that member field in request is ignored and uses authenticated user."""
+        other_user = User.objects.create_user(
+            email='other@example.com',
+            password='testpass123',
+            first_name='Other',
+            last_name='User',
+            phone_number='+254700000011'
+        )
+        
+        data = {
+            'group': self.group.id,
+            'member': other_user.id,  # Try to set a different member
+            'amount': '3000.00',
+            'payment_method': 'BANK'
+        }
+        response = self.client.post('/api/v1/finance/contributions/', data, format='json')
+        
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        # Should use authenticated user, not the one in request
+        self.assertEqual(response.data['member'], self.user.id)
+        
+        contribution = Contribution.objects.get(id=response.data['id'])
+        self.assertEqual(contribution.member, self.user)
+    
+    def test_create_contribution_requires_authentication(self):
+        """Test that creating a contribution requires authentication."""
+        self.client.force_authenticate(user=None)
+        
+        data = {
+            'group': self.group.id,
+            'amount': '1000.00',
+            'payment_method': 'MPESA'
+        }
+        response = self.client.post('/api/v1/finance/contributions/', data, format='json')
+        
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
 
