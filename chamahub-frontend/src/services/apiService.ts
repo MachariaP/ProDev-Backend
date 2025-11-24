@@ -27,6 +27,14 @@ import type {
 
 // Authentication Services
 export const authService = {
+  async login(credentials: { email: string; password: string }): Promise<{ 
+    access: string; 
+    refresh: string;
+  }> {
+    const response = await api.post('/api/token/', credentials);
+    return response.data;
+  },
+
   async register(data: RegisterRequest): Promise<RegisterResponse> {
     const response = await api.post('/accounts/users/register/', data);
     return response.data;
