@@ -64,7 +64,7 @@ function AuthenticatedRoute({ children }: { children: React.ReactNode }) {
   const isAuthenticated = !!localStorage.getItem('access_token');
   
   if (!isAuthenticated) {
-    return <Navigate to="/auth/login" />;
+    return <Navigate to="/login" />;
   }
   return <DashboardLayout>{children}</DashboardLayout>;
 }
@@ -74,7 +74,7 @@ function AdminRoute({ children }: { children: React.ReactNode }) {
   const isAuthenticated = !!localStorage.getItem('access_token');
   
   if (!isAuthenticated) {
-    return <Navigate to="/auth/login" />;
+    return <Navigate to="/login" />;
   }
   return <>{children}</>;
 }
@@ -86,8 +86,8 @@ function App() {
     <Router>
       <Routes>
         {/* Public routes */}
-        <Route path="/login" element={<LandingPage />} />
-        <Route path="/auth/login" element={<LoginPage />} />
+        <Route path="/" element={<LandingPage />} />
+        <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
         <Route path="/reset-password/:uid/:token" element={<ResetPasswordPage />} />
@@ -276,11 +276,11 @@ function App() {
           element={<AdminRoute><AdminSettingsPage /></AdminRoute>}
         />
         
-        <Route path="/" element={<Navigate to={isAuthenticated ? "/dashboard" : "/login"} />} />
+        {/* Catch all route - redirect to home */}
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Router>
   );
 }
 
 export default App;
-
