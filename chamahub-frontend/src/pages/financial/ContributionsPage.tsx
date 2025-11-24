@@ -2,26 +2,25 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { 
-  ArrowLeft, Plus, DollarSign, CheckCircle, AlertCircle, XCircle, 
-  Download, Search, TrendingUp, Users, Calendar, Eye, MoreHorizontal,
-  Sparkles, RefreshCw, Clock, User, CreditCard, Shield, Crown,
-  Target, Wallet, BarChart3, PiggyBank, Filter
+  ArrowLeft, Plus, DollarSign, CheckCircle, Clock, XCircle, 
+  AlertCircle, Download, Filter, Search, Users, Sparkles, Crown,
+  Wallet, Target, BarChart3, PiggyBank, Eye, MoreHorizontal, Calendar,
+  TrendingUp, User, CreditCard, Shield, RefreshCw, FileText
 } from 'lucide-react';
-
-// Import the real finance service from apiService
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../../components/ui/card';
 import { financeService } from '../../services/apiService';
 import type { Contribution } from '../../types/api';
 
 // UI representation of contribution with display-friendly fields
 interface ContributionDisplay {
   id: number;
-  member: string; // member name for display
-  amount: number; // parsed amount
+  member: string;
+  amount: number;
   status: string;
   payment_method: string;
   reference_number: string | null;
   date: string;
-  timestamp: string; // formatted time ago
+  timestamp: string;
 }
 
 // Helper function to format time ago
@@ -42,7 +41,6 @@ const formatTimeAgo = (dateString: string): string => {
 
 // Transform API contribution to UI display format
 const transformContribution = (contribution: Contribution): ContributionDisplay => {
-  // Parse amount with fallback to 0 if invalid
   const parsedAmount = parseFloat(contribution.amount);
   const amount = isNaN(parsedAmount) ? 0 : parsedAmount;
   
@@ -57,29 +55,6 @@ const transformContribution = (contribution: Contribution): ContributionDisplay 
     timestamp: formatTimeAgo(contribution.created_at),
   };
 };
-
-// Simple card components as fallback
-const Card = ({ children, className = '' }: { children: React.ReactNode; className?: string }) => (
-  <div className={`bg-white rounded-2xl border border-gray-200 shadow-sm ${className}`}>
-    {children}
-  </div>
-);
-
-const CardHeader = ({ children, className = '' }: { children: React.ReactNode; className?: string }) => (
-  <div className={`p-6 pb-4 ${className}`}>{children}</div>
-);
-
-const CardTitle = ({ children, className = '' }: { children: React.ReactNode; className?: string }) => (
-  <h3 className={`text-lg font-semibold ${className}`}>{children}</h3>
-);
-
-const CardDescription = ({ children, className = '' }: { children: React.ReactNode; className?: string }) => (
-  <p className={`text-sm text-gray-600 mt-1 ${className}`}>{children}</p>
-);
-
-const CardContent = ({ children, className = '' }: { children: React.ReactNode; className?: string }) => (
-  <div className={`p-6 ${className}`}>{children}</div>
-);
 
 // Floating Background Elements
 const FloatingElement = ({ children, delay = 0 }: { children: React.ReactNode; delay?: number }) => (
@@ -100,81 +75,36 @@ const FloatingElement = ({ children, delay = 0 }: { children: React.ReactNode; d
   </motion.div>
 );
 
-// Enhanced Progress Bar Component
-const ContributionsProgress = ({ percentage }: { percentage: number }) => {
-  const normalizedPercentage = Math.max(0, Math.min(100, percentage));
-
-  const getColorClass = (percent: number) => {
-    if (percent > 85) return 'bg-gradient-to-r from-green-500 to-emerald-600';
-    if (percent > 65) return 'bg-gradient-to-r from-yellow-500 to-orange-500';
-    return 'bg-gradient-to-r from-red-500 to-pink-600';
-  };
-
-  const colorClass = getColorClass(normalizedPercentage);
-
-  return (
-    <motion.div 
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="mt-6 pt-6 border-t border-white/20"
-    >
-      <div className="flex justify-between items-center mb-3">
-        <div>
-          <p className="text-sm font-medium opacity-90">Monthly Target Progress</p>
-          <p className="text-2xl font-bold mt-1">{normalizedPercentage}%</p>
-        </div>
-        <div className="text-right">
-          <p className="text-sm opacity-90">Remaining</p>
-          <p className="text-lg font-semibold mt-1">KES 45,000</p>
-        </div>
-      </div>
-      <div className="w-full bg-white/20 rounded-full h-3 mb-2 overflow-hidden">
-        <motion.div 
-          initial={{ width: 0 }}
-          animate={{ width: `${normalizedPercentage}%` }}
-          transition={{ duration: 1.5, ease: "easeOut", delay: 0.5 }}
-          className={`h-3 rounded-full ${colorClass} shadow-lg`}
-        />
-      </div>
-      <div className="flex justify-between text-xs opacity-75">
-        <span>Behind</span>
-        <span>On Track</span>
-        <span>Ahead</span>
-      </div>
-    </motion.div>
-  );
-};
-
 // Color configuration for stat cards
 const statCardConfig = {
-  green: {
-    border: 'border-l-green-500',
-    iconBg: 'bg-green-100',
-    iconColor: 'text-green-600'
-  },
-  blue: {
-    border: 'border-l-blue-500',
-    iconBg: 'bg-blue-100',
-    iconColor: 'text-blue-600'
+  purple: {
+    border: 'border-l-purple-500',
+    iconBg: 'bg-purple-100',
+    iconColor: 'text-purple-600'
   },
   orange: {
     border: 'border-l-orange-500',
     iconBg: 'bg-orange-100',
     iconColor: 'text-orange-600'
   },
-  purple: {
-    border: 'border-l-purple-500',
-    iconBg: 'bg-purple-100',
-    iconColor: 'text-purple-600'
+  blue: {
+    border: 'border-l-blue-500',
+    iconBg: 'bg-blue-100',
+    iconColor: 'text-blue-600'
+  },
+  green: {
+    border: 'border-l-green-500',
+    iconBg: 'bg-green-100',
+    iconColor: 'text-green-600'
   }
 };
 
-// Enhanced Animated Stat Card Component
+// Animated Stat Card Component
 const AnimatedStatCard = ({ 
   title, 
   value, 
   change, 
-  color = 'green',
+  color = 'purple',
   delay = 0, 
   icon: Icon,
   description 
@@ -182,7 +112,7 @@ const AnimatedStatCard = ({
   title: string; 
   value: string; 
   change?: string; 
-  color?: 'green' | 'blue' | 'orange' | 'purple';
+  color?: 'purple' | 'orange' | 'blue' | 'green';
   delay?: number;
   icon: React.ComponentType<{ className?: string }>;
   description: string;
@@ -224,7 +154,7 @@ const AnimatedStatCard = ({
   );
 };
 
-// Enhanced Status Badge Component
+// Status Badge Component
 const StatusBadge = ({ status }: { status: string }) => {
   const statusConfig = {
     RECONCILED: {
@@ -235,12 +165,12 @@ const StatusBadge = ({ status }: { status: string }) => {
     },
     COMPLETED: {
       icon: CheckCircle,
-      color: 'bg-emerald-100 text-emerald-700 border-emerald-200',
-      bgColor: 'bg-emerald-50',
+      color: 'bg-blue-100 text-blue-700 border-blue-200',
+      bgColor: 'bg-blue-50',
       label: 'Completed'
     },
     PENDING: {
-      icon: AlertCircle,
+      icon: Clock,
       color: 'bg-yellow-100 text-yellow-700 border-yellow-200',
       bgColor: 'bg-yellow-50',
       label: 'Pending'
@@ -267,28 +197,28 @@ const StatusBadge = ({ status }: { status: string }) => {
   );
 };
 
-// Financial Insights Component
-const FinancialInsights = () => {
+// Contribution Insights Component
+const ContributionInsights = () => {
   const insights = [
     {
       title: 'Top Contributor',
       value: 'Jane Doe',
       description: 'KES 85,000 this month',
-      color: 'text-green-300',
+      color: 'text-purple-300',
       icon: Crown,
     },
     {
       title: 'Consistency Rate',
       value: '94%',
       description: 'On-time payments',
-      color: 'text-blue-300',
+      color: 'text-green-300',
       icon: TrendingUp,
     },
     {
       title: 'Avg Contribution',
       value: 'KES 17K',
       description: 'Per member monthly',
-      color: 'text-purple-300',
+      color: 'text-blue-300',
       icon: Users,
     },
   ];
@@ -386,7 +316,6 @@ export function ContributionsPage() {
       setLoading(true);
       setError(null);
       const response = await financeService.getContributions();
-      // Transform API contributions to display format
       const displayContributions = (response.results || []).map(transformContribution);
       setContributions(displayContributions);
     } catch (err) { 
@@ -415,16 +344,12 @@ export function ContributionsPage() {
     setExporting(true);
     setError(null);
     try {
-      // Build query parameters based on current filters
       const params: { status?: string } = {};
       if (filterStatus !== 'ALL') {
         params.status = filterStatus;
       }
       
-      // Use the financeService to export contributions
       const blob = await financeService.exportContributions(params);
-      
-      // Create download link
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
@@ -449,24 +374,24 @@ export function ContributionsPage() {
     return matchesSearch && matchesStatus;
   });
 
-  // Realistic mock stats
-  const stats = { 
-    total: 2_850_000, 
-    monthly: 485_000, 
-    pending: 3, 
-    members: 28,
-    growth: '+18%'
+  // Calculate stats
+  const stats = {
+    total: contributions.reduce((sum, c) => sum + c.amount, 0),
+    monthly: contributions
+      .filter(c => new Date(c.date).getMonth() === new Date().getMonth())
+      .reduce((sum, c) => sum + c.amount, 0),
+    pending: contributions.filter(c => c.status === 'PENDING').length,
+    members: new Set(contributions.map(c => c.member)).size,
+    reconciled: contributions.filter(c => c.status === 'RECONCILED').length
   };
-
-  const targetProgress = 82; // Mock progress percentage
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-green-50 to-emerald-100 flex items-center justify-center relative overflow-hidden">
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-purple-50 to-pink-100 flex items-center justify-center relative overflow-hidden">
         {/* Animated Background Elements */}
         <div className="fixed inset-0 overflow-hidden pointer-events-none">
           <FloatingElement delay={0}>
-            <div className="absolute top-20 left-10 w-72 h-72 bg-gradient-to-r from-green-200 to-emerald-200 rounded-full blur-3xl opacity-20" />
+            <div className="absolute top-20 left-10 w-72 h-72 bg-gradient-to-r from-purple-200 to-pink-200 rounded-full blur-3xl opacity-20" />
           </FloatingElement>
           <FloatingElement delay={2}>
             <div className="absolute top-40 right-20 w-96 h-96 bg-gradient-to-r from-blue-200 to-cyan-200 rounded-full blur-3xl opacity-20" />
@@ -489,7 +414,7 @@ export function ContributionsPage() {
             }}
             className="mx-auto mb-4"
           >
-            <Sparkles className="h-12 w-12 text-green-600" />
+            <Sparkles className="h-12 w-12 text-purple-600" />
           </motion.div>
           <p className="text-gray-600 font-medium">Loading contributions...</p>
         </motion.div>
@@ -498,22 +423,22 @@ export function ContributionsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-green-50 to-emerald-100 relative overflow-hidden">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-purple-50 to-pink-100 relative overflow-hidden">
       {/* Animated Background Elements */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
         <FloatingElement delay={0}>
-          <div className="absolute top-20 left-10 w-72 h-72 bg-gradient-to-r from-green-200 to-emerald-200 rounded-full blur-3xl opacity-20" />
+          <div className="absolute top-20 left-10 w-72 h-72 bg-gradient-to-r from-purple-200 to-pink-200 rounded-full blur-3xl opacity-20" />
         </FloatingElement>
         <FloatingElement delay={2}>
           <div className="absolute top-40 right-20 w-96 h-96 bg-gradient-to-r from-blue-200 to-cyan-200 rounded-full blur-3xl opacity-20" />
         </FloatingElement>
         <FloatingElement delay={1}>
-          <div className="absolute bottom-20 left-1/4 w-64 h-64 bg-gradient-to-r from-emerald-200 to-teal-200 rounded-full blur-3xl opacity-20" />
+          <div className="absolute bottom-20 left-1/4 w-64 h-64 bg-gradient-to-r from-pink-200 to-rose-200 rounded-full blur-3xl opacity-20" />
         </FloatingElement>
       </div>
 
       <div className="max-w-7xl mx-auto space-y-8 p-4 sm:p-6 relative z-10">
-        {/* Enhanced Header */}
+        {/* Header */}
         <motion.div 
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -533,7 +458,7 @@ export function ContributionsPage() {
               <motion.h1 
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
-                className="text-4xl sm:text-5xl font-black bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent"
+                className="text-4xl sm:text-5xl font-black bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent"
               >
                 Contributions
               </motion.h1>
@@ -554,7 +479,7 @@ export function ContributionsPage() {
             </div>
           </div>
           
-          {/* Enhanced Action Buttons */}
+          {/* Action Buttons */}
           <motion.div 
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
@@ -566,7 +491,7 @@ export function ContributionsPage() {
               whileTap={{ scale: 0.95 }}
               onClick={handleExport}
               disabled={exporting}
-              className="flex items-center gap-2 px-5 py-3 bg-white text-gray-700 font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all border border-gray-200 hover:border-green-300 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex items-center gap-2 px-5 py-3 bg-white text-gray-700 font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all border border-gray-200 hover:border-purple-300 disabled:opacity-50"
             >
               <Download className={`h-4 w-4 ${exporting ? 'animate-bounce' : ''}`} />
               {exporting ? 'Exporting...' : 'Export Report'}
@@ -575,7 +500,7 @@ export function ContributionsPage() {
               whileHover={{ scale: 1.05, y: -2 }}
               whileTap={{ scale: 0.95 }}
               onClick={() => navigate('/contributions/new')}
-              className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-600 text-white font-bold rounded-xl shadow-lg shadow-green-500/30 hover:shadow-green-500/50 transition-all"
+              className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-purple-500 to-pink-600 text-white font-bold rounded-xl shadow-lg shadow-purple-500/30 hover:shadow-purple-500/50 transition-all"
             >
               <Plus className="h-5 w-5" />
               New Contribution
@@ -583,144 +508,59 @@ export function ContributionsPage() {
           </motion.div>
         </motion.div>
 
-        {/* Error Message */}
-        {error && (
-          <motion.div
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="p-4 rounded-xl bg-red-50 border border-red-200 flex items-start gap-3"
-          >
-            <AlertCircle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
-            <div className="flex-1">
-              <p className="font-semibold text-red-900">Error</p>
-              <p className="text-sm text-red-700">{error}</p>
-            </div>
-            <button
-              onClick={() => setError(null)}
-              className="text-red-600 hover:text-red-800 transition-colors"
-            >
-              <XCircle className="h-5 w-5" />
-            </button>
-          </motion.div>
-        )}
-
-        {/* Enhanced Total Contributions Card */}
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
-        >
-          <Card className="shadow-2xl bg-gradient-to-br from-green-600 via-emerald-600 to-teal-700 text-white transform hover:scale-[1.005] transition-transform duration-500 overflow-hidden border-none relative">
-            {/* Background Elements */}
-            <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -translate-y-32 translate-x-32"></div>
-            <div className="absolute bottom-0 left-0 w-48 h-48 bg-white/5 rounded-full -translate-x-24 translate-y-24"></div>
-            
-            <CardContent className="p-8 relative">
-              <div className="flex items-start justify-between mb-2">
-                <div>
-                  <div className="flex items-center gap-3 mb-3">
-                    <motion.div
-                      animate={{ 
-                        rotate: [0, 10, -10, 0],
-                        scale: [1, 1.1, 1]
-                      }}
-                      transition={{ 
-                        duration: 2,
-                        repeat: Infinity,
-                        repeatDelay: 3
-                      }}
-                    >
-                      <Crown className="h-6 w-6 text-yellow-300" />
-                    </motion.div>
-                    <p className="text-sm opacity-90 font-medium flex items-center gap-2">
-                      <Wallet className="h-5 w-5" />
-                      Total Contributions
-                    </p>
-                  </div>
-                  <p className="text-4xl sm:text-6xl font-black tracking-tight bg-gradient-to-r from-white to-white/80 bg-clip-text text-transparent">
-                    KES {stats.total.toLocaleString()}
-                  </p>
-                  <p className="text-sm opacity-75 mt-4 flex items-center gap-3">
-                    <Target className="h-4 w-4" />
-                    <span>Monthly target: KES 530,000 • </span>
-                    <span className="text-green-300 font-semibold">{targetProgress}% achieved</span>
-                  </p>
-                </div>
-                <div className="flex gap-2">
-                  <motion.button 
-                    whileHover={{ scale: 1.1 }}
-                    whileTap={{ scale: 0.9 }}
-                    className="p-3 rounded-xl bg-white/10 hover:bg-white/20 transition-colors"
-                  >
-                    <Eye className="h-5 w-5" />
-                  </motion.button>
-                  <motion.button 
-                    whileHover={{ scale: 1.1 }}
-                    whileTap={{ scale: 0.9 }}
-                    className="p-3 rounded-xl bg-white/10 hover:bg-white/20 transition-colors"
-                  >
-                    <MoreHorizontal className="h-5 w-5" />
-                  </motion.button>
-                </div>
-              </div>
-              <ContributionsProgress percentage={targetProgress} />
-            </CardContent>
-          </Card>
-        </motion.div>
-
-        {/* Enhanced Stats Section */}
+        {/* Stats Section */}
         <motion.div 
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4 }}
+          transition={{ delay: 0.3 }}
           className="grid gap-6 md:grid-cols-2 lg:grid-cols-4"
         >
           <AnimatedStatCard 
-            title="Monthly Contributions" 
-            value={`KES ${stats.monthly.toLocaleString()}`} 
-            change={stats.growth}
-            color="green"
+            title="Total Contributions" 
+            value={`KES ${stats.total.toLocaleString()}`} 
+            change="+12%"
+            color="purple"
             delay={0}
             icon={DollarSign}
-            description="Current month's contributions"
+            description="All-time total contributions"
+          />
+          <AnimatedStatCard 
+            title="Monthly Total" 
+            value={`KES ${stats.monthly.toLocaleString()}`} 
+            change="+8%"
+            color="blue"
+            delay={0.1}
+            icon={Wallet}
+            description="This month's contributions"
           />
           <AnimatedStatCard 
             title="Pending Review" 
             value={stats.pending.toString()} 
             change="Urgent"
             color="orange"
-            delay={0.1}
+            delay={0.2}
             icon={AlertCircle}
-            description="Requires attention"
+            description="Requires reconciliation"
           />
           <AnimatedStatCard 
             title="Active Members" 
             value={stats.members.toString()} 
             change="+2"
-            color="purple"
-            delay={0.2}
+            color="green"
+            delay={0.3}
             icon={Users}
             description="Contributing members"
           />
-          <AnimatedStatCard 
-            title="Success Rate" 
-            value="96%" 
-            change="+2%"
-            color="blue"
-            delay={0.3}
-            icon={TrendingUp}
-            description="On-time payments"
-          />
         </motion.div>
 
-        {/* Enhanced Main Content Area */}
+        {/* Main Content Area */}
         <motion.div 
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.5 }}
+          transition={{ delay: 0.4 }}
           className="grid gap-8 lg:grid-cols-3"
         >
-          {/* Contributions List - Fixed Header Area */}
+          {/* Contributions List */}
           <div className="lg:col-span-2">
             {filteredContributions.length === 0 ? (
               <Card className="shadow-2xl text-center py-20 border-0 bg-white">
@@ -728,9 +568,9 @@ export function ContributionsPage() {
                   <motion.div
                     initial={{ scale: 0 }}
                     animate={{ scale: 1 }}
-                    className="p-6 rounded-3xl bg-gradient-to-br from-green-100 to-emerald-100 w-fit mx-auto mb-6"
+                    className="p-6 rounded-3xl bg-gradient-to-br from-purple-100 to-pink-100 w-fit mx-auto mb-6"
                   >
-                    <DollarSign className="h-16 w-16 text-green-600" />
+                    <DollarSign className="h-16 w-16 text-purple-600" />
                   </motion.div>
                   <h3 className="text-2xl font-bold text-gray-800 mb-3">No Contributions Found</h3>
                   <p className="text-gray-600 mb-8 max-w-md mx-auto">
@@ -743,7 +583,7 @@ export function ContributionsPage() {
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                     onClick={() => navigate('/contributions/new')}
-                    className="px-8 py-4 bg-gradient-to-r from-green-500 to-emerald-600 text-white font-bold rounded-xl shadow-lg shadow-green-500/30"
+                    className="px-8 py-4 bg-gradient-to-r from-purple-500 to-pink-600 text-white font-bold rounded-xl shadow-lg shadow-purple-500/30"
                   >
                     Record First Contribution
                   </motion.button>
@@ -753,7 +593,6 @@ export function ContributionsPage() {
               <Card className="shadow-2xl overflow-hidden border-0 bg-white">
                 <CardHeader className="pb-4">
                   <div className="flex flex-col space-y-4">
-                    {/* Header Section - Fixed Height */}
                     <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                       <div className="min-w-0 flex-1">
                         <CardTitle className="text-2xl font-bold text-gray-800 truncate">
@@ -764,7 +603,7 @@ export function ContributionsPage() {
                         </CardDescription>
                       </div>
                       
-                      {/* Enhanced Filters - Better Layout */}
+                      {/* Filters */}
                       <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto min-w-0">
                         <div className="relative flex-1 sm:flex-none sm:w-48">
                           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
@@ -772,7 +611,7 @@ export function ContributionsPage() {
                             placeholder="Search contributions..." 
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
-                            className="pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none bg-white w-full text-sm"
+                            className="pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none bg-white w-full text-sm"
                           />
                         </div>
                         <div className="relative flex-1 sm:flex-none sm:w-40">
@@ -780,7 +619,7 @@ export function ContributionsPage() {
                           <select 
                             value={filterStatus}
                             onChange={(e) => setFilterStatus(e.target.value)}
-                            className="pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none bg-white w-full text-sm appearance-none"
+                            className="pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none bg-white w-full text-sm appearance-none"
                           >
                             <option value="ALL">All Status</option>
                             <option value="COMPLETED">Completed</option>
@@ -820,14 +659,15 @@ export function ContributionsPage() {
                             <div className="flex items-center gap-5 min-w-0">
                               <motion.div 
                                 whileHover={{ scale: 1.1, rotate: 5 }}
-                                className="p-4 rounded-2xl bg-gradient-to-br from-green-100 to-emerald-100 shadow-lg flex-shrink-0"
+                                className="p-4 rounded-2xl bg-gradient-to-br from-purple-100 to-pink-100 shadow-lg flex-shrink-0"
                               >
-                                <DollarSign className="h-7 w-7 text-green-600" />
+                                <DollarSign className="h-7 w-7 text-purple-600" />
                               </motion.div>
                               <div className="flex flex-col gap-2 min-w-0 flex-1">
                                 <div className="flex items-center gap-3">
                                   <User className="h-4 w-4 text-gray-400 flex-shrink-0" />
                                   <p className="font-semibold text-lg text-gray-800 truncate">{contribution.member}</p>
+                                  <StatusBadge status={contribution.status} />
                                 </div>
                                 <div className="flex items-center gap-4 text-sm text-gray-600 flex-wrap">
                                   <div className="flex items-center gap-1">
@@ -835,13 +675,17 @@ export function ContributionsPage() {
                                     <span className="truncate">{contribution.payment_method}</span>
                                   </div>
                                   {contribution.reference_number && (
-                                    <div className="flex items-center gap-1">
-                                      <Shield className="h-3 w-3" />
-                                      <span className="truncate">Ref: {contribution.reference_number}</span>
-                                    </div>
+                                    <>
+                                      <span>•</span>
+                                      <div className="flex items-center gap-1">
+                                        <Shield className="h-3 w-3" />
+                                        <span className="truncate">Ref: {contribution.reference_number}</span>
+                                      </div>
+                                    </>
                                   )}
+                                  <span>•</span>
                                   <div className="flex items-center gap-1">
-                                    <Clock className="h-3 w-3" />
+                                    <Calendar className="h-3 w-3" />
                                     <span>{contribution.timestamp}</span>
                                   </div>
                                 </div>
@@ -850,12 +694,12 @@ export function ContributionsPage() {
                             
                             <div className="flex items-center gap-6 flex-shrink-0">
                               <div className="text-right">
-                                <p className="font-bold text-2xl text-green-600 whitespace-nowrap">
+                                <p className="text-2xl font-bold text-purple-600 whitespace-nowrap">
                                   KES {Number(contribution.amount).toLocaleString()}
                                 </p>
-                                <div className="flex items-center gap-2 mt-2 justify-end">
-                                  <StatusBadge status={contribution.status} />
-                                </div>
+                                <p className="text-sm text-gray-500 mt-1">
+                                  {new Date(contribution.date).toLocaleDateString()}
+                                </p>
                               </div>
                               
                               {/* Action Buttons */}
@@ -906,8 +750,8 @@ export function ContributionsPage() {
             )}
           </div>
 
-          {/* Financial Insights Sidebar - Fixed Height */}
-          <FinancialInsights />
+          {/* Insights Sidebar */}
+          <ContributionInsights />
         </motion.div>
       </div>
     </div>
