@@ -180,8 +180,10 @@ Interactive API documentation is available at:
 ### Authentication
 
 ```
-POST   /api/token/                    # Obtain JWT token
-POST   /api/token/refresh/            # Refresh access token
+POST   /api/v1/token/                 # Obtain JWT token (recommended)
+POST   /api/v1/token/refresh/         # Refresh access token (recommended)
+POST   /api/token/                    # Obtain JWT token (legacy, backwards compatible)
+POST   /api/token/refresh/            # Refresh access token (legacy, backwards compatible)
 ```
 
 ### Accounts
@@ -272,6 +274,15 @@ curl -X POST http://localhost:8000/api/v1/accounts/users/register/ \
 ### 2. Login and Get Token
 
 ```bash
+# Using recommended v1 endpoint
+curl -X POST http://localhost:8000/api/v1/token/ \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "user@example.com",
+    "password": "securepassword123"
+  }'
+
+# Or using legacy endpoint (backwards compatible)
 curl -X POST http://localhost:8000/api/token/ \
   -H "Content-Type: application/json" \
   -d '{

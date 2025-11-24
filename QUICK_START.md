@@ -216,8 +216,8 @@ npm run test
 
 Key endpoints available at `http://localhost:8000/api/v1`:
 
-- `POST /api/token/` - Login (get JWT tokens)
-- `POST /api/token/refresh/` - Refresh access token
+- `POST /api/v1/token/` - Login (get JWT tokens)
+- `POST /api/v1/token/refresh/` - Refresh access token
 - `GET /accounts/users/me/` - Get current user
 - `GET /groups/chama-groups/` - List groups
 - `GET /finance/contributions/` - List contributions
