@@ -48,6 +48,10 @@ urlpatterns = [
     path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair_legacy'),
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh_legacy'),
     
+    # JWT Authentication - root level endpoints (backwards compatibility for frontend configurations)
+    path('token/', TokenObtainPairView.as_view(), name='token_obtain_pair_root'),
+    path('token/refresh/', TokenRefreshView.as_view(), name='token_refresh_root'),
+    
     # API v1 endpoints - Core apps
     path('api/v1/accounts/', include('accounts.urls')),
     path('api/v1/groups/', include('groups.urls')),
