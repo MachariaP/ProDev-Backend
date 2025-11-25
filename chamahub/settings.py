@@ -91,6 +91,8 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'auditlog.middleware.AuditlogMiddleware',
+    # Custom activity monitoring middleware
+    'chamahub.middleware.ActivityMonitoringMiddleware',
 ]
 
 ROOT_URLCONF = 'chamahub.urls'
@@ -286,3 +288,34 @@ SPECTACULAR_SETTINGS = {
 # File Upload Settings
 FILE_UPLOAD_MAX_MEMORY_SIZE = 5242880  # 5MB
 DATA_UPLOAD_MAX_MEMORY_SIZE = 5242880  # 5MB
+
+# Logging Configuration
+# Configures the 'user_activity' logger for the ActivityMonitoringMiddleware
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'user_activity_formatter': {
+            'format': '[%(asctime)s] %(levelname)s %(name)s: %(message)s',
+            'datefmt': '%Y-%m-%d %H:%M:%S',
+        },
+    },
+    'handlers': {
+        'user_activity_console': {
+            'class': 'logging.StreamHandler',
+            'formatter': 'user_activity_formatter',
+        },
+        'user_activity_file': {
+            'class': 'logging.FileHandler',
+            'filename': BASE_DIR / 'logs' / 'user_activity.log',
+            'formatter': 'user_activity_formatter',
+        },
+    },
+    'loggers': {
+        'user_activity': {
+            'handlers': ['user_activity_console', 'user_activity_file'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+    },
+}
