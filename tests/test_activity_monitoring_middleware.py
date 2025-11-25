@@ -6,6 +6,8 @@ details to the 'user_activity' logger, including handling of proxy headers,
 user authentication, and error conditions.
 """
 
+import time
+
 import pytest
 from unittest.mock import Mock, patch, MagicMock
 from django.test import TestCase, RequestFactory, Client
@@ -367,7 +369,6 @@ class ActivityMonitoringMiddlewareLatencyTest(TestCase):
     
     def test_calculate_latency_with_start_time(self):
         """Test latency calculation with valid start_time."""
-        import time
         request = self.factory.get('/api/test/')
         request.start_time = time.time() - 0.1  # 100ms ago
         
