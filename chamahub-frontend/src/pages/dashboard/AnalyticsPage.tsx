@@ -8,7 +8,6 @@ import {
   TrendingUp, 
   Users, 
   PieChart, 
-  Calendar,
   DollarSign,
   Target,
   Sparkles,
@@ -18,31 +17,29 @@ import {
   Filter,
   RefreshCw,
   Eye,
-  Clock,
-  Award,
-  Activity
+  Award
 } from 'lucide-react';
 
 // Simple card components as fallback
-const Card = ({ children, className = '' }) => (
+const Card = ({ children, className = '' }: { children: React.ReactNode; className?: string }) => (
   <div className={`bg-white rounded-xl border border-gray-200 shadow-sm ${className}`}>
     {children}
   </div>
 );
 
-const CardHeader = ({ children, className = '' }) => (
+const CardHeader = ({ children, className = '' }: { children: React.ReactNode; className?: string }) => (
   <div className={`p-6 pb-4 ${className}`}>{children}</div>
 );
 
-const CardTitle = ({ children, className = '' }) => (
+const CardTitle = ({ children, className = '' }: { children: React.ReactNode; className?: string }) => (
   <h3 className={`text-lg font-semibold ${className}`}>{children}</h3>
 );
 
-const CardDescription = ({ children, className = '' }) => (
+const CardDescription = ({ children, className = '' }: { children: React.ReactNode; className?: string }) => (
   <p className={`text-sm text-gray-600 mt-1 ${className}`}>{children}</p>
 );
 
-const CardContent = ({ children, className = '' }) => (
+const CardContent = ({ children, className = '' }: { children: React.ReactNode; className?: string }) => (
   <div className={`p-6 pt-0 ${className}`}>{children}</div>
 );
 
@@ -50,8 +47,6 @@ const CardContent = ({ children, className = '' }) => (
 import {
   BarChart,
   Bar,
-  LineChart,
-  Line,
   XAxis,
   YAxis,
   CartesianGrid,
@@ -221,7 +216,7 @@ const ChartTooltip = ({ active, payload, label, valueFormatter }: any) => {
 };
 
 // Floating Background Elements
-const FloatingElement = ({ children, delay = 0 }) => (
+const FloatingElement = ({ children, delay = 0 }: { children: React.ReactNode; delay?: number }) => (
   <motion.div
     initial={{ y: 0 }}
     animate={{ 

@@ -15,9 +15,6 @@ import {
   FileText,
   RefreshCw,
   Sparkles,
-  Crown,
-  Wallet,
-  Target,
   Users,
   Eye,
   MoreHorizontal,
@@ -43,13 +40,6 @@ interface Transaction {
   user_name: string;
   status: string;
 }
-
-// Simple card components as fallback (if needed)
-const SimpleCard = ({ children, className = '' }: { children: React.ReactNode; className?: string }) => (
-  <div className={`bg-white rounded-2xl border border-gray-200 shadow-sm ${className}`}>
-    {children}
-  </div>
-);
 
 // Floating Background Elements
 const FloatingElement = ({ children, delay = 0 }: { children: React.ReactNode; delay?: number }) => (

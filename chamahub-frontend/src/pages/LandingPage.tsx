@@ -25,14 +25,13 @@ import {
   LogIn
 } from 'lucide-react';
 import { useNavigate, Link } from 'react-router-dom';
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 
 export function LandingPage() {
   const navigate = useNavigate();
-  const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
-    setIsVisible(true);
+    // Trigger any initial visibility-related effects
   }, []);
 
   const features = [
@@ -119,7 +118,7 @@ export function LandingPage() {
     }
   ];
 
-  const FloatingElement = ({ children, delay = 0 }) => (
+  const FloatingElement = ({ children, delay = 0 }: { children: React.ReactNode; delay?: number }) => (
     <motion.div
       initial={{ y: 0 }}
       animate={{ 
@@ -352,7 +351,7 @@ export function LandingPage() {
           </motion.div>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {features.map((feature, index) => {
+            {features.map((feature) => {
               const Icon = feature.icon;
               return (
                 <motion.div

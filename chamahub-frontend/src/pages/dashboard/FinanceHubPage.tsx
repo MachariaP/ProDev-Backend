@@ -20,7 +20,6 @@ import {
   AlertCircle,
   Sparkles,
   Crown,
-  Zap,
   BarChart3,
   PiggyBank,
   Shield,
@@ -28,13 +27,13 @@ import {
 } from 'lucide-react';
 
 // Simple card components as fallback
-const Card = ({ children, className = '' }) => (
+const Card = ({ children, className = '' }: { children: React.ReactNode; className?: string }) => (
   <div className={`bg-white rounded-2xl border border-gray-200 shadow-sm ${className}`}>
     {children}
   </div>
 );
 
-const CardContent = ({ children, className = '' }) => (
+const CardContent = ({ children, className = '' }: { children: React.ReactNode; className?: string }) => (
   <div className={`p-6 ${className}`}>{children}</div>
 );
 
@@ -84,7 +83,7 @@ const FundProgress = ({ percentage }: { percentage: number }) => {
 };
 
 // Floating Background Elements
-const FloatingElement = ({ children, delay = 0 }) => (
+const FloatingElement = ({ children, delay = 0 }: { children: React.ReactNode; delay?: number }) => (
   <motion.div
     initial={{ y: 0 }}
     animate={{ 

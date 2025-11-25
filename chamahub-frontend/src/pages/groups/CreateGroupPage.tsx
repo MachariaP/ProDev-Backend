@@ -3,31 +3,17 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { 
   ArrowLeft, 
-  Save, 
   Users, 
-  Target, 
   Calendar,
-  DollarSign,
-  FileText,
-  Building,
   TrendingUp,
   HeartHandshake,
   Sparkles,
-  Crown,
   Zap,
   Rocket,
   CheckCircle2,
-  Lightbulb,
-  Shield,
-  Plus,
   Download,
-  Eye,
-  MoreHorizontal,
   AlertCircle,
   Clock,
-  Filter,
-  Search,
-  BarChart3,
   PiggyBank
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/card';
@@ -249,8 +235,6 @@ export function CreateGroupPage() {
       setLoading(false);
     }
   };
-
-  const selectedType = groupTypes.find(type => type.value === formData.group_type);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-purple-50 to-pink-100 relative overflow-hidden">

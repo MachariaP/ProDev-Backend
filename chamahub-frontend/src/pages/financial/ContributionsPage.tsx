@@ -4,8 +4,8 @@ import { useNavigate } from 'react-router-dom';
 import { 
   ArrowLeft, Plus, DollarSign, CheckCircle, Clock, XCircle, 
   AlertCircle, Download, Filter, Search, Users, Sparkles, Crown,
-  Wallet, Target, BarChart3, PiggyBank, Eye, MoreHorizontal, Calendar,
-  TrendingUp, User, CreditCard, Shield, RefreshCw, FileText
+  Wallet, BarChart3, PiggyBank, Eye, MoreHorizontal, Calendar,
+  TrendingUp, User, CreditCard, Shield, RefreshCw
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../../components/ui/card';
 import { financeService } from '../../services/apiService';
@@ -304,7 +304,7 @@ export function ContributionsPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState<string>('ALL');
   const [exporting, setExporting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [, setError] = useState<string | null>(null);
   const navigate = useNavigate();
 
   useEffect(() => { 

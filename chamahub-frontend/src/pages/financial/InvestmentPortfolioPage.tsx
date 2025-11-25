@@ -11,21 +11,17 @@ import {
   Eye,
   Filter,
   Search,
-  Download,
   RefreshCw,
   Sparkles,
-  Crown,
   Wallet,
-  Target,
-  Users,
   BarChart3,
   PiggyBank,
   ArrowUpRight,
   ArrowDownRight,
-  MoreHorizontal
+  MoreHorizontal,
+  Shield
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/card';
-import { StatsCard } from '../../components/StatsCard';
 import { PieChart as RechartsPie, Pie, Cell, ResponsiveContainer, Tooltip, AreaChart, Area, XAxis, YAxis, CartesianGrid } from 'recharts';
 import api from '../../services/api';
 

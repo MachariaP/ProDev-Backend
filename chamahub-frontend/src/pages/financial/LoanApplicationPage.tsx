@@ -16,20 +16,10 @@ import {
   Clock,
   Download,
   Plus,
-  Filter,
   Search,
-  ArrowUpRight,
-  ArrowDownRight,
   Crown,
   Wallet,
-  Target,
-  Eye,
-  MoreHorizontal,
   User,
-  CreditCard,
-  Shield,
-  BarChart3,
-  PiggyBank,
   RefreshCw
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/card';
