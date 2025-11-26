@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { UserPlus, Mail, Lock, User, Phone, Eye, EyeOff, Crown, Sparkles, Shield, CheckCircle } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/card';
 import { Link } from 'react-router-dom';
-import api from '../../services/api';
+import { authService } from '../../services/apiService';
 import { useAuth } from '../../hooks/useAuth';
 
 export function RegisterPage() {
@@ -47,11 +47,21 @@ export function RegisterPage() {
       return;
     }
 
+    // Validate phone number
+    if (!formData.phone_number || formData.phone_number.length < 10) {
+      setError('Phone number must be at least 10 digits');
+      setLoading(false);
+      return;
+    }
+
     try {
-      const response = await api.post('/accounts/users/register/', formData);
+      const response = await authService.register(formData);
 
       // Store tokens
-      const { tokens, user } = response.data;
+      const { tokens, user } = response;
+      
+      localStorage.setItem('access_token', tokens.access);
+      localStorage.setItem('refresh_token', tokens.refresh);
       
       // Use the auth hook to handle login
       login(tokens.access, {
@@ -59,11 +69,43 @@ export function RegisterPage() {
         ...user
       });
 
-    } catch (err: unknown) {
-      const errorMessage = (err as { response?: { data?: { email?: string[]; detail?: string; message?: string } } })?.response?.data?.email?.[0] || 
-                          (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail || 
-                          (err as { response?: { data?: { message?: string } } })?.response?.data?.message ||
-                          'Registration failed. Please try again.';
+    } catch (err: any) {
+      console.error('Registration error:', err);
+      
+      // Handle different error formats from the backend
+      let errorMessage = 'Registration failed. Please try again.';
+      
+      if (err.response?.data) {
+        const errorData = err.response.data;
+        
+        // Handle field-specific errors
+        if (errorData.email) {
+          errorMessage = Array.isArray(errorData.email) ? errorData.email[0] : errorData.email;
+        } else if (errorData.password) {
+          errorMessage = Array.isArray(errorData.password) ? errorData.password[0] : errorData.password;
+        } else if (errorData.password_confirm) {
+          errorMessage = Array.isArray(errorData.password_confirm) ? errorData.password_confirm[0] : errorData.password_confirm;
+        } else if (errorData.phone_number) {
+          errorMessage = Array.isArray(errorData.phone_number) ? errorData.phone_number[0] : errorData.phone_number;
+        } else if (errorData.first_name) {
+          errorMessage = Array.isArray(errorData.first_name) ? errorData.first_name[0] : errorData.first_name;
+        } else if (errorData.last_name) {
+          errorMessage = Array.isArray(errorData.last_name) ? errorData.last_name[0] : errorData.last_name;
+        } else if (errorData.detail) {
+          errorMessage = errorData.detail;
+        } else if (errorData.message) {
+          errorMessage = errorData.message;
+        } else if (typeof errorData === 'string') {
+          errorMessage = errorData;
+        } else if (Object.keys(errorData).length > 0) {
+          // Show the first error found
+          const firstError = Object.values(errorData)[0];
+          errorMessage = Array.isArray(firstError) ? firstError[0] : String(firstError);
+        }
+      } else if (err.message) {
+        errorMessage = err.message;
+      }
+      
       setError(errorMessage);
     } finally {
       setLoading(false);
@@ -234,7 +276,7 @@ export function RegisterPage() {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-3">
-                    <label className="text-sm font-semibold text-white">First Name</label>
+                    <label className="text-sm font-semibold text-white">First Name *</label>
                     <div className="relative">
                       <User className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-white/60" />
                       <input
@@ -245,12 +287,13 @@ export function RegisterPage() {
                         className="w-full pl-12 pr-4 py-4 rounded-2xl bg-white/10 border border-white/20 text-white placeholder-white/60 focus:ring-2 focus:ring-white/50 focus:border-transparent transition-all backdrop-blur-sm"
                         placeholder="John"
                         required
+                        minLength={2}
                       />
                     </div>
                   </div>
 
                   <div className="space-y-3">
-                    <label className="text-sm font-semibold text-white">Last Name</label>
+                    <label className="text-sm font-semibold text-white">Last Name *</label>
                     <div className="relative">
                       <User className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-white/60" />
                       <input
@@ -261,13 +304,14 @@ export function RegisterPage() {
                         className="w-full pl-12 pr-4 py-4 rounded-2xl bg-white/10 border border-white/20 text-white placeholder-white/60 focus:ring-2 focus:ring-white/50 focus:border-transparent transition-all backdrop-blur-sm"
                         placeholder="Doe"
                         required
+                        minLength={2}
                       />
                     </div>
                   </div>
                 </div>
 
                 <div className="space-y-3">
-                  <label className="text-sm font-semibold text-white">Email</label>
+                  <label className="text-sm font-semibold text-white">Email *</label>
                   <div className="relative">
                     <Mail className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-white/60" />
                     <input
@@ -283,7 +327,7 @@ export function RegisterPage() {
                 </div>
 
                 <div className="space-y-3">
-                  <label className="text-sm font-semibold text-white">Phone Number</label>
+                  <label className="text-sm font-semibold text-white">Phone Number *</label>
                   <div className="relative">
                     <Phone className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-white/60" />
                     <input
@@ -292,14 +336,20 @@ export function RegisterPage() {
                       value={formData.phone_number}
                       onChange={handleChange}
                       className="w-full pl-12 pr-4 py-4 rounded-2xl bg-white/10 border border-white/20 text-white placeholder-white/60 focus:ring-2 focus:ring-white/50 focus:border-transparent transition-all backdrop-blur-sm"
-                      placeholder="+254 700 000 000"
+                      placeholder="254700000000"
                       required
+                      minLength={10}
+                      maxLength={15}
+                      pattern="[0-9]+"
                     />
                   </div>
+                  <p className="text-xs text-white/60">
+                    Enter numbers only (10-15 digits)
+                  </p>
                 </div>
 
                 <div className="space-y-3">
-                  <label className="text-sm font-semibold text-white">Password</label>
+                  <label className="text-sm font-semibold text-white">Password *</label>
                   <div className="relative">
                     <Lock className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-white/60" />
                     <input
@@ -310,6 +360,7 @@ export function RegisterPage() {
                       className="w-full pl-12 pr-12 py-4 rounded-2xl bg-white/10 border border-white/20 text-white placeholder-white/60 focus:ring-2 focus:ring-white/50 focus:border-transparent transition-all backdrop-blur-sm"
                       placeholder="••••••••"
                       required
+                      minLength={8}
                     />
                     <button
                       type="button"
@@ -326,7 +377,7 @@ export function RegisterPage() {
                 </div>
 
                 <div className="space-y-3">
-                  <label className="text-sm font-semibold text-white">Confirm Password</label>
+                  <label className="text-sm font-semibold text-white">Confirm Password *</label>
                   <div className="relative">
                     <Lock className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-white/60" />
                     <input
@@ -337,6 +388,7 @@ export function RegisterPage() {
                       className="w-full pl-12 pr-12 py-4 rounded-2xl bg-white/10 border border-white/20 text-white placeholder-white/60 focus:ring-2 focus:ring-white/50 focus:border-transparent transition-all backdrop-blur-sm"
                       placeholder="••••••••"
                       required
+                      minLength={8}
                     />
                     <button
                       type="button"

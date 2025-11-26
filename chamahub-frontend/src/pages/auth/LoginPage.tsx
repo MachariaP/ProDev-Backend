@@ -20,7 +20,7 @@ export function LoginPage() {
     setLoading(true);
 
     try {
-      // Use the API service to login
+      // Use the API service to login - NOW USING CORRECT ENDPOINT
       const response = await authService.login({ email, password });
       
       // Store tokens

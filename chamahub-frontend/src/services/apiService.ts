@@ -25,7 +25,7 @@ import type {
   RecentActivity,
 } from '../types/api';
 
-// Authentication Services
+// Authentication Services - UPDATED: Using root level endpoints
 export const authService = {
   async login(credentials: { email: string; password: string }): Promise<{ 
     access: string; 
@@ -68,9 +68,14 @@ export const authService = {
     const response = await api.get('/accounts/wallets/my_wallet/');
     return response.data;
   },
+
+  async logout(refreshToken: string): Promise<{ message: string }> {
+    const response = await api.post('/accounts/users/logout/', { refresh: refreshToken });
+    return response.data;
+  },
 };
 
-// Groups Services
+// Groups Services - UPDATED: Using root level endpoints
 export const groupsService = {
   async getGroups(params?: { page?: number; group_type?: string }): Promise<PaginatedResponse<ChamaGroup>> {
     const response = await api.get('/groups/chama-groups/', { params });
@@ -146,7 +151,7 @@ export const groupsService = {
   },
 };
 
-// Finance Services
+// Finance Services - UPDATED: Using root level endpoints
 export const financeService = {
   // Contributions
   async getContributions(params?: { group?: number; member?: number; status?: string; payment_method?: string; page?: number }): Promise<PaginatedResponse<Contribution>> {
@@ -270,7 +275,7 @@ export const financeService = {
   },
 };
 
-// Governance Services
+// Governance Services - UPDATED: Using root level endpoints
 export const governanceService = {
   async getVotes(params?: { group?: number; status?: string; page?: number }): Promise<PaginatedResponse<Vote>> {
     const response = await api.get('/governance/votes/', { params });
@@ -336,7 +341,7 @@ export const governanceService = {
   },
 };
 
-// Investment Services
+// Investment Services - UPDATED: Using root level endpoints
 export const investmentService = {
   async getInvestments(params?: { group?: number; investment_type?: string; status?: string; page?: number }): Promise<PaginatedResponse<Investment>> {
     const response = await api.get('/investments/investments/', { params });
@@ -373,7 +378,7 @@ export const investmentService = {
   },
 };
 
-// Analytics Services
+// Analytics Services - UPDATED: Using root level endpoints
 export const analyticsService = {
   async getDashboardAnalytics(groupId: number): Promise<{
     contributions_over_time: Array<{ date: string; amount: number }>;

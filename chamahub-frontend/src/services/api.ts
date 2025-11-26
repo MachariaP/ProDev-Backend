@@ -1,6 +1,7 @@
 import axios from 'axios';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1';
+// Use the root level token endpoint or the api/v1 endpoint
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -21,7 +22,7 @@ api.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// Handle token refresh
+// Handle token refresh - FIXED URL
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
@@ -32,7 +33,8 @@ api.interceptors.response.use(
 
       try {
         const refreshToken = localStorage.getItem('refresh_token');
-        const response = await axios.post(`${API_BASE_URL}/token/refresh/`, {
+        // Use the correct refresh token endpoint
+        const response = await axios.post(`${API_BASE_URL}/api/v1/token/refresh/`, {
           refresh: refreshToken,
         });
 
