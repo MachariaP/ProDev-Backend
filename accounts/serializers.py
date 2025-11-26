@@ -108,3 +108,9 @@ class PasswordResetConfirmSerializer(serializers.Serializer):
             raise serializers.ValidationError({"new_password": "Passwords do not match."})
         return attrs
 
+
+class LogoutSerializer(serializers.Serializer):
+    """Serializer for logout request."""
+    
+    refresh = serializers.CharField(help_text="The refresh token to blacklist")
+

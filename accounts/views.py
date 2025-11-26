@@ -3,6 +3,7 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework_simplejwt.exceptions import TokenError
 from django.contrib.auth import get_user_model
 from django.contrib.auth.tokens import default_token_generator
 from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
@@ -14,7 +15,7 @@ from .serializers import (
     UserSerializer, UserRegistrationSerializer,
     KYCDocumentUploadSerializer, MemberWalletSerializer,
     UserProfileUpdateSerializer, PasswordResetRequestSerializer,
-    PasswordResetConfirmSerializer
+    PasswordResetConfirmSerializer, LogoutSerializer
 )
 
 User = get_user_model()
@@ -82,6 +83,26 @@ class UserViewSet(viewsets.ModelViewSet):
         serializer.save()
         
         return Response(serializer.data)
+    
+    @action(detail=False, methods=['post'])
+    def logout(self, request):
+        """Logout user by blacklisting their refresh token."""
+        serializer = LogoutSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        
+        try:
+            refresh_token = serializer.validated_data['refresh']
+            token = RefreshToken(refresh_token)
+            token.blacklist()
+            return Response(
+                {'message': 'Successfully logged out.'},
+                status=status.HTTP_200_OK
+            )
+        except TokenError:
+            return Response(
+                {'error': 'Invalid or expired token.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
     
     @action(detail=False, methods=['post'])
     def upload_kyc(self, request):
