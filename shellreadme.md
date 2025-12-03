@@ -12,7 +12,7 @@
 
 *Transform raw API data into actionable insights using the power of the command line*
 
-[🚀 Quick Start](#-quick-start) • [📚 Learning Objectives](#-learning-objectives) • [🛠️ Tools](#-tools-and-libraries) • [📋 Tasks](#-project-tasks)
+[🚀 Quick Start](#-quick-start) • [📚 Learning Objectives](#-learning-objectives) • [🛠️ Tech Stack](#3-technology-stack-overview) • [📋 Tasks](#8-project-tasks)
 
 </div>
 
