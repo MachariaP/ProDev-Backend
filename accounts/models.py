@@ -1,6 +1,7 @@
 from django.contrib.auth.models import AbstractUser, BaseUserManager
 from django.db import models
 from django.utils.translation import gettext_lazy as _
+from django.utils import timezone
 
 
 class UserManager(BaseUserManager):
@@ -109,3 +110,46 @@ class MemberWallet(models.Model):
     def __str__(self):
         return f"{self.user.get_full_name()}'s Wallet - KES {self.balance}"
 
+
+class PasswordResetToken(models.Model):
+    """Model to track password reset tokens for security and analytics."""
+    
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='password_reset_tokens',
+        verbose_name=_('user')
+    )
+    token = models.CharField(_('token'), max_length=255)
+    uid = models.CharField(_('uid'), max_length=255)
+    is_used = models.BooleanField(_('is used'), default=False)
+    used_at = models.DateTimeField(_('used at'), null=True, blank=True)
+    created_at = models.DateTimeField(_('created at'), auto_now_add=True)
+    
+    class Meta:
+        verbose_name = _('password reset token')
+        verbose_name_plural = _('password reset tokens')
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['user', 'is_used', 'created_at']),
+            models.Index(fields=['token', 'uid']),
+        ]
+    
+    def __str__(self):
+        return f"Password reset for {self.user.email} ({'Used' if self.is_used else 'Active'})"
+    
+    @property
+    def expires_at(self):
+        """Token expires 24 hours after creation."""
+        return self.created_at + timezone.timedelta(hours=24)
+    
+    @property
+    def is_expired(self):
+        """Check if token has expired."""
+        return timezone.now() > self.expires_at
+    
+    def mark_as_used(self):
+        """Mark token as used with timestamp."""
+        self.is_used = True
+        self.used_at = timezone.now()
+        self.save()
