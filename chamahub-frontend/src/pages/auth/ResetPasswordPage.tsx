@@ -56,10 +56,11 @@ export function ResetPasswordPage() {
       setTimeout(() => {
         navigate('/login');
       }, 3000);
-    } catch (err: unknown) {
-      setError((err as { response?: { data?: { error?: string } } })?.response?.data?.error || 'Failed to reset password. The link may be invalid or expired.');
-    } finally {
-      setLoading(false);
+    } catch (err: any) {
+    	setError(err.response?.data?.error || err.response?.data?.detail || 'Failed to reset password. 
+The link may be invalid or expired.');
+  } finally {
+    setLoading(false);
     }
   };
 
