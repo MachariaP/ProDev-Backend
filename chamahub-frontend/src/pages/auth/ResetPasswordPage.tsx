@@ -57,10 +57,9 @@ export function ResetPasswordPage() {
         navigate('/login');
       }, 3000);
     } catch (err: any) {
-    	setError(err.response?.data?.error || err.response?.data?.detail || 'Failed to reset password. 
-The link may be invalid or expired.');
-  } finally {
-    setLoading(false);
+      setError(err.response?.data?.error || err.response?.data?.detail || 'Failed to reset password. The link may be invalid or expired.');
+    } finally {
+      setLoading(false);
     }
   };
 
