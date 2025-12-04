@@ -27,9 +27,16 @@ from drf_spectacular.views import (
     SpectacularSwaggerView,
     SpectacularRedocView,
 )
-from .views import actions_list
+from .views import api_root, health_check, actions_list
 
 urlpatterns = [
+    # Root URL - Welcome endpoint
+    path('', api_root, name='api-root'),
+    
+    # Health check endpoint
+    path('health/', health_check, name='health-check'),
+    
+    # Admin panel
     path('admin/', admin.site.urls),
     
     # Actions endpoint
@@ -100,4 +107,3 @@ urlpatterns = [
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
     urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
-

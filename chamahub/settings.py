@@ -38,6 +38,19 @@ RENDER_EXTERNAL_HOSTNAME = os.environ.get('RENDER_EXTERNAL_HOSTNAME')
 if RENDER_EXTERNAL_HOSTNAME:
     ALLOWED_HOSTS.append(RENDER_EXTERNAL_HOSTNAME)
 
+# Add deployed domains
+ALLOWED_HOSTS.extend([
+    'chama-hub.onrender.com',
+    '*.onrender.com',
+])
+
+# Security settings
+CSRF_TRUSTED_ORIGINS = [
+    'https://chama-hub.onrender.com',
+    'https://*.onrender.com',
+    'http://localhost:3000',
+    'http://localhost:5173',
+]
 
 # Application definition
 
@@ -233,22 +246,27 @@ SIMPLE_JWT = {
 # CORS Configuration
 CORS_ALLOWED_ORIGINS = config(
     'CORS_ALLOWED_ORIGINS',
-    default='http://localhost:3000,http://localhost:5173'
+    default='http://localhost:3000,http://localhost:5173,https://chama-hub.onrender.com'
 ).split(',')
 
 # Additional CORS configuration for production deployments
-# This allows more flexible CORS handling when CORS_ALLOW_ALL_ORIGINS is set to True
 CORS_ALLOW_ALL_ORIGINS = config('CORS_ALLOW_ALL_ORIGINS', default=False, cast=bool)
 
 # Allowed origin regex patterns for dynamic subdomains (e.g., *.onrender.com)
-CORS_ALLOWED_ORIGIN_REGEXES = []
-cors_regex_patterns = config('CORS_ALLOWED_ORIGIN_REGEXES', default='')
-if cors_regex_patterns:
-    CORS_ALLOWED_ORIGIN_REGEXES = cors_regex_patterns.split(',')
+CORS_ALLOWED_ORIGIN_REGEXES = [
+    r"^https://[\w-]+\.onrender\.com$",
+]
 
-CORS_ALLOW_CREDENTIALS = True
+# Additional CORS settings for production
+CORS_ALLOW_METHODS = [
+    'DELETE',
+    'GET',
+    'OPTIONS',
+    'PATCH',
+    'POST',
+    'PUT',
+]
 
-# CORS headers configuration - required for preflight requests
 CORS_ALLOW_HEADERS = [
     'accept',
     'accept-encoding',
@@ -259,22 +277,16 @@ CORS_ALLOW_HEADERS = [
     'user-agent',
     'x-csrftoken',
     'x-requested-with',
+    'x-api-key',
 ]
 
-# HTTP methods allowed in CORS requests
-CORS_ALLOW_METHODS = [
-    'DELETE',
-    'GET',
-    'OPTIONS',
-    'PATCH',
-    'POST',
-    'PUT',
-]
+CORS_ALLOW_CREDENTIALS = True
 
 # Headers that can be exposed to the browser
 CORS_EXPOSE_HEADERS = [
     'content-type',
     'x-csrftoken',
+    'x-api-version',
 ]
 
 # Email Configuration (Console backend for development)
@@ -295,11 +307,24 @@ SPECTACULAR_SETTINGS = {
     'DESCRIPTION': 'API for managing Chama (savings groups) operations including onboarding, finances, governance, and investments',
     'VERSION': '1.0.0',
     'SERVE_INCLUDE_SCHEMA': False,
+    'SERVE_PUBLIC': True,
+    'COMPONENT_SPLIT_REQUEST': True,
+    'SCHEMA_PATH_PREFIX': r'/api/v[0-9]',
 }
 
 # File Upload Settings
 FILE_UPLOAD_MAX_MEMORY_SIZE = 5242880  # 5MB
 DATA_UPLOAD_MAX_MEMORY_SIZE = 5242880  # 5MB
+
+# Security settings for production
+if not DEBUG:
+    SECURE_SSL_REDIRECT = True
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+    SECURE_HSTS_SECONDS = 31536000  # 1 year
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_HSTS_PRELOAD = True
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
 
 # Logging Configuration
 # Configures the 'user_activity' logger for the ActivityMonitoringMiddleware
@@ -311,12 +336,30 @@ LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
     'formatters': {
+        'verbose': {
+            'format': '{levelname} {asctime} {module} {process:d} {thread:d} {message}',
+            'style': '{',
+        },
+        'simple': {
+            'format': '{levelname} {message}',
+            'style': '{',
+        },
         'user_activity_formatter': {
-            'format': '[%(asctime)s] %(levelname)s %(name)s: %(message)s',
+            'format': '[{asctime}] {levelname} {name}: {message}',
+            'style': '{',
             'datefmt': '%Y-%m-%d %H:%M:%S',
         },
     },
     'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+            'formatter': 'simple',
+        },
+        'file': {
+            'class': 'logging.FileHandler',
+            'filename': BASE_DIR / 'logs' / 'django.log',
+            'formatter': 'verbose',
+        },
         'user_activity_console': {
             'class': 'logging.StreamHandler',
             'formatter': 'user_activity_formatter',
@@ -328,6 +371,11 @@ LOGGING = {
         },
     },
     'loggers': {
+        'django': {
+            'handlers': ['console', 'file'],
+            'level': 'INFO',
+            'propagate': True,
+        },
         'user_activity': {
             'handlers': ['user_activity_console', 'user_activity_file'],
             'level': 'INFO',

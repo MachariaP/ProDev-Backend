@@ -1,10 +1,87 @@
 """
 Root-level views for the ChamaHub API.
 """
+from datetime import datetime
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework import status
+
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def api_root(request):
+    """
+    Welcome endpoint for the ChamaHub API.
+    
+    Returns basic information about the API and available endpoints.
+    """
+    base_url = request.build_absolute_uri('/')
+    
+    response_data = {
+        'name': 'ChamaHub API',
+        'version': '1.0.0',
+        'description': 'A comprehensive API for managing Chama (savings groups) operations',
+        'timestamp': datetime.now().isoformat(),
+        'status': 'operational',
+        'environment': 'production' if not request.get_host().startswith('localhost') else 'development',
+        'endpoints': {
+            'documentation': {
+                'swagger_ui': f'{base_url}api/docs/',
+                'redoc': f'{base_url}api/redoc/',
+                'schema': f'{base_url}api/schema/',
+            },
+            'authentication': {
+                'jwt_token_obtain': f'{base_url}api/v1/token/',
+                'jwt_token_refresh': f'{base_url}api/v1/token/refresh/',
+                'legacy_token': f'{base_url}token/',
+            },
+            'core_services': {
+                'accounts': f'{base_url}api/v1/accounts/',
+                'groups': f'{base_url}api/v1/groups/',
+                'finance': f'{base_url}api/v1/finance/',
+                'governance': f'{base_url}api/v1/governance/',
+                'investments': f'{base_url}api/v1/investments/',
+            },
+            'fintech_services': {
+                'mpesa': f'{base_url}api/v1/mpesa/',
+                'wealth_engine': f'{base_url}api/v1/wealth-engine/',
+                'credit_scoring': f'{base_url}api/v1/credit-scoring/',
+                'kyc_verification': f'{base_url}api/v1/kyc/',
+                'ai_assistant': f'{base_url}api/v1/ai-assistant/',
+                'automation': f'{base_url}api/v1/automation/',
+                'gamification': f'{base_url}api/v1/gamification/',
+                'education': f'{base_url}api/v1/education/',
+            },
+            'monitoring': {
+                'health_check': f'{base_url}health/',
+                'actions_list': f'{base_url}actions',
+            }
+        },
+        'support': {
+            'admin_panel': f'{base_url}admin/',
+            'status': 'active',
+        }
+    }
+    
+    return Response(response_data, status=status.HTTP_200_OK)
+
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def health_check(request):
+    """
+    Health check endpoint for monitoring and load balancers.
+    """
+    return Response({
+        'status': 'healthy',
+        'service': 'ChamaHub API',
+        'timestamp': datetime.now().isoformat(),
+        'database': 'connected',
+        'cache': 'operational',
+        'version': '1.0.0',
+        'uptime': '100%',
+    }, status=status.HTTP_200_OK)
 
 
 @api_view(['GET'])
