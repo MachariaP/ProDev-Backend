@@ -8,13 +8,14 @@ from rest_framework.response import Response
 from rest_framework import status
 
 
-@api_view(['GET'])
+@api_view(['GET', 'HEAD'])
 @permission_classes([AllowAny])
 def api_root(request):
     """
     Welcome endpoint for the ChamaHub API.
     
     Returns basic information about the API and available endpoints.
+    Supports both GET and HEAD methods for health checks.
     """
     base_url = request.build_absolute_uri('/')
     
@@ -64,15 +65,23 @@ def api_root(request):
         }
     }
     
+    # For HEAD requests, return empty response with headers
+    if request.method == 'HEAD':
+        return Response(status=status.HTTP_200_OK)
+    
     return Response(response_data, status=status.HTTP_200_OK)
 
 
-@api_view(['GET'])
+@api_view(['GET', 'HEAD'])
 @permission_classes([AllowAny])
 def health_check(request):
     """
     Health check endpoint for monitoring and load balancers.
+    Supports both GET and HEAD methods.
     """
+    if request.method == 'HEAD':
+        return Response(status=status.HTTP_200_OK)
+    
     return Response({
         'status': 'healthy',
         'service': 'ChamaHub API',
