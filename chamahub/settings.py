@@ -42,6 +42,7 @@ if RENDER_EXTERNAL_HOSTNAME:
 ALLOWED_HOSTS.extend([
     'chama-hub.onrender.com',
     '*.onrender.com',
+    'chama-hub-qe2d.onrender.com',
 ])
 
 # Security settings
@@ -50,6 +51,7 @@ CSRF_TRUSTED_ORIGINS = [
     'https://*.onrender.com',
     'http://localhost:3000',
     'http://localhost:5173',
+    'https://chama-hub-qe2d.onrender.com',
 ]
 
 # Application definition
@@ -114,7 +116,7 @@ ROOT_URLCONF = 'chamahub.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [BASE_DIR / 'accounts/templates'],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -154,8 +156,6 @@ else:
     }
 
 # Password validation
-# https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators
-
 AUTH_PASSWORD_VALIDATORS = [
     {
         'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
@@ -171,22 +171,13 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-
 # Internationalization
-# https://docs.djangoproject.com/en/5.2/topics/i18n/
-
 LANGUAGE_CODE = 'en-us'
-
 TIME_ZONE = 'Africa/Nairobi'
-
 USE_I18N = True
-
 USE_TZ = True
 
-
-# Static files (CSS, JavaScript, Images)
-# https://docs.djangoproject.com/en/5.2/howto/static-files/
-
+# Static files
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 STATIC_URL = 'static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
@@ -197,9 +188,6 @@ WHITENOISE_USE_FINDERS = True
 
 MEDIA_URL = 'media/'
 MEDIA_ROOT = BASE_DIR / 'media'
-
-# Default primary key field type
-# https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
@@ -246,50 +234,30 @@ SIMPLE_JWT = {
 # CORS Configuration
 CORS_ALLOWED_ORIGINS = config(
     'CORS_ALLOWED_ORIGINS',
-    default='http://localhost:3000,http://localhost:5173,https://chama-hub.onrender.com'
+    default='http://localhost:5173,http://127.0.0.1:5173,https://chama-hub.onrender.com,https://chama-hub-qe2d.onrender.com'
 ).split(',')
 
-# Additional CORS configuration for production deployments
 CORS_ALLOW_ALL_ORIGINS = config('CORS_ALLOW_ALL_ORIGINS', default=False, cast=bool)
-
-# Allowed origin regex patterns for dynamic subdomains (e.g., *.onrender.com)
 CORS_ALLOWED_ORIGIN_REGEXES = [
     r"^https://[\w-]+\.onrender\.com$",
 ]
+CORS_ALLOW_CREDENTIALS = True
 
-# Additional CORS settings for production
 CORS_ALLOW_METHODS = [
-    'DELETE',
-    'GET',
-    'OPTIONS',
-    'PATCH',
-    'POST',
-    'PUT',
+    'DELETE', 'GET', 'OPTIONS', 'PATCH', 'POST', 'PUT',
 ]
 
 CORS_ALLOW_HEADERS = [
-    'accept',
-    'accept-encoding',
-    'authorization',
-    'content-type',
-    'dnt',
-    'origin',
-    'user-agent',
-    'x-csrftoken',
-    'x-requested-with',
+    'accept', 'accept-encoding', 'authorization', 'content-type',
+    'dnt', 'origin', 'user-agent', 'x-csrftoken', 'x-requested-with',
     'x-api-key',
 ]
 
-CORS_ALLOW_CREDENTIALS = True
-
-# Headers that can be exposed to the browser
 CORS_EXPOSE_HEADERS = [
-    'content-type',
-    'x-csrftoken',
-    'x-api-version',
+    'content-type', 'x-csrftoken', 'x-api-version',
 ]
 
-# Email Configuration (Console backend for development)
+# Email Configuration (Enhanced for production)
 EMAIL_BACKEND = config('EMAIL_BACKEND', default='django.core.mail.backends.console.EmailBackend')
 EMAIL_HOST = config('EMAIL_HOST', default='smtp.gmail.com')
 EMAIL_PORT = config('EMAIL_PORT', default=587, cast=int)
@@ -297,11 +265,15 @@ EMAIL_USE_TLS = config('EMAIL_USE_TLS', default=True, cast=bool)
 EMAIL_HOST_USER = config('EMAIL_HOST_USER', default='')
 EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD', default='')
 DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL', default='noreply@chamahub.com')
+EMAIL_TIMEOUT = 30
 
 # Frontend URL for password reset links
 FRONTEND_URL = config('FRONTEND_URL', default='http://localhost:5173')
 
-# API Documentation with drf-spectacular
+# Password reset settings
+PASSWORD_RESET_TIMEOUT = 86400  # 24 hours in seconds
+
+# API Documentation
 SPECTACULAR_SETTINGS = {
     'TITLE': 'ChamaHub API',
     'DESCRIPTION': 'API for managing Chama (savings groups) operations including onboarding, finances, governance, and investments',
@@ -327,8 +299,6 @@ if not DEBUG:
     CSRF_COOKIE_SECURE = True
 
 # Logging Configuration
-# Configures the 'user_activity' logger for the ActivityMonitoringMiddleware
-# Ensure logs directory exists
 LOGS_DIR = BASE_DIR / 'logs'
 LOGS_DIR.mkdir(parents=True, exist_ok=True)
 
@@ -360,6 +330,16 @@ LOGGING = {
             'filename': BASE_DIR / 'logs' / 'django.log',
             'formatter': 'verbose',
         },
+        'auth_file': {
+            'class': 'logging.FileHandler',
+            'filename': BASE_DIR / 'logs' / 'auth.log',
+            'formatter': 'verbose',
+        },
+        'email_file': {
+            'class': 'logging.FileHandler',
+            'filename': BASE_DIR / 'logs' / 'email.log',
+            'formatter': 'verbose',
+        },
         'user_activity_console': {
             'class': 'logging.StreamHandler',
             'formatter': 'user_activity_formatter',
@@ -375,6 +355,16 @@ LOGGING = {
             'handlers': ['console', 'file'],
             'level': 'INFO',
             'propagate': True,
+        },
+        'accounts': {
+            'handlers': ['console', 'auth_file'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+        'django.core.mail': {
+            'handlers': ['console', 'email_file'],
+            'level': 'INFO',
+            'propagate': False,
         },
         'user_activity': {
             'handlers': ['user_activity_console', 'user_activity_file'],
