@@ -64,8 +64,8 @@ npm run dev
 
 Visit: **http://localhost:5173** 🎨
 
-📖 **[Full Quick Start Guide](./QUICK_START.md)**  
-🔧 **[Dashboard Troubleshooting](./DASHBOARD_TROUBLESHOOTING.md)** - If dashboard fails to load
+📖 **[Full Quick Start Guide](./docs/QUICK_START.md)**  
+🔧 **[Dashboard Troubleshooting](./docs/DASHBOARD_TROUBLESHOOTING.md)** - If dashboard fails to load
 
 ---
 
@@ -160,21 +160,21 @@ This repository is organized into **two main folders** for optimal learning:
 - **Guide 10**: Production-ready forms with React Hook Form, Zod validation, multi-step wizards
 - **Guide 11**: WebSocket integration for live updates, online presence, collaborative voting
 
-### 📚 [`/learn`](./learn/) - Conceptual Deep-Dives
+### 📚 [`/learn`](./docs/) - Conceptual Deep-Dives
 
 **Deep-dive explanations of Django and DRF concepts**. Reference these when you want to understand "why" and "how" things work.
 
-- 🐘 [PostgreSQL Deep Dive](./learn/09-postgresql-deep-dive.md) - Database optimization, indexes, performance
-- 🔐 [Authentication Explained](./learn/10-authentication-explained.md) - JWT, sessions, OAuth, security
-- 📝 [Serializers Explained](./learn/11-serializers-explained.md) - Data transformation and validation
-- 🔄 [Requests & Responses](./learn/12-requests-explained.md) - HTTP handling in DRF
-- 🔒 [Permissions Explained](./learn/23-permissions-explained.md) - Access control and authorization
-- 📄 [Pagination Explained](./learn/26-pagination-explained.md) - Efficient data pagination
-- ⚠️ [Exceptions Explained](./learn/33-exceptions-explained.md) - Error handling
-- 🔢 [Status Codes Explained](./learn/34-status-codes-explained.md) - HTTP status codes reference
-- 🎓 [Django Terminology Reference](./learn/README.md#-must-know-django--drf-terms) - Complete glossary
+- 🐘 [PostgreSQL Deep Dive](./docs/09-postgresql-deep-dive.md) - Database optimization, indexes, performance
+- 🔐 [Authentication Explained](./docs/10-authentication-explained.md) - JWT, sessions, OAuth, security
+- 📝 [Serializers Explained](./docs/11-serializers-explained.md) - Data transformation and validation
+- 🔄 [Requests & Responses](./docs/12-requests-explained.md) - HTTP handling in DRF
+- 🔒 [Permissions Explained](./docs/23-permissions-explained.md) - Access control and authorization
+- 📄 [Pagination Explained](./docs/26-pagination-explained.md) - Efficient data pagination
+- ⚠️ [Exceptions Explained](./docs/33-exceptions-explained.md) - Error handling
+- 🔢 [Status Codes Explained](./docs/34-status-codes-explained.md) - HTTP status codes reference
+- 🎓 [Django Terminology Reference](./docs/LEARN_README.md#-must-know-django--drf-terms) - Complete glossary
 
-**Plus**: [📖 DRF API Guides Index](./learn/DRF-API-GUIDES-INDEX.md) tracking 7/24 completed DRF topics
+**Plus**: [📖 DRF API Guides Index](./docs/DRF-API-GUIDES-INDEX.md) tracking 7/24 completed DRF topics
 
 ---
 
@@ -192,7 +192,7 @@ Most tutorials teach backend OR frontend. This tutorial teaches **both** and how
 - ✅ **Environment Config** - Separate dev/production settings
 - ✅ **Deployment** - Deploy backend + frontend together
 
-**📘 Read the Complete Guide**: [Django + Frontend Integration](./learn/DJANGO-FULLSTACK-INTEGRATION.md)
+**📘 Read the Complete Guide**: [Django + Frontend Integration](./docs/DJANGO-FULLSTACK-INTEGRATION.md)
 
 ### Type-Safe API Integration Example
 
@@ -249,7 +249,7 @@ pip install -r requirements.txt
 - **Backend Only**: [Guide 1: Initial Setup](./docs/01-initial-setup.md)
 - **Full-Stack**: Start with Guide 1, then jump to [Guide 7](./docs/07-django-typescript-fullstack-mastery.md) after Guide 6
 - **Deploy to Internet**: [🚀 Render Deployment Guide](./docs/RENDER_DEPLOYMENT.md) - Deploy your app in 45 minutes!
-- **Learn Concepts**: Browse the [Learning Center](./learn/)
+- **Learn Concepts**: Browse the [Learning Center](./docs/)
 
 ---
 
@@ -263,17 +263,17 @@ Choose your path based on your goals and experience:
 **Phase 1: Backend Fundamentals** (20-25 hours)
 1. [Guide 1: Initial Setup](./docs/01-initial-setup.md) - Set up your development environment
 2. [Guide 2: First API](./docs/02-first-endpoint.md) - Create your first working API
-3. [📚 PostgreSQL Deep Dive](./learn/09-postgresql-deep-dive.md) - Understand databases
+3. [📚 PostgreSQL Deep Dive](./docs/09-postgresql-deep-dive.md) - Understand databases
 4. [Guide 4: Database Design](./docs/04-models-database.md) - Design your data schema
-5. [📚 Authentication Explained](./learn/10-authentication-explained.md) - Learn security concepts
+5. [📚 Authentication Explained](./docs/10-authentication-explained.md) - Learn security concepts
 
 **Phase 2: Advanced Backend** (20-25 hours)
 6. [Guide 5: Authentication & APIs](./docs/05-advanced-drf.md) - Build secure APIs
-7. [📚 Serializers](./learn/11-serializers-explained.md) + [Requests/Responses](./learn/12-requests-explained.md) - Master DRF
+7. [📚 Serializers](./docs/11-serializers-explained.md) + [Requests/Responses](./docs/12-requests-explained.md) - Master DRF
 8. [Guide 6: Production Features](./docs/06-production-features.md) - Add Celery, WebSockets, Redis
 
 **Phase 3: Full-Stack Integration** (20-30 hours)
-9. [📚 Django-Frontend Integration](./learn/DJANGO-FULLSTACK-INTEGRATION.md) - Understand CORS, auth flow
+9. [📚 Django-Frontend Integration](./docs/DJANGO-FULLSTACK-INTEGRATION.md) - Understand CORS, auth flow
 10. [Guide 7: Django + TypeScript Full-Stack](./docs/07-django-typescript-fullstack-mastery.md) - Build the frontend
 11. [Guide 3: Deployment](./docs/03-deployment.md) - Deploy to production
 
@@ -286,10 +286,10 @@ Choose your path based on your goals and experience:
 1. Skim [Guides 1-2](./docs/) (basic Django setup)
 2. Focus [Guide 4](./docs/04-models-database.md) (database design)
 3. Focus [Guide 5](./docs/05-advanced-drf.md) (building APIs)
-4. Study [📚 DRF Concepts](./learn/) (serializers, permissions, etc.)
+4. Study [📚 DRF Concepts](./docs/) (serializers, permissions, etc.)
 
 **Full-Stack Integration** (10-15 hours)
-5. Read [📚 Django-Frontend Integration Guide](./learn/DJANGO-FULLSTACK-INTEGRATION.md)
+5. Read [📚 Django-Frontend Integration Guide](./docs/DJANGO-FULLSTACK-INTEGRATION.md)
 6. **Deep Dive**: [Guide 7: Full-Stack Mastery](./docs/07-django-typescript-fullstack-mastery.md)
 
 **Production Deployment** (5 hours)
@@ -305,7 +305,7 @@ Choose your path based on your goals and experience:
 1. Skim [Guides 1-2](./docs/) (Django project structure)
 2. Focus [Guide 4](./docs/04-models-database.md) (Django ORM)
 3. Focus [Guide 5](./docs/05-advanced-drf.md) (DRF patterns)
-4. Browse [📚 Learning Center](./learn/) (reference as needed)
+4. Browse [📚 Learning Center](./docs/) (reference as needed)
 
 **Advanced Features** (7-13 hours)
 5. [Guide 6](./docs/06-production-features.md) (Celery, Channels, testing)
