@@ -7,7 +7,7 @@
 *Django REST Framework Backend + TypeScript Frontend*
 
 [![Implementation Guides](https://img.shields.io/badge/Implementation-7_Guides-blue?style=for-the-badge)](./)
-[![Learning Resources](https://img.shields.io/badge/Learning-10_Guides-green?style=for-the-badge)](../learn/)
+[![Learning Resources](https://img.shields.io/badge/Learning-10_Guides-green?style=for-the-badge)](./)
 [![Beginner Friendly](https://img.shields.io/badge/Beginner-Friendly-orange?style=for-the-badge)](./)
 [![Full Stack](https://img.shields.io/badge/Full_Stack-Ready-red?style=for-the-badge)](./)
 
@@ -30,7 +30,7 @@ Welcome to the **implementation guides** for building **ChamaHub**, a production
 
 ### 📚 Need Conceptual Understanding?
 
-For **deep-dive explanations** of Django and DRF concepts, visit the [**`/learn`**](../learn/) folder:
+For **deep-dive explanations** of Django and DRF concepts, visit the [**`/learn`**](./) folder:
 - 📖 PostgreSQL Deep Dive
 - 🔐 Authentication Explained  
 - 📝 Serializers Explained
@@ -51,15 +51,15 @@ For **deep-dive explanations** of Django and DRF concepts, visit the [**`/learn`
 **Phase 1: Backend Foundation** (20-25 hours)
 1. [Guide 1: Initial Setup](./01-initial-setup.md) - Install tools and configure environment
 2. [Guide 2: First API Endpoint](./02-first-endpoint.md) - Create your first working API
-3. [📚 Learn: Email Integration](../learn/08-email-integration.md) - Understand how email works
-4. [📚 Learn: PostgreSQL Deep Dive](../learn/09-postgresql-deep-dive.md) - Master databases
+3. [📚 Learn: Email Integration](./08-email-integration.md) - Understand how email works
+4. [📚 Learn: PostgreSQL Deep Dive](./09-postgresql-deep-dive.md) - Master databases
 
 **Phase 2: Build the Backend** (20-25 hours)
 5. [Guide 4: Models & Database](./04-models-database.md) - Design your database schema
-6. [📚 Learn: Authentication](../learn/10-authentication-explained.md) - Understand security
+6. [📚 Learn: Authentication](./10-authentication-explained.md) - Understand security
 7. [Guide 5: Advanced DRF](./05-advanced-drf.md) - Build secure, scalable APIs
-8. [📚 Learn: Serializers](../learn/11-serializers-explained.md) - Master data transformation
-9. [📚 Learn: Requests/Responses](../learn/12-requests-explained.md) - Handle HTTP properly
+8. [📚 Learn: Serializers](./11-serializers-explained.md) - Master data transformation
+9. [📚 Learn: Requests/Responses](./12-requests-explained.md) - Handle HTTP properly
 
 **Phase 3: Production & Full-Stack** (20-30 hours)
 10. [Guide 6: Production Features](./06-production-features.md) - Add background tasks, caching, WebSockets
@@ -102,7 +102,7 @@ For **deep-dive explanations** of Django and DRF concepts, visit the [**`/learn`
 
 2. **Advanced Patterns** (7-12 hours)
    - Guide 6 (Celery, WebSockets, Redis, testing)
-   - [📚 Learn folder](../learn/) (deep dives on specific topics)
+   - [📚 Learn folder](./) (deep dives on specific topics)
 
 3. **Full-Stack** (3-5 hours)
    - Guide 7 (TypeScript integration with Django)
@@ -265,26 +265,26 @@ These guides build the **ChamaHub** application step-by-step. Follow them in ord
 
 ## 🎓 Conceptual Deep-Dives (Understand the Concepts)
 
-These guides are now in the **[`/learn`](../learn/)** folder for better organization:
+These guides are now in the **[`/learn`](./)** folder for better organization:
 
 ### Available Learning Guides
 
 | Guide | Topic | Link |
 |-------|-------|------|
-| 📧 **Email Integration** | How email works, SendGrid, Mailgun, templates | [08-email-integration.md](../learn/08-email-integration.md) |
-| 🐘 **PostgreSQL Deep Dive** | Database optimization, indexes, query performance | [09-postgresql-deep-dive.md](../learn/09-postgresql-deep-dive.md) |
-| 🔐 **Authentication Explained** | JWT, sessions, OAuth, security best practices | [10-authentication-explained.md](../learn/10-authentication-explained.md) |
-| 📝 **Serializers Explained** | Data transformation, validation, nested relationships | [11-serializers-explained.md](../learn/11-serializers-explained.md) |
-| 🔄 **Requests Explained** | DRF Request handling, parsers, file uploads | [12-requests-explained.md](../learn/12-requests-explained.md) |
-| 📤 **Responses Explained** | Response formatting, renderers, status codes | [13-responses-explained.md](../learn/13-responses-explained.md) |
-| 🔒 **Permissions Explained** | Access control, custom permissions, object-level | [23-permissions-explained.md](../learn/23-permissions-explained.md) |
-| 📄 **Pagination Explained** | PageNumber, Cursor, LimitOffset pagination | [26-pagination-explained.md](../learn/26-pagination-explained.md) |
-| ⚠️ **Exceptions Explained** | Error handling, custom exceptions, validation | [33-exceptions-explained.md](../learn/33-exceptions-explained.md) |
-| 🔢 **Status Codes Explained** | HTTP status codes reference and best practices | [34-status-codes-explained.md](../learn/34-status-codes-explained.md) |
+| 📧 **Email Integration** | How email works, SendGrid, Mailgun, templates | [08-email-integration.md](./08-email-integration.md) |
+| 🐘 **PostgreSQL Deep Dive** | Database optimization, indexes, query performance | [09-postgresql-deep-dive.md](./09-postgresql-deep-dive.md) |
+| 🔐 **Authentication Explained** | JWT, sessions, OAuth, security best practices | [10-authentication-explained.md](./10-authentication-explained.md) |
+| 📝 **Serializers Explained** | Data transformation, validation, nested relationships | [11-serializers-explained.md](./11-serializers-explained.md) |
+| 🔄 **Requests Explained** | DRF Request handling, parsers, file uploads | [12-requests-explained.md](./12-requests-explained.md) |
+| 📤 **Responses Explained** | Response formatting, renderers, status codes | [13-responses-explained.md](./13-responses-explained.md) |
+| 🔒 **Permissions Explained** | Access control, custom permissions, object-level | [23-permissions-explained.md](./23-permissions-explained.md) |
+| 📄 **Pagination Explained** | PageNumber, Cursor, LimitOffset pagination | [26-pagination-explained.md](./26-pagination-explained.md) |
+| ⚠️ **Exceptions Explained** | Error handling, custom exceptions, validation | [33-exceptions-explained.md](./33-exceptions-explained.md) |
+| 🔢 **Status Codes Explained** | HTTP status codes reference and best practices | [34-status-codes-explained.md](./34-status-codes-explained.md) |
 
-**Plus**: [📖 DRF API Guides Index](../learn/DRF-API-GUIDES-INDEX.md) - Track progress on all 24 DRF topics
+**Plus**: [📖 DRF API Guides Index](./DRF-API-GUIDES-INDEX.md) - Track progress on all 24 DRF topics
 
-**And**: [🎓 Django Terminology Reference](../learn/README.md#-must-know-django--drf-terms) - Complete glossary of Django & DRF terms
+**And**: [🎓 Django Terminology Reference](./README.md#-must-know-django--drf-terms) - Complete glossary of Django & DRF terms
 
 ---
 
@@ -297,7 +297,7 @@ These guides are now in the **[`/learn`](../learn/)** folder for better organiza
 - Build the ChamaHub application step-by-step
 - Focus on "how to build" with working code
 
-**Learning Guides ([`/learn`](../learn/) folder)**:
+**Learning Guides ([`/learn`](./) folder)**:
 - Reference when you need concept clarification
 - Deep dives into Django and DRF features
 - Focus on "why it works this way"
@@ -381,7 +381,7 @@ These guides are designed for complete beginners. We explain:
 - How to troubleshoot common issues
 - Django terminology as you encounter it
 
-**💡 Tip**: Keep the [**`/learn`**](../learn/) folder bookmarked for when you need concept clarification!
+**💡 Tip**: Keep the [**`/learn`**](./) folder bookmarked for when you need concept clarification!
 
 ---
 
@@ -400,7 +400,7 @@ These guides are designed for complete beginners. We explain:
 
 ## 📖 Additional Resources
 
-- **[Learning Center (`/learn`)](../learn/)** - Conceptual deep-dives and Django terminology
+- **[Learning Center (`/learn`)](./)** - Conceptual deep-dives and Django terminology
 - **[Main README](../README.md)** - Project overview and features
 - **[ChamaHub README](../my_chama/README.md)** - Full project architecture and roadmap
 
@@ -412,7 +412,7 @@ These guides are designed for complete beginners. We explain:
 
 ### [📦 Start with Guide 1: Initial Setup →](./01-initial-setup.md)
 
-Or explore conceptual guides: [📚 Learning Center →](../learn/)
+Or explore conceptual guides: [📚 Learning Center →](./)
 
 ---
 
@@ -422,7 +422,7 @@ Or explore conceptual guides: [📚 Learning Center →](../learn/)
 
 ---
 
-[⬅️ Back to Main README](../README.md) | [📚 Learning Center](../learn/)
+[⬅️ Back to Main README](../README.md) | [📚 Learning Center](./)
 
 ---
 

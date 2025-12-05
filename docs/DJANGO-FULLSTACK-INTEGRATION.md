@@ -883,7 +883,7 @@ Frontend:
 
 - **For Backend Focus**: Follow guides in [`/docs`](../docs/) to build the Django API
 - **For Full-Stack**: Start with [`/docs/07-django-typescript-fullstack-mastery.md`](../docs/07-django-typescript-fullstack-mastery.md)
-- **For Concepts**: Explore other guides in this [`/learn`](../learn/) folder
+- **For Concepts**: Explore other guides in this [`/learn`](./) folder
 
 ---
 
