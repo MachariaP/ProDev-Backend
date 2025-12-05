@@ -11,6 +11,8 @@ pip install --upgrade pip
 echo "📥 Step 2: Installing Python dependencies..."
 pip install -r requirements.txt
 
+python manage.py create_superuser
+
 echo "🗂️ Step 3: Collecting static files..."
 python manage.py collectstatic --no-input --clear
 
