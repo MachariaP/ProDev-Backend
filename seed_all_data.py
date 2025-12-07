@@ -268,6 +268,11 @@ class DataSeeder:
         
         for group in self.groups:
             num_goals = random.randint(1, 3)
+            # Get members from this group
+            group_members = GroupMembership.objects.filter(group=group, status='ACTIVE')
+            if not group_members.exists():
+                continue
+            
             for _ in range(num_goals):
                 target_amount = Decimal(str(random.choice([100000, 250000, 500000, 1000000])))
                 current_amount = target_amount * Decimal(str(random.uniform(0.1, 0.8))).quantize(Decimal('0.01'))
@@ -280,7 +285,7 @@ class DataSeeder:
                     current_amount=current_amount,
                     target_date=timezone.now().date() + timedelta(days=random.randint(90, 365)),
                     status=random.choice(['ACTIVE', 'ACTIVE', 'ACTIVE', 'ACHIEVED']),
-                    created_by=random.choice(self.users)
+                    created_by=random.choice(group_members).user
                 )
                 count += 1
         
@@ -374,15 +379,20 @@ class DataSeeder:
                 interest_rate = Decimal(str(random.uniform(5, 15))).quantize(Decimal('0.01'))
                 duration = random.choice([3, 6, 12, 24])
                 
+                # Calculate loan amounts before creating
+                interest = (principal * interest_rate * duration) / (Decimal('100') * Decimal('12'))
+                total_amount = principal + interest
+                monthly_payment = total_amount / duration if duration > 0 else Decimal('0')
+                
                 loan = Loan.objects.create(
                     group=group,
                     borrower=membership.user,
                     principal_amount=principal,
                     interest_rate=interest_rate,
                     duration_months=duration,
-                    total_amount=Decimal('0'),
-                    monthly_payment=Decimal('0'),
-                    outstanding_balance=Decimal('0'),
+                    total_amount=total_amount,
+                    monthly_payment=monthly_payment,
+                    outstanding_balance=total_amount,
                     status=random.choice(statuses),
                     purpose=random.choice([
                         'Business expansion', 'Emergency medical expenses',
@@ -397,12 +407,12 @@ class DataSeeder:
                     for _ in range(num_repayments):
                         LoanRepayment.objects.create(
                             loan=loan,
-                            amount=loan.monthly_payment,
+                            amount=monthly_payment,
                             payment_method=random.choice(['MPESA', 'BANK', 'CASH']),
                             reference_number=f'REP{random.randint(100000, 999999)}',
                             status='COMPLETED'
                         )
-                        loan.outstanding_balance -= loan.monthly_payment
+                        loan.outstanding_balance -= monthly_payment
                         repayment_count += 1
                     loan.save()
         
@@ -465,21 +475,21 @@ class DataSeeder:
         
         print(f"  ✓ Created {investment_count} investments with {transaction_count} transactions")
         
-        # Create portfolios
+        # Create portfolios for groups that don't have one
         portfolio_count = 0
-        for group in self.groups:
-            if not hasattr(group, 'portfolio'):
-                Portfolio.objects.create(
-                    group=group,
-                    total_invested=Decimal(str(random.uniform(50000, 500000))).quantize(Decimal('0.01')),
-                    current_value=Decimal(str(random.uniform(50000, 600000))).quantize(Decimal('0.01')),
-                    stocks_percentage=Decimal(str(random.uniform(20, 40))).quantize(Decimal('0.01')),
-                    bonds_percentage=Decimal(str(random.uniform(20, 30))).quantize(Decimal('0.01')),
-                    real_estate_percentage=Decimal(str(random.uniform(10, 25))).quantize(Decimal('0.01')),
-                    cash_percentage=Decimal(str(random.uniform(10, 20))).quantize(Decimal('0.01')),
-                    ytd_return=Decimal(str(random.uniform(-5, 15))).quantize(Decimal('0.01'))
-                )
-                portfolio_count += 1
+        groups_without_portfolio = ChamaGroup.objects.filter(portfolio__isnull=True)
+        for group in groups_without_portfolio:
+            Portfolio.objects.create(
+                group=group,
+                total_invested=Decimal(str(random.uniform(50000, 500000))).quantize(Decimal('0.01')),
+                current_value=Decimal(str(random.uniform(50000, 600000))).quantize(Decimal('0.01')),
+                stocks_percentage=Decimal(str(random.uniform(20, 40))).quantize(Decimal('0.01')),
+                bonds_percentage=Decimal(str(random.uniform(20, 30))).quantize(Decimal('0.01')),
+                real_estate_percentage=Decimal(str(random.uniform(10, 25))).quantize(Decimal('0.01')),
+                cash_percentage=Decimal(str(random.uniform(10, 20))).quantize(Decimal('0.01')),
+                ytd_return=Decimal(str(random.uniform(-5, 15))).quantize(Decimal('0.01'))
+            )
+            portfolio_count += 1
         
         print(f"  ✓ Created {portfolio_count} portfolios")
     
