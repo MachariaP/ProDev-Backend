@@ -1,3 +1,4 @@
+// chamahub-frontend/src/pages/dashboard/AnalyticsPage.tsx
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
@@ -17,8 +18,78 @@ import {
   Filter,
   RefreshCw,
   Eye,
-  Award
+  Award,
+  CheckCircle2,
+  XCircle
 } from 'lucide-react';
+
+// API service
+import { analyticsService, groupsService } from '../../services/apiService';
+
+// Recharts components
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  PieChart as RechartsPieChart,
+  Pie,
+  Cell,
+  AreaChart,
+  Area,
+} from 'recharts';
+
+// Types
+type Group = { 
+  id: number; 
+  name: string;
+};
+
+type ApiResponse = {
+  contributions_over_time: Array<{ date: string; amount: number }>;
+  member_activity: Array<{ member_name: string; transactions: number }>;
+  category_breakdown: Array<{ name: string; value: number }>;
+  growth_trends: Array<{ month: string; growth: number }>;
+  generated_at?: string;
+};
+
+type ProcessedAnalyticsData = {
+  contributions_over_time: Array<{ date: string; amount: number }>;
+  member_activity: Array<{ member_name: string; transactions: number; amount: number }>;
+  category_breakdown: Array<{ name: string; value: number; color: string }>;
+  growth_trends: Array<{ month: string; growth: number; target: number }>;
+  summary_stats: {
+    total_contributions: number;
+    active_members: number;
+    average_growth: number;
+    top_performer: string;
+  };
+};
+
+// Constants
+const COLORS = [
+  'hsl(142 76% 36%)',    // Green
+  'hsl(217 91% 60%)',    // Blue
+  'hsl(280 90% 60%)',    // Purple
+  'hsl(24 95% 53%)',     // Orange
+  'hsl(338 90% 60%)',    // Pink
+  'hsl(48 96% 53%)',     // Yellow
+  'hsl(162 90% 60%)',    // Teal
+  'hsl(340 90% 60%)',    // Red
+];
+
+const ESTIMATED_AMOUNT_PER_TRANSACTION = 10000; // Temporary estimate
+const TARGET_PERCENTAGE = 0.8; // Target set to 80% of highest growth
+
+const gradientColors = {
+  contributions: { from: 'hsl(142 76% 36%)', to: 'hsl(162 90% 60%)' },
+  growth: { from: 'hsl(217 91% 60%)', to: 'hsl(198 90% 60%)' },
+  activity: { from: 'hsl(280 90% 60%)', to: 'hsl(300 90% 60%)' },
+  categories: { from: 'hsl(24 95% 53%)', to: 'hsl(14 95% 53%)' },
+};
 
 // Simple card components as fallback
 const Card = ({ children, className = '' }: { children: React.ReactNode; className?: string }) => (
@@ -43,126 +114,48 @@ const CardContent = ({ children, className = '' }: { children: React.ReactNode; 
   <div className={`p-6 pt-0 ${className}`}>{children}</div>
 );
 
-// Recharts components - make sure these are installed
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  PieChart as RechartsPieChart,
-  Pie,
-  Cell,
-  AreaChart,
-  Area,
-} from 'recharts';
+// Helper function to process raw API data
+const processAnalyticsData = (data: ApiResponse): ProcessedAnalyticsData => {
+  console.log('🔄 Processing analytics data from API:', {
+    contributions: data.contributions_over_time?.length || 0,
+    members: data.member_activity?.length || 0,
+    categories: data.category_breakdown?.length || 0,
+    trends: data.growth_trends?.length || 0
+  });
 
-// API service - make sure this path is correct
-import api from '../../services/api';
-
-const COLORS = [
-  'hsl(142 76% 36%)',    // Green
-  'hsl(217 91% 60%)',    // Blue
-  'hsl(280 90% 60%)',    // Purple
-  'hsl(24 95% 53%)',     // Orange
-  'hsl(338 90% 60%)',    // Pink
-  'hsl(48 96% 53%)',     // Yellow
-  'hsl(162 90% 60%)',    // Teal
-  'hsl(340 90% 60%)',    // Red
-];
-
-// Constants for analytics data processing
-const ESTIMATED_AMOUNT_PER_TRANSACTION = 10000; // Temporary estimate until backend provides actual amounts
-const TARGET_PERCENTAGE = 0.8; // Target set to 80% of highest growth
-
-const gradientColors = {
-  contributions: { from: 'hsl(142 76% 36%)', to: 'hsl(162 90% 60%)' },
-  growth: { from: 'hsl(217 91% 60%)', to: 'hsl(198 90% 60%)' },
-  activity: { from: 'hsl(280 90% 60%)', to: 'hsl(300 90% 60%)' },
-  categories: { from: 'hsl(24 95% 53%)', to: 'hsl(14 95% 53%)' },
-};
-
-type Group = { id: string; name: string };
-
-// API Response types
-interface ApiMemberActivity {
-  member_name: string;
-  transactions: number;
-}
-
-interface ApiCategoryBreakdown {
-  name: string;
-  value: number;
-}
-
-interface ApiGrowthTrend {
-  month: string;
-  growth: number;
-}
-
-interface ApiContribution {
-  date: string;
-  amount: number;
-}
-
-interface RawAnalyticsData {
-  contributions_over_time: ApiContribution[];
-  member_activity: ApiMemberActivity[];
-  category_breakdown: ApiCategoryBreakdown[];
-  growth_trends: ApiGrowthTrend[];
-  generated_at?: string;
-}
-
-type AnalyticsData = {
-  contributions_over_time: Array<{ date: string; amount: number }>;
-  member_activity: Array<{ member_name: string; transactions: number; amount: number }>;
-  category_breakdown: Array<{ name: string; value: number; color?: string }>;
-  growth_trends: Array<{ month: string; growth: number; target: number }>;
-  summary_stats: {
-    total_contributions: number;
-    active_members: number;
-    average_growth: number;
-    top_performer: string;
-  };
-};
-
-// Helper function to process raw API data into the format expected by the UI
-const processAnalyticsData = (data: RawAnalyticsData): AnalyticsData => {
   // Add amount field to member_activity (estimate based on transactions)
-  const processedMemberActivity = (data.member_activity || []).map((member: ApiMemberActivity) => ({
+  const processedMemberActivity = (data.member_activity || []).map((member) => ({
     ...member,
     amount: member.transactions * ESTIMATED_AMOUNT_PER_TRANSACTION,
   }));
   
-  // Add target field to growth_trends (set target to percentage of highest growth)
-  const maxGrowth = Math.max(...(data.growth_trends || []).map((g: ApiGrowthTrend) => g.growth), 0);
+  // Add target field to growth_trends
+  const maxGrowth = Math.max(...(data.growth_trends || []).map((g) => g.growth), 0);
   const targetAmount = maxGrowth * TARGET_PERCENTAGE;
-  const processedGrowthTrends = (data.growth_trends || []).map((trend: ApiGrowthTrend) => ({
+  const processedGrowthTrends = (data.growth_trends || []).map((trend) => ({
     ...trend,
     target: targetAmount,
   }));
   
   // Add colors to category_breakdown
-  const processedCategoryBreakdown = (data.category_breakdown || []).map((cat: ApiCategoryBreakdown, idx: number) => ({
+  const processedCategoryBreakdown = (data.category_breakdown || []).map((cat, idx) => ({
     ...cat,
     color: COLORS[idx % COLORS.length],
   }));
   
-  // Calculate summary stats from the data
+  // Calculate summary stats
   const totalContributions = (data.contributions_over_time || []).reduce(
-    (sum: number, item: ApiContribution) => sum + (item.amount || 0), 
+    (sum, item) => sum + (item.amount || 0), 
     0
   );
   const activeMembers = (data.member_activity || []).length;
   
-  // Get top performer (backend already sorts by transaction count, but we'll be explicit)
+  // Get top performer
   const sortedMembers = [...(data.member_activity || [])].sort((a, b) => b.transactions - a.transactions);
-  const topPerformer = sortedMembers[0]?.member_name || 'N/A';
+  const topPerformer = sortedMembers[0]?.member_name || 'No data';
   
-  // Calculate average growth (month-over-month percentage)
-  const growthValues = (data.growth_trends || []).map((g: ApiGrowthTrend) => g.growth);
+  // Calculate average growth
+  const growthValues = (data.growth_trends || []).map((g) => g.growth);
   let averageGrowth = 0;
   if (growthValues.length > 1) {
     const growthRates = [];
@@ -235,15 +228,37 @@ const FloatingElement = ({ children, delay = 0 }: { children: React.ReactNode; d
 );
 
 // Stat Card Component
-function StatCard({ title, value, change, icon: Icon, gradient, description }: {
+function StatCard({ 
+  title, 
+  value, 
+  change, 
+  icon: Icon, 
+  gradient, 
+  description,
+  isLoading = false 
+}: {
   title: string;
   value: string | number;
   change?: number;
   icon: any;
   gradient: string;
   description: string;
+  isLoading?: boolean;
 }) {
   const isPositive = change === undefined ? true : change >= 0;
+  
+  if (isLoading) {
+    return (
+      <div className="p-6 rounded-3xl border border-gray-200 bg-white/80 backdrop-blur-sm shadow-lg animate-pulse">
+        <div className="flex items-center justify-between mb-4">
+          <div className={`h-12 w-12 rounded-2xl bg-gray-200`} />
+          <div className="h-8 w-16 bg-gray-200 rounded-full" />
+        </div>
+        <div className="h-8 w-32 bg-gray-200 rounded mb-2" />
+        <div className="h-4 w-48 bg-gray-200 rounded" />
+      </div>
+    );
+  }
   
   return (
     <motion.div
@@ -276,12 +291,13 @@ export function AnalyticsPage() {
   const [loading, setLoading] = useState(true);
   const [fetching, setFetching] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [apiStatus, setApiStatus] = useState<'loading' | 'success' | 'error'>('loading');
 
   const [groups, setGroups] = useState<Group[]>([]);
   const [selectedGroupId, setSelectedGroupId] = useState<string>('');
   const [timeRange, setTimeRange] = useState<string>('12months');
 
-  const [analyticsData, setAnalyticsData] = useState<AnalyticsData>({
+  const [analyticsData, setAnalyticsData] = useState<ProcessedAnalyticsData>({
     contributions_over_time: [],
     member_activity: [],
     category_breakdown: [],
@@ -294,18 +310,40 @@ export function AnalyticsPage() {
     },
   });
 
-  // Load user's groups
+  // Load user's groups with better error handling
   useEffect(() => {
     const loadGroups = async () => {
       try {
-        const res = await api.get('/groups/chama-groups/my_groups/');
-        setGroups(res.data);
-        if (res.data.length > 0) {
-          setSelectedGroupId(res.data[0].id);
+        console.log('📊 Loading user groups...');
+        const groupsResponse = await groupsService.getMyGroups();
+        console.log('✅ Groups loaded:', groupsResponse);
+        setGroups(groupsResponse);
+        
+        if (groupsResponse.length > 0) {
+          const firstGroup = groupsResponse[0];
+          setSelectedGroupId(firstGroup.id.toString());
+          console.log(`🎯 Selected first group: ${firstGroup.name} (ID: ${firstGroup.id})`);
+        } else {
+          console.log('👤 No groups found for user');
+          setError('You are not a member of any chama groups yet.');
         }
-      } catch (err) {
-        console.error('Failed to load groups:', err);
-        setError('Failed to load your chamas. Please try again.');
+      } catch (err: any) {
+        console.error('❌ Failed to load groups:', err);
+        
+        // Detailed error logging
+        if (err.response) {
+          console.error('📡 Response error:', {
+            status: err.response.status,
+            data: err.response.data,
+            headers: err.response.headers
+          });
+        } else if (err.request) {
+          console.error('🌐 No response received. Backend may be unreachable.');
+        } else {
+          console.error('⚡ Request setup error:', err.message);
+        }
+        
+        setError('Failed to load your chama groups. Please try again.');
       } finally {
         setLoading(false);
       }
@@ -314,22 +352,64 @@ export function AnalyticsPage() {
     loadGroups();
   }, []);
 
-  // Load analytics when group changes
+  // Load analytics when group changes with improved error handling
   useEffect(() => {
     if (!selectedGroupId) return;
 
     const fetchAnalytics = async () => {
       setFetching(true);
       setError(null);
+      setApiStatus('loading');
 
       try {
-        const response = await api.get(`/analytics/dashboard/?group_id=${selectedGroupId}`);
-        const processedData = processAnalyticsData(response.data);
+        console.log(`📈 Fetching analytics for group ${selectedGroupId}...`);
+        const response = await analyticsService.getDashboardAnalytics(parseInt(selectedGroupId));
+        console.log('✅ Analytics data received:', {
+          contributions: response.contributions_over_time?.length || 0,
+          members: response.member_activity?.length || 0,
+          categories: response.category_breakdown?.length || 0,
+          trends: response.growth_trends?.length || 0
+        });
+
+        const processedData = processAnalyticsData(response);
         setAnalyticsData(processedData);
-      } catch (err: unknown) {
-        console.error('Error fetching analytics:', err);
-        setError('Failed to load analytics data. Please try again.');
-        // Don't show mock data on error - keep empty state
+        setApiStatus('success');
+        
+        console.log('📊 Processed analytics data:', {
+          totalContributions: processedData.summary_stats.total_contributions,
+          activeMembers: processedData.summary_stats.active_members,
+          topPerformer: processedData.summary_stats.top_performer
+        });
+      } catch (err: any) {
+        console.error('❌ Error fetching analytics:', err);
+        setApiStatus('error');
+        
+        // Detailed error logging
+        if (err.response) {
+          console.error('📡 Response error:', {
+            status: err.response.status,
+            data: err.response.data,
+            url: err.config?.url
+          });
+          
+          if (err.response.status === 401) {
+            setError('Authentication required. Please login again.');
+          } else if (err.response.status === 403) {
+            setError('You do not have permission to view analytics for this group.');
+          } else if (err.response.status === 404) {
+            setError('Analytics data not found for this group.');
+          } else if (err.response.status >= 500) {
+            setError('Server error. Please try again later.');
+          } else {
+            setError(`Failed to load analytics: ${err.response.data?.detail || 'Unknown error'}`);
+          }
+        } else if (err.request) {
+          console.error('🌐 No response received. Backend may be unreachable.');
+          setError('Cannot connect to the server. Please check your internet connection.');
+        } else {
+          console.error('⚡ Request setup error:', err.message);
+          setError('Failed to load analytics data. Please try again.');
+        }
       } finally {
         setFetching(false);
       }
@@ -339,27 +419,81 @@ export function AnalyticsPage() {
   }, [selectedGroupId, timeRange]);
 
   const handleExportData = () => {
-    // Implement export functionality
-    console.log('Exporting analytics data...');
-    alert('Export functionality would be implemented here');
+    try {
+      console.log('📤 Exporting analytics data...');
+      // Create CSV content from analytics data
+      const csvContent = [
+        ['Metric', 'Value'],
+        ['Total Contributions', `KES ${analyticsData.summary_stats.total_contributions.toLocaleString()}`],
+        ['Active Members', analyticsData.summary_stats.active_members],
+        ['Average Growth', `${analyticsData.summary_stats.average_growth}%`],
+        ['Top Performer', analyticsData.summary_stats.top_performer],
+        ['', ''],
+        ['Date', 'Amount'],
+        ...analyticsData.contributions_over_time.map(item => [
+          new Date(item.date).toLocaleDateString(),
+          `KES ${item.amount.toLocaleString()}`
+        ])
+      ].map(row => row.join(',')).join('\n');
+
+      // Create blob and download
+      const blob = new Blob([csvContent], { type: 'text/csv' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `analytics-${new Date().toISOString().split('T')[0]}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+      
+      console.log('✅ Analytics data exported successfully');
+    } catch (err) {
+      console.error('❌ Failed to export analytics:', err);
+      alert('Failed to export data. Please try again.');
+    }
   };
 
   const handleRefresh = async () => {
     if (selectedGroupId) {
       setFetching(true);
       setError(null);
+      setApiStatus('loading');
       
       try {
-        const response = await api.get(`/analytics/dashboard/?group_id=${selectedGroupId}`);
-        const processedData = processAnalyticsData(response.data);
+        console.log('🔄 Refreshing analytics data...');
+        const response = await analyticsService.getDashboardAnalytics(parseInt(selectedGroupId));
+        const processedData = processAnalyticsData(response);
         setAnalyticsData(processedData);
-      } catch (err: unknown) {
-        console.error('Error refreshing analytics:', err);
+        setApiStatus('success');
+        console.log('✅ Analytics data refreshed');
+      } catch (err: any) {
+        console.error('❌ Error refreshing analytics:', err);
+        setApiStatus('error');
         setError('Failed to refresh analytics data. Please try again.');
       } finally {
         setFetching(false);
       }
     }
+  };
+
+  // API Status Badge Component
+  const ApiStatusBadge = () => {
+    if (apiStatus === 'loading') return null;
+    
+    const statusConfig = {
+      success: { label: 'Live Data', color: 'bg-green-100 text-green-700', icon: '✅' },
+      error: { label: 'Demo Data', color: 'bg-blue-100 text-blue-700', icon: '🔴' }
+    };
+
+    const config = statusConfig[apiStatus];
+
+    return (
+      <span className={`ml-2 px-3 py-1 rounded-full text-xs font-medium ${config.color} flex items-center gap-1`}>
+        <span>{config.icon}</span>
+        <span>{config.label}</span>
+      </span>
+    );
   };
 
   if (loading) {
@@ -432,9 +566,10 @@ export function AnalyticsPage() {
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: 0.2 }}
-                  className="text-5xl font-black bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent mb-3"
+                  className="text-5xl font-black bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent mb-3 flex items-center"
                 >
                   Analytics Dashboard
+                  <ApiStatusBadge />
                 </motion.h1>
                 <motion.p 
                   initial={{ opacity: 0, x: -20 }}
@@ -469,12 +604,15 @@ export function AnalyticsPage() {
               <div className="relative">
                 <select
                   value={selectedGroupId}
-                  onChange={(e) => setSelectedGroupId(e.target.value)}
+                  onChange={(e) => {
+                    console.log(`🔄 Switching to group ${e.target.value}`);
+                    setSelectedGroupId(e.target.value);
+                  }}
                   disabled={fetching || groups.length === 0}
                   className="appearance-none pl-4 pr-10 py-3 border-2 border-gray-200 rounded-2xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none bg-white/80 backdrop-blur-sm text-gray-700 font-medium w-full sm:w-64 disabled:opacity-50"
                 >
                   {groups.length === 0 ? (
-                    <option>No chamas found</option>
+                    <option value="">No chamas found</option>
                   ) : (
                     groups.map((g) => (
                       <option key={g.id} value={g.id}>
@@ -492,8 +630,9 @@ export function AnalyticsPage() {
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                   onClick={handleRefresh}
-                  disabled={fetching}
+                  disabled={fetching || !selectedGroupId}
                   className="p-3 rounded-2xl border-2 border-gray-200 bg-white/80 backdrop-blur-sm hover:shadow-lg transition-all disabled:opacity-50"
+                  aria-label="Refresh analytics"
                 >
                   <RefreshCw className={`h-5 w-5 text-gray-600 ${fetching ? 'animate-spin' : ''}`} />
                 </motion.button>
@@ -502,7 +641,9 @@ export function AnalyticsPage() {
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                   onClick={handleExportData}
-                  className="p-3 rounded-2xl border-2 border-gray-200 bg-white/80 backdrop-blur-sm hover:shadow-lg transition-all flex items-center gap-2"
+                  disabled={analyticsData.contributions_over_time.length === 0}
+                  className="p-3 rounded-2xl border-2 border-gray-200 bg-white/80 backdrop-blur-sm hover:shadow-lg transition-all flex items-center gap-2 disabled:opacity-50"
+                  aria-label="Export data"
                 >
                   <Download className="h-5 w-5 text-gray-600" />
                 </motion.button>
@@ -527,6 +668,13 @@ export function AnalyticsPage() {
                 <h3 className="font-bold text-lg">Analytics Update</h3>
                 <p>{error}</p>
               </div>
+              <button
+                onClick={() => setError(null)}
+                className="p-2 hover:bg-red-100 rounded-lg transition-colors"
+                aria-label="Dismiss error"
+              >
+                <XCircle className="h-5 w-5" />
+              </button>
             </motion.div>
           )}
         </AnimatePresence>
@@ -578,6 +726,7 @@ export function AnalyticsPage() {
             icon={DollarSign}
             gradient="from-green-500 to-emerald-500"
             description="Total amount contributed by members"
+            isLoading={fetching}
           />
           <StatCard
             title="Active Members"
@@ -586,6 +735,7 @@ export function AnalyticsPage() {
             icon={Users}
             gradient="from-blue-500 to-cyan-500"
             description="Members with recent activity"
+            isLoading={fetching}
           />
           <StatCard
             title="Average Growth"
@@ -594,6 +744,7 @@ export function AnalyticsPage() {
             icon={TrendingUp}
             gradient="from-purple-500 to-pink-500"
             description="Monthly growth rate"
+            isLoading={fetching}
           />
           <StatCard
             title="Top Performer"
@@ -601,6 +752,7 @@ export function AnalyticsPage() {
             icon={Award}
             gradient="from-orange-500 to-amber-500"
             description="Highest contributing member"
+            isLoading={fetching}
           />
         </motion.div>
 
@@ -616,46 +768,64 @@ export function AnalyticsPage() {
               <CardHeader className="flex flex-row items-center justify-between pb-4">
                 <div>
                   <CardTitle className="text-xl font-black text-gray-800">Contributions Over Time</CardTitle>
-                  <CardDescription className="text-gray-600 font-medium">Monthly contribution trends and patterns</CardDescription>
+                  <CardDescription className="text-gray-600 font-medium">
+                    {fetching ? 'Loading...' : `Showing ${analyticsData.contributions_over_time.length} data points`}
+                  </CardDescription>
                 </div>
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  className="p-2 rounded-xl hover:bg-gray-100 transition-colors"
-                >
-                  <Eye className="h-4 w-4 text-gray-600" />
-                </motion.button>
+                <div className="flex items-center gap-2">
+                  {apiStatus === 'success' && (
+                    <span className="text-xs px-2 py-1 bg-green-100 text-green-700 rounded-full font-medium">
+                      Live Data
+                    </span>
+                  )}
+                  <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    className="p-2 rounded-xl hover:bg-gray-100 transition-colors"
+                    aria-label="View details"
+                  >
+                    <Eye className="h-4 w-4 text-gray-600" />
+                  </motion.button>
+                </div>
               </CardHeader>
               <CardContent>
-                <ResponsiveContainer width="100%" height={300}>
-                  <AreaChart data={analyticsData.contributions_over_time}>
-                    <defs>
-                      <linearGradient id="colorContributions" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor={gradientColors.contributions.from} stopOpacity={0.4} />
-                        <stop offset="95%" stopColor={gradientColors.contributions.from} stopOpacity={0} />
-                      </linearGradient>
-                    </defs>
-                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.05)" />
-                    <XAxis 
-                      dataKey="date" 
-                      tickFormatter={(v) => new Date(v).toLocaleDateString('en-US', { month: 'short' })}
-                      className="text-sm font-medium"
-                    />
-                    <YAxis 
-                      tickFormatter={(v) => `KES ${v / 1000}k`}
-                      className="text-sm font-medium"
-                    />
-                    <Tooltip content={<ChartTooltip valueFormatter={(v: number) => `KES ${v.toLocaleString()}`} />} />
-                    <Area 
-                      type="monotone" 
-                      dataKey="amount" 
-                      stroke={gradientColors.contributions.from}
-                      fill="url(#colorContributions)" 
-                      strokeWidth={3}
-                      dot={{ fill: gradientColors.contributions.from, strokeWidth: 2, r: 4 }}
-                    />
-                  </AreaChart>
-                </ResponsiveContainer>
+                {analyticsData.contributions_over_time.length === 0 ? (
+                  <div className="h-64 flex flex-col items-center justify-center text-gray-500">
+                    <BarChart3 className="h-12 w-12 mb-4 opacity-50" />
+                    <p className="font-medium">No contribution data available</p>
+                    <p className="text-sm mt-1">Start recording contributions to see trends</p>
+                  </div>
+                ) : (
+                  <ResponsiveContainer width="100%" height={300}>
+                    <AreaChart data={analyticsData.contributions_over_time}>
+                      <defs>
+                        <linearGradient id="colorContributions" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor={gradientColors.contributions.from} stopOpacity={0.4} />
+                          <stop offset="95%" stopColor={gradientColors.contributions.from} stopOpacity={0} />
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.05)" />
+                      <XAxis 
+                        dataKey="date" 
+                        tickFormatter={(v) => new Date(v).toLocaleDateString('en-US', { month: 'short' })}
+                        className="text-sm font-medium"
+                      />
+                      <YAxis 
+                        tickFormatter={(v) => `KES ${v / 1000}k`}
+                        className="text-sm font-medium"
+                      />
+                      <Tooltip content={<ChartTooltip valueFormatter={(v: number) => `KES ${v.toLocaleString()}`} />} />
+                      <Area 
+                        type="monotone" 
+                        dataKey="amount" 
+                        stroke={gradientColors.contributions.from}
+                        fill="url(#colorContributions)" 
+                        strokeWidth={3}
+                        dot={{ fill: gradientColors.contributions.from, strokeWidth: 2, r: 4 }}
+                      />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                )}
               </CardContent>
             </Card>
           </motion.div>
@@ -670,38 +840,48 @@ export function AnalyticsPage() {
               <CardHeader className="flex flex-row items-center justify-between pb-4">
                 <div>
                   <CardTitle className="text-xl font-black text-gray-800">Top Contributors</CardTitle>
-                  <CardDescription className="text-gray-600 font-medium">Most active members by transaction volume</CardDescription>
+                  <CardDescription className="text-gray-600 font-medium">
+                    {fetching ? 'Loading...' : `${analyticsData.member_activity.length} active members`}
+                  </CardDescription>
                 </div>
                 <Users className="h-5 w-5 text-gray-400" />
               </CardHeader>
               <CardContent>
-                <ResponsiveContainer width="100%" height={300}>
-                  <BarChart 
-                    data={analyticsData.member_activity}
-                    layout="vertical"
-                    margin={{ left: 100 }}
-                  >
-                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.05)" horizontal={true} vertical={false} />
-                    <XAxis 
-                      type="number"
-                      tickFormatter={(v) => `KES ${v / 1000}k`}
-                      className="text-sm font-medium"
-                    />
-                    <YAxis 
-                      dataKey="member_name" 
-                      type="category" 
-                      width={100}
-                      className="text-sm font-medium"
-                    />
-                    <Tooltip content={<ChartTooltip valueFormatter={(v: number) => `${v} transactions`} />} />
-                    <Bar 
-                      dataKey="amount" 
-                      fill={gradientColors.activity.from}
-                      radius={[0, 8, 8, 0]}
-                      name="Total Amount"
-                    />
-                  </BarChart>
-                </ResponsiveContainer>
+                {analyticsData.member_activity.length === 0 ? (
+                  <div className="h-64 flex flex-col items-center justify-center text-gray-500">
+                    <Users className="h-12 w-12 mb-4 opacity-50" />
+                    <p className="font-medium">No member activity data</p>
+                    <p className="text-sm mt-1">Members will appear here when they contribute</p>
+                  </div>
+                ) : (
+                  <ResponsiveContainer width="100%" height={300}>
+                    <BarChart 
+                      data={analyticsData.member_activity}
+                      layout="vertical"
+                      margin={{ left: 100 }}
+                    >
+                      <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.05)" horizontal={true} vertical={false} />
+                      <XAxis 
+                        type="number"
+                        tickFormatter={(v) => `KES ${v / 1000}k`}
+                        className="text-sm font-medium"
+                      />
+                      <YAxis 
+                        dataKey="member_name" 
+                        type="category" 
+                        width={100}
+                        className="text-sm font-medium"
+                      />
+                      <Tooltip content={<ChartTooltip valueFormatter={(v: number) => `${v} transactions`} />} />
+                      <Bar 
+                        dataKey="amount" 
+                        fill={gradientColors.activity.from}
+                        radius={[0, 8, 8, 0]}
+                        name="Total Amount"
+                      />
+                    </BarChart>
+                  </ResponsiveContainer>
+                )}
               </CardContent>
             </Card>
           </motion.div>
@@ -716,48 +896,58 @@ export function AnalyticsPage() {
               <CardHeader className="flex flex-row items-center justify-between pb-4">
                 <div>
                   <CardTitle className="text-xl font-black text-gray-800">Fund Distribution</CardTitle>
-                  <CardDescription className="text-gray-600 font-medium">How group funds are allocated</CardDescription>
+                  <CardDescription className="text-gray-600 font-medium">
+                    {fetching ? 'Loading...' : 'How group funds are allocated'}
+                  </CardDescription>
                 </div>
                 <PieChart className="h-5 w-5 text-gray-400" />
               </CardHeader>
               <CardContent>
-                <div className="flex flex-col lg:flex-row items-center gap-6">
-                  <div className="h-64 w-64">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <RechartsPieChart>
-                        <Pie
-                          data={analyticsData.category_breakdown}
-                          cx="50%"
-                          cy="50%"
-                          labelLine={false}
-                          label={({ name, percent }) => `${name} ${((percent || 0) * 100).toFixed(0)}%`}
-                          outerRadius={80}
-                          innerRadius={40}
-                          dataKey="value"
-                        >
-                          {analyticsData.category_breakdown.map((entry, index) => (
-                            <Cell key={`cell-${index}`} fill={entry.color || COLORS[index % COLORS.length]} />
-                          ))}
-                        </Pie>
-                        <Tooltip content={<ChartTooltip valueFormatter={(v: number) => `KES ${(v * 24567).toLocaleString()}`} />} />
-                      </RechartsPieChart>
-                    </ResponsiveContainer>
+                {analyticsData.category_breakdown.length === 0 ? (
+                  <div className="h-64 flex flex-col items-center justify-center text-gray-500">
+                    <PieChart className="h-12 w-12 mb-4 opacity-50" />
+                    <p className="font-medium">No category data available</p>
+                    <p className="text-sm mt-1">Categories will appear when expenses are recorded</p>
                   </div>
-                  <div className="flex-1 space-y-3">
-                    {analyticsData.category_breakdown.map((category, index) => (
-                      <div key={category.name} className="flex items-center justify-between p-3 rounded-xl bg-gray-50/50">
-                        <div className="flex items-center gap-3">
-                          <div 
-                            className="h-4 w-4 rounded-full" 
-                            style={{ backgroundColor: category.color || COLORS[index % COLORS.length] }}
-                          />
-                          <span className="font-medium text-gray-700">{category.name}</span>
+                ) : (
+                  <div className="flex flex-col lg:flex-row items-center gap-6">
+                    <div className="h-64 w-64">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <RechartsPieChart>
+                          <Pie
+                            data={analyticsData.category_breakdown}
+                            cx="50%"
+                            cy="50%"
+                            labelLine={false}
+                            label={({ name, percent }) => `${name} ${((percent || 0) * 100).toFixed(0)}%`}
+                            outerRadius={80}
+                            innerRadius={40}
+                            dataKey="value"
+                          >
+                            {analyticsData.category_breakdown.map((entry, index) => (
+                              <Cell key={`cell-${index}`} fill={entry.color || COLORS[index % COLORS.length]} />
+                            ))}
+                          </Pie>
+                          <Tooltip content={<ChartTooltip valueFormatter={(v: number) => `KES ${(v * 24567).toLocaleString()}`} />} />
+                        </RechartsPieChart>
+                      </ResponsiveContainer>
+                    </div>
+                    <div className="flex-1 space-y-3">
+                      {analyticsData.category_breakdown.map((category, index) => (
+                        <div key={category.name} className="flex items-center justify-between p-3 rounded-xl bg-gray-50/50">
+                          <div className="flex items-center gap-3">
+                            <div 
+                              className="h-4 w-4 rounded-full" 
+                              style={{ backgroundColor: category.color || COLORS[index % COLORS.length] }}
+                            />
+                            <span className="font-medium text-gray-700">{category.name}</span>
+                          </div>
+                          <span className="font-bold text-gray-900">{category.value}%</span>
                         </div>
-                        <span className="font-bold text-gray-900">{category.value}%</span>
-                      </div>
-                    ))}
+                      ))}
+                    </div>
                   </div>
-                </div>
+                )}
               </CardContent>
             </Card>
           </motion.div>
@@ -772,35 +962,45 @@ export function AnalyticsPage() {
               <CardHeader className="flex flex-row items-center justify-between pb-4">
                 <div>
                   <CardTitle className="text-xl font-black text-gray-800">Growth vs Target</CardTitle>
-                  <CardDescription className="text-gray-600 font-medium">Monthly performance against targets</CardDescription>
+                  <CardDescription className="text-gray-600 font-medium">
+                    {fetching ? 'Loading...' : 'Monthly performance against targets'}
+                  </CardDescription>
                 </div>
                 <Target className="h-5 w-5 text-gray-400" />
               </CardHeader>
               <CardContent>
-                <ResponsiveContainer width="100%" height={300}>
-                  <BarChart data={analyticsData.growth_trends}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.05)" />
-                    <XAxis dataKey="month" className="text-sm font-medium" />
-                    <YAxis 
-                      tickFormatter={(v) => `KES ${v / 1000}k`}
-                      className="text-sm font-medium"
-                    />
-                    <Tooltip content={<ChartTooltip valueFormatter={(v: number) => `KES ${v.toLocaleString()}`} />} />
-                    <Bar 
-                      dataKey="target" 
-                      fill={gradientColors.growth.from}
-                      opacity={0.6}
-                      radius={[4, 4, 0, 0]}
-                      name="Target"
-                    />
-                    <Bar 
-                      dataKey="growth" 
-                      fill={gradientColors.growth.to}
-                      radius={[4, 4, 0, 0]}
-                      name="Actual Growth"
-                    />
-                  </BarChart>
-                </ResponsiveContainer>
+                {analyticsData.growth_trends.length === 0 ? (
+                  <div className="h-64 flex flex-col items-center justify-center text-gray-500">
+                    <Target className="h-12 w-12 mb-4 opacity-50" />
+                    <p className="font-medium">No growth data available</p>
+                    <p className="text-sm mt-1">Growth trends will appear over time</p>
+                  </div>
+                ) : (
+                  <ResponsiveContainer width="100%" height={300}>
+                    <BarChart data={analyticsData.growth_trends}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.05)" />
+                      <XAxis dataKey="month" className="text-sm font-medium" />
+                      <YAxis 
+                        tickFormatter={(v) => `KES ${v / 1000}k`}
+                        className="text-sm font-medium"
+                      />
+                      <Tooltip content={<ChartTooltip valueFormatter={(v: number) => `KES ${v.toLocaleString()}`} />} />
+                      <Bar 
+                        dataKey="target" 
+                        fill={gradientColors.growth.from}
+                        opacity={0.6}
+                        radius={[4, 4, 0, 0]}
+                        name="Target"
+                      />
+                      <Bar 
+                        dataKey="growth" 
+                        fill={gradientColors.growth.to}
+                        radius={[4, 4, 0, 0]}
+                        name="Actual Growth"
+                      />
+                    </BarChart>
+                  </ResponsiveContainer>
+                )}
               </CardContent>
             </Card>
           </motion.div>
@@ -816,24 +1016,28 @@ function AnalyticsSkeleton() {
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 p-6">
       <div className="max-w-7xl mx-auto space-y-8">
         {/* Header Skeleton */}
-        <div className="flex justify-between items-center">
-          <div className="flex items-center gap-4">
+        <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-8">
+          <div className="flex items-center gap-6">
             <div className="h-20 w-20 rounded-3xl bg-gray-200 animate-pulse" />
             <div>
-              <div className="h-8 w-64 bg-gray-200 rounded mb-2 animate-pulse" />
-              <div className="h-4 w-80 bg-gray-200 rounded animate-pulse" />
+              <div className="h-10 w-64 bg-gray-200 rounded mb-3 animate-pulse" />
+              <div className="h-5 w-80 bg-gray-200 rounded animate-pulse" />
             </div>
           </div>
-          <div className="flex gap-3">
-            <div className="h-12 w-32 bg-gray-200 rounded-2xl animate-pulse" />
-            <div className="h-12 w-12 bg-gray-200 rounded-2xl animate-pulse" />
+          <div className="flex flex-col sm:flex-row gap-4 w-full lg:w-auto">
+            <div className="h-12 w-48 bg-gray-200 rounded-2xl animate-pulse" />
+            <div className="h-12 w-64 bg-gray-200 rounded-2xl animate-pulse" />
+            <div className="flex gap-2">
+              <div className="h-12 w-12 bg-gray-200 rounded-2xl animate-pulse" />
+              <div className="h-12 w-12 bg-gray-200 rounded-2xl animate-pulse" />
+            </div>
           </div>
         </div>
 
         {/* Stats Skeleton */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {[...Array(4)].map((_, i) => (
-            <div key={i} className="h-32 rounded-3xl bg-gray-200 animate-pulse" />
+            <div key={i} className="h-36 rounded-3xl bg-gray-200 animate-pulse" />
           ))}
         </div>
 
