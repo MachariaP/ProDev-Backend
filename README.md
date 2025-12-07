@@ -67,6 +67,31 @@ Visit: **http://localhost:5173** 🎨
 📖 **[Full Quick Start Guide](./docs/QUICK_START.md)**  
 🔧 **[Dashboard Troubleshooting](./docs/DASHBOARD_TROUBLESHOOTING.md)** - If dashboard fails to load
 
+### 🗄️ Database Seeding (Optional but Recommended)
+
+Want to quickly populate your database with sample data for testing and development?
+
+```bash
+# Seed all data (users, groups, contributions, loans, investments, etc.)
+python seed_all_data.py
+
+# Or seed specific data only
+python manage.py seed_data          # Users and groups
+python manage.py seed_investments   # Investment data
+```
+
+This creates **50+ users**, **15 groups**, and thousands of realistic transactions including:
+- ✅ Member contributions and wallets
+- ✅ Loans and repayments
+- ✅ Investments and portfolios
+- ✅ M-Pesa transactions
+- ✅ Educational content
+- ✅ Gamification achievements
+- ✅ Governance and voting records
+
+**Default login**: Any user email with password `password123`  
+📚 **[Full Seeding Guide](./SEEDING_GUIDE.md)** - Detailed documentation and customization
+
 ---
 
 ## 🌟 Welcome to Your Full-Stack Mastery Journey!
