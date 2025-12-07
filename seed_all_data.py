@@ -491,33 +491,28 @@ class DataSeeder:
         groups_without_portfolio = ChamaGroup.objects.filter(portfolio__isnull=True)
         for group in groups_without_portfolio:
             # Generate random percentages that sum to exactly 100
-            # Use a list to divide 100 among asset classes
-            percentages = []
             remaining = 100.0
             
             # Stocks: 20-40%
             stocks_pct = random.uniform(20, min(40, remaining))
-            percentages.append(stocks_pct)
             remaining -= stocks_pct
             
             # Bonds: 20-30% (adjusted for remaining)
             bonds_pct = random.uniform(20, min(30, remaining))
-            percentages.append(bonds_pct)
             remaining -= bonds_pct
             
             # Real Estate: 10-25% (adjusted for remaining)
             real_estate_pct = random.uniform(10, min(25, remaining))
-            percentages.append(real_estate_pct)
             remaining -= real_estate_pct
             
             # Cash: 10-20% (adjusted for remaining)
-            cash_pct = random.uniform(max(0, min(10, remaining)), min(20, remaining))
-            percentages.append(cash_pct)
+            min_cash = max(0, min(10, remaining))
+            max_cash = min(20, remaining)
+            cash_pct = random.uniform(min_cash, max_cash)
             remaining -= cash_pct
             
             # Other: whatever remains to make it exactly 100%
             other_pct = max(0, remaining)
-            percentages.append(other_pct)
             
             Portfolio.objects.create(
                 group=group,
@@ -842,12 +837,21 @@ class DataSeeder:
         print(f"  ✓ Created {fine_count} fines")
         
         # Votes
+        vote_titles_and_descriptions = [
+            ('Approve New Loan Policy', 'Vote to approve proposed changes to the group loan policy including new interest rates and repayment terms.'),
+            ('Elect New Officials', 'Vote to elect new group officials for the upcoming term including Chairperson, Treasurer, and Secretary.'),
+            ('Increase Contributions', 'Vote to increase the minimum monthly contribution amount to support group growth and goals.'),
+            ('Approve Investment Proposal', 'Vote to approve a new investment opportunity for the group funds.'),
+            ('Change Meeting Schedule', 'Vote to change the regular meeting schedule to better accommodate member availability.'),
+        ]
+        
         for group in random.sample(self.groups, 8):
             start_date = timezone.now() - timedelta(days=random.randint(1, 30))
+            title, description = random.choice(vote_titles_and_descriptions)
             vote = Vote.objects.create(
                 group=group,
-                title=random.choice(['Approve New Loan Policy', 'Elect New Officials', 'Increase Contributions']),
-                description='Vote on this important matter',
+                title=title,
+                description=description,
                 vote_type=random.choice(['SIMPLE', 'TWO_THIRDS']),
                 status=random.choice(['ACTIVE', 'CLOSED', 'CLOSED']),
                 start_date=start_date,
