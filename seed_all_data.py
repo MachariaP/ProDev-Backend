@@ -3,9 +3,12 @@ Comprehensive database seeding script for ProDev-Backend.
 This script seeds all necessary data across all apps in the system.
 
 Usage:
-    python manage.py shell < seed_all_data.py
-    OR
     python seed_all_data.py
+    
+Note: This script requires interactive input and cannot be used with shell redirection.
+For non-interactive seeding, use the Django management commands:
+    python manage.py seed_data
+    python manage.py seed_investments
 """
 
 import os
@@ -384,8 +387,9 @@ class DataSeeder:
                 duration = random.choice([3, 6, 12, 24])
                 
                 # Calculate loan amounts before creating
-                interest = (principal * interest_rate * duration) / (Decimal('100') * Decimal(str(MONTHS_PER_YEAR)))
-                total_amount = principal + interest
+                # Calculate total interest for the entire loan duration (simple interest)
+                total_interest = (principal * interest_rate * duration) / (Decimal('100') * Decimal(str(MONTHS_PER_YEAR)))
+                total_amount = principal + total_interest
                 monthly_payment = total_amount / duration if duration > 0 else Decimal('0')
                 
                 loan = Loan.objects.create(
@@ -486,13 +490,34 @@ class DataSeeder:
         portfolio_count = 0
         groups_without_portfolio = ChamaGroup.objects.filter(portfolio__isnull=True)
         for group in groups_without_portfolio:
-            # Generate random percentages that sum to 100
-            stocks_pct = random.uniform(20, 40)
-            bonds_pct = random.uniform(20, 30)
-            real_estate_pct = random.uniform(10, 25)
-            remaining = 100 - (stocks_pct + bonds_pct + real_estate_pct)
-            cash_pct = max(10, min(20, remaining))  # Ensure cash is between 10-20%
-            other_pct = 100 - (stocks_pct + bonds_pct + real_estate_pct + cash_pct)
+            # Generate random percentages that sum to exactly 100
+            # Use a list to divide 100 among asset classes
+            percentages = []
+            remaining = 100.0
+            
+            # Stocks: 20-40%
+            stocks_pct = random.uniform(20, min(40, remaining))
+            percentages.append(stocks_pct)
+            remaining -= stocks_pct
+            
+            # Bonds: 20-30% (adjusted for remaining)
+            bonds_pct = random.uniform(20, min(30, remaining))
+            percentages.append(bonds_pct)
+            remaining -= bonds_pct
+            
+            # Real Estate: 10-25% (adjusted for remaining)
+            real_estate_pct = random.uniform(10, min(25, remaining))
+            percentages.append(real_estate_pct)
+            remaining -= real_estate_pct
+            
+            # Cash: 10-20% (adjusted for remaining)
+            cash_pct = random.uniform(max(0, min(10, remaining)), min(20, remaining))
+            percentages.append(cash_pct)
+            remaining -= cash_pct
+            
+            # Other: whatever remains to make it exactly 100%
+            other_pct = max(0, remaining)
+            percentages.append(other_pct)
             
             Portfolio.objects.create(
                 group=group,
@@ -524,11 +549,18 @@ class DataSeeder:
         purchase_date = timezone.now().date() - timedelta(days=random.randint(0, 180))
         maturity_date = purchase_date + timedelta(days=duration_days)
         
-        # Calculate current value using float for intermediate calculations, then convert to Decimal
+        # Calculate current value using Decimal arithmetic for precision
         days_elapsed = (timezone.now().date() - purchase_date).days
-        years_elapsed = days_elapsed / 365.25
-        growth_factor = (1.0 + (float(expected_return_rate) / 100.0)) ** years_elapsed
-        current_value = Decimal(str(float(principal_amount) * growth_factor * random.uniform(0.95, 1.05))).quantize(Decimal('0.01'))
+        years_elapsed = Decimal(str(days_elapsed)) / Decimal('365.25')
+        
+        # Calculate growth factor: (1 + rate/100)^years
+        base_rate = Decimal('1') + (expected_return_rate / Decimal('100'))
+        # Use power calculation with Decimal for precision
+        growth_factor = base_rate ** years_elapsed
+        
+        # Apply variance (0.95 to 1.05)
+        variance = Decimal(str(random.uniform(0.95, 1.05)))
+        current_value = (principal_amount * growth_factor * variance).quantize(Decimal('0.01'))
         
         status = random.choice(['ACTIVE', 'ACTIVE', 'ACTIVE', 'MATURED', 'SOLD'])
         
