@@ -409,15 +409,18 @@ class DataSeeder:
                 if loan.status in ['ACTIVE', 'COMPLETED']:
                     num_repayments = random.randint(1, duration)
                     for _ in range(num_repayments):
-                        LoanRepayment.objects.create(
-                            loan=loan,
-                            amount=monthly_payment,
-                            payment_method=random.choice(['MPESA', 'BANK', 'CASH']),
-                            reference_number=f'REP{random.randint(100000, 999999)}',
-                            status='COMPLETED'
-                        )
-                        loan.outstanding_balance -= monthly_payment
-                        repayment_count += 1
+                        # Ensure we don't create more repayments than needed
+                        if loan.outstanding_balance > Decimal('0'):
+                            repayment_amount = min(monthly_payment, loan.outstanding_balance)
+                            LoanRepayment.objects.create(
+                                loan=loan,
+                                amount=repayment_amount,
+                                payment_method=random.choice(['MPESA', 'BANK', 'CASH']),
+                                reference_number=f'REP{random.randint(100000, 999999)}',
+                                status='COMPLETED'
+                            )
+                            loan.outstanding_balance -= repayment_amount
+                            repayment_count += 1
                     loan.save()
         
         print(f"  ✓ Created {count} loans and {repayment_count} repayments")
@@ -483,14 +486,23 @@ class DataSeeder:
         portfolio_count = 0
         groups_without_portfolio = ChamaGroup.objects.filter(portfolio__isnull=True)
         for group in groups_without_portfolio:
+            # Generate random percentages that sum to 100
+            stocks_pct = random.uniform(20, 40)
+            bonds_pct = random.uniform(20, 30)
+            real_estate_pct = random.uniform(10, 25)
+            remaining = 100 - (stocks_pct + bonds_pct + real_estate_pct)
+            cash_pct = max(10, min(20, remaining))  # Ensure cash is between 10-20%
+            other_pct = 100 - (stocks_pct + bonds_pct + real_estate_pct + cash_pct)
+            
             Portfolio.objects.create(
                 group=group,
                 total_invested=Decimal(str(random.uniform(50000, 500000))).quantize(Decimal('0.01')),
                 current_value=Decimal(str(random.uniform(50000, 600000))).quantize(Decimal('0.01')),
-                stocks_percentage=Decimal(str(random.uniform(20, 40))).quantize(Decimal('0.01')),
-                bonds_percentage=Decimal(str(random.uniform(20, 30))).quantize(Decimal('0.01')),
-                real_estate_percentage=Decimal(str(random.uniform(10, 25))).quantize(Decimal('0.01')),
-                cash_percentage=Decimal(str(random.uniform(10, 20))).quantize(Decimal('0.01')),
+                stocks_percentage=Decimal(str(stocks_pct)).quantize(Decimal('0.01')),
+                bonds_percentage=Decimal(str(bonds_pct)).quantize(Decimal('0.01')),
+                real_estate_percentage=Decimal(str(real_estate_pct)).quantize(Decimal('0.01')),
+                cash_percentage=Decimal(str(cash_pct)).quantize(Decimal('0.01')),
+                other_percentage=Decimal(str(other_pct)).quantize(Decimal('0.01')),
                 ytd_return=Decimal(str(random.uniform(-5, 15))).quantize(Decimal('0.01'))
             )
             portfolio_count += 1
@@ -512,11 +524,11 @@ class DataSeeder:
         purchase_date = timezone.now().date() - timedelta(days=random.randint(0, 180))
         maturity_date = purchase_date + timedelta(days=duration_days)
         
-        # Calculate current value
+        # Calculate current value using float for intermediate calculations, then convert to Decimal
         days_elapsed = (timezone.now().date() - purchase_date).days
-        years_elapsed = Decimal(str(days_elapsed / 365.25))
-        growth_factor = (Decimal('1') + (expected_return_rate / Decimal('100'))) ** years_elapsed
-        current_value = (principal_amount * growth_factor * Decimal(str(random.uniform(0.95, 1.05)))).quantize(Decimal('0.01'))
+        years_elapsed = days_elapsed / 365.25
+        growth_factor = (1.0 + (float(expected_return_rate) / 100.0)) ** years_elapsed
+        current_value = Decimal(str(float(principal_amount) * growth_factor * random.uniform(0.95, 1.05))).quantize(Decimal('0.01'))
         
         status = random.choice(['ACTIVE', 'ACTIVE', 'ACTIVE', 'MATURED', 'SOLD'])
         
