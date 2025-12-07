@@ -17,7 +17,7 @@ def validate_seed_script():
     
     # Check if file exists
     try:
-        with open('seed_all_data.py', 'r') as f:
+        with open('seed_all_data.py', 'r', encoding='utf-8') as f:
             content = f.read()
         print("✓ Seed script file found")
     except FileNotFoundError:

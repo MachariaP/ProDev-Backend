@@ -33,6 +33,10 @@ from audit_trail.models import AuditLog, ComplianceReport, SuspiciousActivityAle
 
 User = get_user_model()
 
+# Constants for calculations
+MONTHS_PER_YEAR = 12
+DUMMY_CHECKSUM = 'a' * 64  # Placeholder checksum for audit logs
+
 
 class DataSeeder:
     """Main seeding class for all database models."""
@@ -380,7 +384,7 @@ class DataSeeder:
                 duration = random.choice([3, 6, 12, 24])
                 
                 # Calculate loan amounts before creating
-                interest = (principal * interest_rate * duration) / (Decimal('100') * Decimal('12'))
+                interest = (principal * interest_rate * duration) / (Decimal('100') * Decimal(str(MONTHS_PER_YEAR)))
                 total_amount = principal + interest
                 monthly_payment = total_amount / duration if duration > 0 else Decimal('0')
                 
@@ -834,7 +838,7 @@ class DataSeeder:
                 changes={'amount': str(contribution.amount), 'status': contribution.status},
                 ip_address='192.168.1.1',
                 user_agent='Mozilla/5.0',
-                checksum='a' * 64
+                checksum=DUMMY_CHECKSUM
             )
             audit_count += 1
         
