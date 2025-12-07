@@ -31,4 +31,16 @@ else
     echo "Please set these environment variables in Render dashboard."
 fi
 
+# 🆕 ADD THIS SECTION FOR DATA SEEDING
+echo "🌱 Step 6: Seeding data (if SEED_DATA is true)..."
+if [ "$SEED_DATA" = "true" ]; then
+    echo "Seeding database with sample data..."
+    python manage.py seed_data
+    python manage.py seed_investments
+    # OR if you want to use the comprehensive script:
+    # python seed_all_data.py
+else
+    echo "Skipping data seeding. Set SEED_DATA=true to seed sample data."
+fi
+
 echo "✅ Build completed successfully!"
