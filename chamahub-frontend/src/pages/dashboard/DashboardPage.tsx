@@ -1,3 +1,4 @@
+// chamahub-frontend/src/pages/dashboard/DashboardPage.tsx
 import { motion, AnimatePresence, type Variants } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -347,26 +348,48 @@ export function DashboardPage() {
   const userRole = user?.role || 'member';
   const unreadNotificationsCount = notifications.filter(n => !n.read).length;
 
-  // Fetch data from backend with fallbacks
+  // Fetch data from backend with improved error handling and logging
   useEffect(() => {
     const fetchData = async () => {
       setIsLoading(true);
       setApiStatus('loading');
+      
       try {
+        console.log('🔄 Starting dashboard data fetch...');
+        
         // Fetch user's groups
+        console.log('📊 Fetching user groups...');
         const groupsResponse = await groupsService.getMyGroups();
+        console.log('✅ Groups fetched:', groupsResponse);
         setGroups(groupsResponse);
         
         if (groupsResponse.length > 0) {
           const firstGroup = groupsResponse[0];
+          console.log(`🎯 Selected first group: ${firstGroup.name} (ID: ${firstGroup.id})`);
           setSelectedGroupId(firstGroup.id.toString());
           await fetchDashboardData(firstGroup.id);
         } else {
+          console.log('👤 No groups found for user');
           setIsLoading(false);
           setApiStatus('error');
         }
-      } catch (error) {
-        console.error('Failed to fetch dashboard data:', error);
+      } catch (error: any) {
+        console.error('❌ Failed to fetch dashboard data:', error);
+        
+        // Log specific error details
+        if (error.response) {
+          console.error('📡 Response error:', {
+            status: error.response.status,
+            data: error.response.data,
+            headers: error.response.headers
+          });
+        } else if (error.request) {
+          console.error('🌐 No response received. Backend may be unreachable.');
+          console.log('📡 Attempting to connect to:', import.meta.env.VITE_API_URL);
+        } else {
+          console.error('⚡ Request setup error:', error.message);
+        }
+        
         setIsLoading(false);
         setApiStatus('error');
       }
@@ -375,119 +398,161 @@ export function DashboardPage() {
     fetchData();
   }, []);
 
+  // Improved fetchDashboardData function with Promise.allSettled and better error handling
   const fetchDashboardData = async (groupId: number) => {
     try {
-      let apiData: any = {};
+      console.log(`🚀 Fetching dashboard data for group ${groupId}...`);
+      
+      // Use Promise.allSettled to handle partial failures gracefully
+      const [dashboardAnalytics, groupStats, recentActivity, transactions] = await Promise.allSettled([
+        analyticsService.getDashboardAnalytics(groupId).catch(err => {
+          console.warn('⚠️ Dashboard analytics endpoint failed:', err.message);
+          return null;
+        }),
+        analyticsService.getGroupStats(groupId).catch(err => {
+          console.warn('⚠️ Group stats endpoint failed:', err.message);
+          return null;
+        }),
+        analyticsService.getRecentActivity(groupId).catch(err => {
+          console.warn('⚠️ Recent activity endpoint failed:', err.message);
+          return null;
+        }),
+        financeService.getTransactions({ 
+          group: groupId, 
+          page: 1, 
+          page_size: 10 
+        }).catch(err => {
+          console.warn('⚠️ Transactions endpoint failed:', err.message);
+          return { results: [] };
+        })
+      ]);
+
+      console.log('📊 API Response Summary:', {
+        dashboardAnalytics: dashboardAnalytics.status,
+        groupStats: groupStats.status,
+        recentActivity: recentActivity.status,
+        transactions: transactions.status
+      });
+
       let successfulCalls = 0;
-      let totalCalls = 0;
+      const results: any = {};
 
-      // Try to fetch from available endpoints
-      try {
-        totalCalls++;
-        const dashboardAnalytics = await analyticsService.getDashboardAnalytics(groupId);
-        apiData.dashboardAnalytics = dashboardAnalytics;
+      // Process each promise result
+      if (dashboardAnalytics.status === 'fulfilled' && dashboardAnalytics.value) {
+        results.dashboardAnalytics = dashboardAnalytics.value;
         successfulCalls++;
-      } catch (error) {
-        console.warn('Dashboard analytics endpoint not available, using mock data');
-        apiData.dashboardAnalytics = null;
+        console.log('✅ Dashboard analytics loaded');
       }
 
-      // Try group stats endpoint
-      try {
-        totalCalls++;
-        const groupStats = await analyticsService.getGroupStats(groupId);
-        apiData.groupStats = groupStats;
+      if (groupStats.status === 'fulfilled' && groupStats.value) {
+        results.groupStats = groupStats.value;
         successfulCalls++;
-      } catch (error) {
-        console.warn('Group stats endpoint not available, using mock data');
-        apiData.groupStats = null;
+        console.log('✅ Group stats loaded:', groupStats.value);
       }
 
-      // Try recent activity endpoint
-      try {
-        totalCalls++;
-        const recentActivity = await analyticsService.getRecentActivity(groupId);
-        apiData.recentActivity = recentActivity;
+      if (recentActivity.status === 'fulfilled' && recentActivity.value) {
+        results.recentActivity = recentActivity.value;
         successfulCalls++;
-      } catch (error) {
-        console.warn('Recent activity endpoint not available, using mock data');
-        apiData.recentActivity = null;
+        console.log('✅ Recent activity loaded');
       }
 
-      // Try transactions endpoint
-      try {
-        totalCalls++;
-        const transactions = await financeService.getTransactions({ group: groupId, page: 1 });
-        apiData.transactions = transactions;
+      if (transactions.status === 'fulfilled' && transactions.value) {
+        results.transactions = transactions.value;
         successfulCalls++;
-      } catch (error) {
-        console.warn('Transactions endpoint not available, using mock data');
-        apiData.transactions = null;
+        console.log('✅ Transactions loaded');
       }
 
       // Determine API status
       if (successfulCalls === 0) {
         setApiStatus('error');
+        console.log('⚠️ All API calls failed. Using mock data.');
         setDashboardData(mockDashboardData);
-      } else if (successfulCalls === totalCalls) {
+      } else if (successfulCalls === 4) {
         setApiStatus('success');
+        console.log('✅ All API calls succeeded!');
       } else {
         setApiStatus('partial');
+        console.log(`⚠️ Partial data loaded: ${successfulCalls}/4 API calls succeeded`);
       }
 
-      // Transform the data
-      const transformedData = transformDashboardData(
-        apiData.groupStats,
-        apiData.recentActivity,
-        apiData.dashboardAnalytics,
-        apiData.transactions
-      );
+      // Transform the data with better error handling
+      try {
+        const transformedData = transformDashboardData(
+          results.groupStats,
+          results.recentActivity,
+          results.dashboardAnalytics,
+          results.transactions?.results || []
+        );
 
-      setDashboardData(transformedData);
+        console.log('📈 Transformed dashboard data:', {
+          summary: transformedData.summary,
+          transactionsCount: transformedData.recent_transactions?.length || 0,
+          chartsData: {
+            contributionTrend: transformedData.contribution_trend?.length || 0,
+            weeklyActivity: transformedData.weekly_activity?.length || 0
+          }
+        });
+
+        setDashboardData(transformedData);
+      } catch (transformError) {
+        console.error('❌ Error transforming data:', transformError);
+        setDashboardData(mockDashboardData);
+      }
+      
     } catch (error) {
-      console.error('Failed to fetch group dashboard:', error);
+      console.error('❌ Critical error in fetchDashboardData:', error);
       setApiStatus('error');
+      console.log('🔄 Falling back to mock data');
       setDashboardData(mockDashboardData);
     } finally {
       setIsLoading(false);
+      console.log('🏁 Dashboard data fetch completed');
     }
   };
 
-  // Transform API data to component structure with fallbacks
+  // Updated transformDashboardData function to handle API data better
   const transformDashboardData = (
     groupStats: any,
     recentActivity: any,
     dashboardAnalytics: any,
-    _transactions: any
+    transactionsData: any
   ) => {
+    console.log('🔄 Transforming data from:', {
+      hasGroupStats: !!groupStats,
+      hasRecentActivity: !!recentActivity,
+      hasDashboardAnalytics: !!dashboardAnalytics,
+      hasTransactions: !!transactionsData
+    });
+
     // Use API data if available, otherwise use mock data
-    const useMockData = !groupStats && !recentActivity && !dashboardAnalytics;
+    const useMockData = !groupStats && !recentActivity && !dashboardAnalytics && !transactionsData;
 
     if (useMockData) {
+      console.log('🔄 Using mock data for transformation');
       return mockDashboardData;
     }
 
     // Transform recent activity to transactions format if available
     const recentTransactions = recentActivity 
-      ? recentActivity.map((activity: any, index: number) => ({
-          id: index + 1,
-          member: activity.member_name || 'Member',
+      ? recentActivity.slice(0, 6).map((activity: any, index: number) => ({
+          id: activity.id || index + 1,
+          member: activity.member_name || activity.user?.full_name || 'Member',
           type: activity.type || 'contribution',
           amount: activity.amount || 0,
           time: activity.timestamp ? formatTimeAgo(activity.timestamp) : 'Recently',
-          status: activity.status || 'completed'
+          status: activity.status?.toLowerCase() || 'completed'
         }))
       : mockDashboardData.recent_transactions;
 
     // Transform analytics data for charts if available
-    const contributionTrend = dashboardAnalytics?.contributions_over_time?.map((item: any) => ({
-      month: item.date ? new Date(item.date).toLocaleDateString('en-US', { month: 'short' }) : 'Month',
+    const contributionTrend = dashboardAnalytics?.contributions_over_time?.map((item: any, index: number) => ({
+      month: item.date ? new Date(item.date).toLocaleDateString('en-US', { month: 'short' }) : `Month ${index + 1}`,
       amount: item.amount || 0,
       target: (item.amount || 0) * 1.1
     })) || mockDashboardData.contribution_trend;
 
     const weeklyActivity = dashboardAnalytics?.member_activity?.slice(0, 7).map((item: any, index: number) => ({
-      name: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'][index],
+      name: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'][index] || `Day ${index + 1}`,
       contributions: item.transactions || 0,
       loans: Math.floor(Math.random() * 5),
       meetings: Math.floor(Math.random() * 3)
@@ -500,25 +565,25 @@ export function DashboardPage() {
         active_loans: groupStats?.active_loans || mockDashboardData.summary.active_loans,
         total_investments: groupStats?.total_investments || mockDashboardData.summary.total_investments,
         growth_rates: {
-          balance: groupStats?.balance_growth || mockDashboardData.summary.growth_rates.balance,
-          members: groupStats?.member_growth || mockDashboardData.summary.growth_rates.members,
-          loans: groupStats?.loan_growth || mockDashboardData.summary.growth_rates.loans,
-          investments: groupStats?.investment_growth || mockDashboardData.summary.growth_rates.investments,
+          balance: groupStats?.growth_rates?.balance || groupStats?.balance_growth || mockDashboardData.summary.growth_rates.balance,
+          members: groupStats?.growth_rates?.members || groupStats?.member_growth || mockDashboardData.summary.growth_rates.members,
+          loans: groupStats?.growth_rates?.loans || groupStats?.loan_growth || mockDashboardData.summary.growth_rates.loans,
+          investments: groupStats?.growth_rates?.investments || groupStats?.investment_growth || mockDashboardData.summary.growth_rates.investments,
         },
       },
       contribution_trend: contributionTrend,
       weekly_activity: weeklyActivity,
-      recent_transactions: recentTransactions.slice(0, 6),
+      recent_transactions: recentTransactions,
       quick_stats: {
-        pending_actions: groupStats?.pending_actions || mockDashboardData.quick_stats.pending_actions,
-        upcoming_meetings: groupStats?.upcoming_meetings || mockDashboardData.quick_stats.upcoming_meetings,
+        pending_actions: groupStats?.quick_stats?.pending_actions || groupStats?.pending_actions || mockDashboardData.quick_stats.pending_actions,
+        upcoming_meetings: groupStats?.quick_stats?.upcoming_meetings || mockDashboardData.quick_stats.upcoming_meetings,
         unread_notifications: notifications.filter(n => !n.read).length,
-        loan_approvals: groupStats?.pending_loans || mockDashboardData.quick_stats.loan_approvals,
+        loan_approvals: groupStats?.quick_stats?.loan_approvals || groupStats?.pending_loans || mockDashboardData.quick_stats.loan_approvals,
       },
       performance_metrics: {
         roi: groupStats?.roi || mockDashboardData.performance_metrics.roi,
         savings_growth: groupStats?.savings_growth || mockDashboardData.performance_metrics.savings_growth,
-        loan_recovery: groupStats?.loan_recovery_rate || mockDashboardData.performance_metrics.loan_recovery,
+        loan_recovery: groupStats?.loan_recovery_rate || groupStats?.loan_recovery || mockDashboardData.performance_metrics.loan_recovery,
         member_satisfaction: groupStats?.member_satisfaction || mockDashboardData.performance_metrics.member_satisfaction
       }
     };
@@ -543,6 +608,7 @@ export function DashboardPage() {
   const handleRefresh = async () => {
     setIsRefreshing(true);
     try {
+      console.log('🔄 Manually refreshing dashboard data...');
       if (selectedGroupId) {
         await fetchDashboardData(parseInt(selectedGroupId));
       }
@@ -572,16 +638,17 @@ export function DashboardPage() {
     if (apiStatus === 'loading') return null;
     
     const statusConfig = {
-      success: { label: 'Live Data', color: 'bg-green-100 text-green-700' },
-      partial: { label: 'Partial Data', color: 'bg-yellow-100 text-yellow-700' },
-      error: { label: 'Demo Data', color: 'bg-blue-100 text-blue-700' }
+      success: { label: 'Live Data', color: 'bg-green-100 text-green-700', icon: '✅' },
+      partial: { label: 'Partial Data', color: 'bg-yellow-100 text-yellow-700', icon: '⚠️' },
+      error: { label: 'Demo Data', color: 'bg-blue-100 text-blue-700', icon: '🔴' }
     };
 
     const config = statusConfig[apiStatus];
 
     return (
-      <Badge variant="secondary" className={`ml-2 ${config.color}`}>
-        {config.label}
+      <Badge variant="secondary" className={`ml-2 ${config.color} flex items-center gap-1`}>
+        <span>{config.icon}</span>
+        <span>{config.label}</span>
       </Badge>
     );
   };
@@ -615,7 +682,11 @@ export function DashboardPage() {
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
         <div className="text-center">
           <h2 className="text-2xl font-bold mb-2">Failed to load dashboard</h2>
-          <Button onClick={handleRefresh}>Retry</Button>
+          <p className="text-gray-600 mb-4">Please check your internet connection and try again.</p>
+          <Button onClick={handleRefresh} className="bg-gradient-to-r from-blue-600 to-purple-600">
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Retry
+          </Button>
         </div>
       </div>
     );
@@ -703,6 +774,7 @@ export function DashboardPage() {
             {/* Group Selector */}
             {groups.length > 0 && (
               <Select value={selectedGroupId} onValueChange={(value) => {
+                console.log(`🔄 Switching to group ${value}`);
                 setSelectedGroupId(value);
                 fetchDashboardData(parseInt(value));
               }}>
