@@ -1,3 +1,4 @@
+// chamahub-frontend/src/services/apiService.ts
 import api from './api';
 import type {
   User,
@@ -25,7 +26,7 @@ import type {
   RecentActivity,
 } from '../types/api';
 
-// Authentication Services - UPDATED: Using root level endpoints
+// Authentication Services
 export const authService = {
   async login(credentials: { email: string; password: string }): Promise<{ 
     access: string; 
@@ -75,7 +76,7 @@ export const authService = {
   },
 };
 
-// Groups Services - UPDATED: Using root level endpoints
+// Groups Services
 export const groupsService = {
   async getGroups(params?: { page?: number; group_type?: string }): Promise<PaginatedResponse<ChamaGroup>> {
     const response = await api.get('/groups/chama-groups/', { params });
@@ -83,8 +84,15 @@ export const groupsService = {
   },
 
   async getMyGroups(): Promise<ChamaGroup[]> {
-    const response = await api.get('/groups/chama-groups/my_groups/');
-    return response.data;
+    try {
+      console.log('📊 Fetching user groups...');
+      const response = await api.get('/groups/chama-groups/my_groups/');
+      console.log('✅ Groups fetched:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('❌ Failed to fetch groups:', error);
+      return [];
+    }
   },
 
   async getGroup(id: number): Promise<ChamaGroup> {
@@ -151,10 +159,17 @@ export const groupsService = {
   },
 };
 
-// Finance Services - UPDATED: Using root level endpoints
+// Finance Services
 export const financeService = {
   // Contributions
-  async getContributions(params?: { group?: number; member?: number; status?: string; payment_method?: string; page?: number }): Promise<PaginatedResponse<Contribution>> {
+  async getContributions(params?: { 
+    group?: number; 
+    member?: number; 
+    status?: string; 
+    payment_method?: string; 
+    page?: number;
+    page_size?: number;
+  }): Promise<PaginatedResponse<Contribution>> {
     const response = await api.get('/finance/contributions/', { params });
     return response.data;
   },
@@ -178,7 +193,13 @@ export const financeService = {
   },
 
   // Loans
-  async getLoans(params?: { group?: number; borrower?: number; status?: string; page?: number }): Promise<PaginatedResponse<Loan>> {
+  async getLoans(params?: { 
+    group?: number; 
+    borrower?: number; 
+    status?: string; 
+    page?: number;
+    page_size?: number;
+  }): Promise<PaginatedResponse<Loan>> {
     const response = await api.get('/finance/loans/', { params });
     return response.data;
   },
@@ -193,7 +214,11 @@ export const financeService = {
     return response.data;
   },
 
-  async calculateLoan(data: { group_id: number; amount: number; duration_months: number }): Promise<{
+  async calculateLoan(data: { 
+    group_id: number; 
+    amount: number; 
+    duration_months: number; 
+  }): Promise<{
     monthly_payment: number;
     total_interest: number;
     total_repayment: number;
@@ -216,7 +241,13 @@ export const financeService = {
   },
 
   // Expenses
-  async getExpenses(params?: { group?: number; category?: string; status?: string; page?: number }): Promise<PaginatedResponse<Expense>> {
+  async getExpenses(params?: { 
+    group?: number; 
+    category?: string; 
+    status?: string; 
+    page?: number;
+    page_size?: number;
+  }): Promise<PaginatedResponse<Expense>> {
     const response = await api.get('/finance/expenses/', { params });
     return response.data;
   },
@@ -227,7 +258,13 @@ export const financeService = {
   },
 
   // Disbursement Approvals
-  async getDisbursementApprovals(params?: { group?: number; approval_type?: string; status?: string; page?: number }): Promise<PaginatedResponse<DisbursementApproval>> {
+  async getDisbursementApprovals(params?: { 
+    group?: number; 
+    approval_type?: string; 
+    status?: string; 
+    page?: number;
+    page_size?: number;
+  }): Promise<PaginatedResponse<DisbursementApproval>> {
     const response = await api.get('/finance/disbursement-approvals/', { params });
     return response.data;
   },
@@ -238,7 +275,13 @@ export const financeService = {
   },
 
   // Approval Signatures
-  async getApprovalSignatures(params?: { approval?: number; approver?: number; approved?: boolean }): Promise<PaginatedResponse<ApprovalSignature>> {
+  async getApprovalSignatures(params?: { 
+    approval?: number; 
+    approver?: number; 
+    approved?: boolean;
+    page?: number;
+    page_size?: number;
+  }): Promise<PaginatedResponse<ApprovalSignature>> {
     const response = await api.get('/finance/approval-signatures/', { params });
     return response.data;
   },
@@ -255,7 +298,8 @@ export const financeService = {
     status?: string; 
     date_from?: string; 
     date_to?: string;
-    page?: number 
+    page?: number;
+    page_size?: number;
   }): Promise<PaginatedResponse<any>> {
     const response = await api.get('/finance/transactions/', { params });
     return response.data;
@@ -275,9 +319,14 @@ export const financeService = {
   },
 };
 
-// Governance Services - UPDATED: Using root level endpoints
+// Governance Services
 export const governanceService = {
-  async getVotes(params?: { group?: number; status?: string; page?: number }): Promise<PaginatedResponse<Vote>> {
+  async getVotes(params?: { 
+    group?: number; 
+    status?: string; 
+    page?: number;
+    page_size?: number;
+  }): Promise<PaginatedResponse<Vote>> {
     const response = await api.get('/governance/votes/', { params });
     return response.data;
   },
@@ -302,7 +351,10 @@ export const governanceService = {
     return response.data;
   },
 
-  async castVote(voteId: number, data: { choice: 'YES' | 'NO' | 'ABSTAIN'; comments?: string }): Promise<{
+  async castVote(voteId: number, data: { 
+    choice: 'YES' | 'NO' | 'ABSTAIN'; 
+    comments?: string; 
+  }): Promise<{
     ballot: VoteBallot;
     vote: Vote;
     message: string;
@@ -316,7 +368,13 @@ export const governanceService = {
     return response.data;
   },
 
-  async getFines(params?: { group?: number; member?: number; status?: string; page?: number }): Promise<PaginatedResponse<Fine>> {
+  async getFines(params?: { 
+    group?: number; 
+    member?: number; 
+    status?: string; 
+    page?: number;
+    page_size?: number;
+  }): Promise<PaginatedResponse<Fine>> {
     const response = await api.get('/governance/fines/', { params });
     return response.data;
   },
@@ -326,7 +384,12 @@ export const governanceService = {
     return response.data;
   },
 
-  async getDocuments(params?: { group?: number; document_type?: string; page?: number }): Promise<PaginatedResponse<Document>> {
+  async getDocuments(params?: { 
+    group?: number; 
+    document_type?: string; 
+    page?: number;
+    page_size?: number;
+  }): Promise<PaginatedResponse<Document>> {
     const response = await api.get('/governance/documents/', { params });
     return response.data;
   },
@@ -341,9 +404,15 @@ export const governanceService = {
   },
 };
 
-// Investment Services - UPDATED: Using root level endpoints
+// Investment Services
 export const investmentService = {
-  async getInvestments(params?: { group?: number; investment_type?: string; status?: string; page?: number }): Promise<PaginatedResponse<Investment>> {
+  async getInvestments(params?: { 
+    group?: number; 
+    investment_type?: string; 
+    status?: string; 
+    page?: number;
+    page_size?: number;
+  }): Promise<PaginatedResponse<Investment>> {
     const response = await api.get('/investments/investments/', { params });
     return response.data;
   },
@@ -378,7 +447,7 @@ export const investmentService = {
   },
 };
 
-// Analytics Services - UPDATED: Using root level endpoints
+// Analytics Services - FIXED ENDPOINTS
 export const analyticsService = {
   async getDashboardAnalytics(groupId: number): Promise<{
     contributions_over_time: Array<{ date: string; amount: number }>;
@@ -386,19 +455,53 @@ export const analyticsService = {
     category_breakdown: Array<{ name: string; value: number }>;
     growth_trends: Array<{ month: string; growth: number }>;
   }> {
+    console.log(`📈 Fetching dashboard analytics for group ${groupId}...`);
     const response = await api.get(`/analytics/dashboard/?group_id=${groupId}`);
     return response.data;
   },
 
   async getGroupStats(groupId: number): Promise<DashboardStats> {
+    console.log(`📊 Fetching group stats for group ${groupId}...`);
     const response = await api.get(`/analytics/groups/${groupId}/stats/`);
     return response.data;
   },
 
   async getRecentActivity(groupId: number): Promise<RecentActivity[]> {
+    console.log(`🔄 Fetching recent activity for group ${groupId}...`);
     const response = await api.get(`/analytics/groups/${groupId}/recent-activity/`);
     return response.data;
   },
+};
+
+// Combined Dashboard Service for easier data fetching
+export const dashboardService = {
+  async getFullDashboard(groupId: number) {
+    try {
+      console.log(`🚀 Fetching full dashboard for group ${groupId}...`);
+      
+      const [stats, analytics, recentActivity, transactions] = await Promise.all([
+        analyticsService.getGroupStats(groupId),
+        analyticsService.getDashboardAnalytics(groupId),
+        analyticsService.getRecentActivity(groupId),
+        financeService.getTransactions({ 
+          group: groupId, 
+          page: 1, 
+          page_size: 10,
+          ordering: '-created_at'
+        })
+      ]);
+
+      return {
+        stats,
+        analytics,
+        recentActivity,
+        transactions: transactions.results || [],
+      };
+    } catch (error) {
+      console.error('❌ Failed to fetch full dashboard:', error);
+      throw error;
+    }
+  }
 };
 
 export default {
@@ -408,4 +511,5 @@ export default {
   governance: governanceService,
   investments: investmentService,
   analytics: analyticsService,
+  dashboard: dashboardService,
 };
