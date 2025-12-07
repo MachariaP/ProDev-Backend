@@ -291,7 +291,7 @@ export const financeService = {
     return response.data;
   },
 
-  // Transaction History
+  // Transaction History - FIXED: Added ordering parameter
   async getTransactions(params?: { 
     group?: number; 
     type?: string; 
@@ -300,6 +300,7 @@ export const financeService = {
     date_to?: string;
     page?: number;
     page_size?: number;
+    ordering?: string; // Added this line to fix the TypeScript error
   }): Promise<PaginatedResponse<any>> {
     const response = await api.get('/finance/transactions/', { params });
     return response.data;

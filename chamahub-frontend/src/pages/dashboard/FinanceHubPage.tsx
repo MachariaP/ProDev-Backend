@@ -11,7 +11,6 @@ import {
   Wallet,
   Clock,
   ArrowUpRight,
-  ArrowDownLeft,
   Plus,
   MoreHorizontal,
   Eye,
@@ -28,11 +27,10 @@ import {
   Rocket,
   RefreshCw,
   CheckCircle2,
-  XCircle,
   Search,
-  Filter,
   ChevronDown
 } from 'lucide-react';
+// Removed: ArrowDownLeft, Filter
 
 // API services
 import { financeService, analyticsService, groupsService } from '../../services/apiService';
@@ -347,9 +345,9 @@ export function FinanceHubPage() {
         console.log(`💰 Fetching finance data for group ${selectedGroupId}...`);
         
         // Use Promise.allSettled for parallel API calls
-        const [financeStats, transactions, groupAnalytics] = await Promise.allSettled([
-          financeService.getFinanceSummary(parseInt(selectedGroupId)).catch(err => {
-            console.warn('⚠️ Finance summary endpoint failed:', err.message);
+        const [groupStats, transactions, recentActivity] = await Promise.allSettled([
+          analyticsService.getGroupStats(parseInt(selectedGroupId)).catch(err => {
+            console.warn('⚠️ Group stats endpoint failed:', err.message);
             return null;
           }),
           financeService.getTransactions({ 
@@ -360,26 +358,26 @@ export function FinanceHubPage() {
             console.warn('⚠️ Transactions endpoint failed:', err.message);
             return { results: [] };
           }),
-          analyticsService.getGroupStats(parseInt(selectedGroupId)).catch(err => {
-            console.warn('⚠️ Group stats endpoint failed:', err.message);
+          analyticsService.getRecentActivity(parseInt(selectedGroupId)).catch(err => {
+            console.warn('⚠️ Recent activity endpoint failed:', err.message);
             return null;
           })
         ]);
 
         console.log('📊 Finance API Response Summary:', {
-          financeStats: financeStats.status,
+          groupStats: groupStats.status,
           transactions: transactions.status,
-          groupAnalytics: groupAnalytics.status
+          recentActivity: recentActivity.status
         });
 
         let successfulCalls = 0;
         const results: any = {};
 
         // Process each promise result
-        if (financeStats.status === 'fulfilled' && financeStats.value) {
-          results.financeStats = financeStats.value;
+        if (groupStats.status === 'fulfilled' && groupStats.value) {
+          results.groupStats = groupStats.value;
           successfulCalls++;
-          console.log('✅ Finance stats loaded');
+          console.log('✅ Group stats loaded');
         }
 
         if (transactions.status === 'fulfilled' && transactions.value) {
@@ -388,10 +386,10 @@ export function FinanceHubPage() {
           console.log('✅ Transactions loaded:', results.transactions.length);
         }
 
-        if (groupAnalytics.status === 'fulfilled' && groupAnalytics.value) {
-          results.groupAnalytics = groupAnalytics.value;
+        if (recentActivity.status === 'fulfilled' && recentActivity.value) {
+          results.recentActivity = recentActivity.value;
           successfulCalls++;
-          console.log('✅ Group analytics loaded');
+          console.log('✅ Recent activity loaded');
         }
 
         // Determine API status
@@ -408,8 +406,8 @@ export function FinanceHubPage() {
 
         // Transform and set data
         const processedSummary = processFinanceData(
-          results.financeStats,
-          results.groupAnalytics
+          results.groupStats,
+          results.transactions
         );
 
         setFinanceSummary(processedSummary);
@@ -477,22 +475,22 @@ export function FinanceHubPage() {
   }, [searchQuery, recentTransactions]);
 
   // Process finance data from API responses
-  const processFinanceData = (financeStats: any, groupAnalytics: any): FinanceSummary => {
+  const processFinanceData = (groupStats: any, transactions: any[]): FinanceSummary => {
     console.log('🔄 Processing finance data:', {
-      hasFinanceStats: !!financeStats,
-      hasGroupAnalytics: !!groupAnalytics
+      hasGroupStats: !!groupStats,
+      hasTransactions: !!transactions
     });
 
     return {
-      total_balance: financeStats?.total_balance || groupAnalytics?.total_balance || 1234567,
-      monthly_contributions: financeStats?.monthly_contributions || groupAnalytics?.monthly_contributions || 145000,
-      active_loans: financeStats?.active_loans || groupAnalytics?.active_loans || 12,
-      pending_approvals: financeStats?.pending_approvals || 5,
-      total_members: groupAnalytics?.total_members || 24,
-      loan_recovery_rate: financeStats?.loan_recovery_rate || groupAnalytics?.loan_recovery_rate || 92,
-      savings_growth: groupAnalytics?.savings_growth || 18,
-      member_participation: groupAnalytics?.member_participation || 89,
-      fund_growth: financeStats?.monthly_growth || 245000,
+      total_balance: groupStats?.total_balance || 1234567,
+      monthly_contributions: groupStats?.monthly_contributions || 145000,
+      active_loans: groupStats?.active_loans || 12,
+      pending_approvals: groupStats?.pending_actions || 5,
+      total_members: groupStats?.total_members || 24,
+      loan_recovery_rate: groupStats?.loan_recovery_rate || 92,
+      savings_growth: groupStats?.savings_growth || 18,
+      member_participation: groupStats?.member_participation || 89,
+      fund_growth: groupStats?.monthly_growth || 245000,
     };
   };
 
@@ -504,8 +502,8 @@ export function FinanceHubPage() {
       
       try {
         console.log('🔄 Refreshing finance data...');
-        const response = await financeService.getFinanceSummary(parseInt(selectedGroupId));
-        const processedSummary = processFinanceData(response, {});
+        const response = await analyticsService.getGroupStats(parseInt(selectedGroupId));
+        const processedSummary = processFinanceData(response, []);
         setFinanceSummary(processedSummary);
         setApiStatus('success');
         console.log('✅ Finance data refreshed');
@@ -809,7 +807,7 @@ export function FinanceHubPage() {
                 className="p-2 hover:bg-red-100 rounded-lg transition-colors"
                 aria-label="Dismiss error"
               >
-                <XCircle className="h-5 w-5" />
+                ×
               </button>
             </motion.div>
           )}

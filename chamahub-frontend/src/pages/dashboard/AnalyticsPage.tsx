@@ -15,12 +15,9 @@ import {
   Crown,
   Zap,
   Download,
-  Filter,
   RefreshCw,
   Eye,
-  Award,
-  CheckCircle2,
-  XCircle
+  Award
 } from 'lucide-react';
 
 // API service
@@ -597,7 +594,7 @@ export function AnalyticsPage() {
                   <option value="12months">Last 12 Months</option>
                   <option value="custom">Custom Range</option>
                 </select>
-                <Filter className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
+                {/* Filter icon removed */}
               </div>
 
               {/* Group Selector */}
@@ -673,7 +670,8 @@ export function AnalyticsPage() {
                 className="p-2 hover:bg-red-100 rounded-lg transition-colors"
                 aria-label="Dismiss error"
               >
-                <XCircle className="h-5 w-5" />
+                {/* XCircle removed */}
+                ×
               </button>
             </motion.div>
           )}
