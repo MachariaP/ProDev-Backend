@@ -24,6 +24,7 @@ import type {
   PaginatedResponse,
   DashboardStats,
   RecentActivity,
+  Notification,
 } from '../types/api';
 
 // Authentication Services
@@ -291,7 +292,7 @@ export const financeService = {
     return response.data;
   },
 
-  // Transaction History - FIXED: Added ordering parameter
+  // Transaction History
   async getTransactions(params?: { 
     group?: number; 
     type?: string; 
@@ -300,7 +301,7 @@ export const financeService = {
     date_to?: string;
     page?: number;
     page_size?: number;
-    ordering?: string; // Added this line to fix the TypeScript error
+    ordering?: string;
   }): Promise<PaginatedResponse<any>> {
     const response = await api.get('/finance/transactions/', { params });
     return response.data;
@@ -448,7 +449,7 @@ export const investmentService = {
   },
 };
 
-// Analytics Services - FIXED ENDPOINTS
+// Analytics Services
 export const analyticsService = {
   async getDashboardAnalytics(groupId: number): Promise<{
     contributions_over_time: Array<{ date: string; amount: number }>;
@@ -471,6 +472,37 @@ export const analyticsService = {
     console.log(`🔄 Fetching recent activity for group ${groupId}...`);
     const response = await api.get(`/analytics/groups/${groupId}/recent-activity/`);
     return response.data;
+  },
+};
+
+// Notifications Services
+export const notificationsService = {
+  async getNotifications(params?: { 
+    read?: boolean; 
+    page?: number;
+    page_size?: number;
+  }): Promise<PaginatedResponse<Notification>> {
+    const response = await api.get('/notifications/', { params });
+    return response.data;
+  },
+
+  async markAsRead(id: number): Promise<Notification> {
+    const response = await api.post(`/notifications/${id}/mark_as_read/`);
+    return response.data;
+  },
+
+  async markAllAsRead(): Promise<{ message: string }> {
+    const response = await api.post('/notifications/mark_all_as_read/');
+    return response.data;
+  },
+
+  async getUnreadCount(): Promise<{ count: number }> {
+    const response = await api.get('/notifications/unread_count/');
+    return response.data;
+  },
+
+  async deleteNotification(id: number): Promise<void> {
+    await api.delete(`/notifications/${id}/`);
   },
 };
 
@@ -513,4 +545,5 @@ export default {
   investments: investmentService,
   analytics: analyticsService,
   dashboard: dashboardService,
+  notifications: notificationsService,
 };

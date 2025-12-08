@@ -32,82 +32,8 @@ import { Badge } from '../../components/ui/badge';
 import { Button } from '../../components/ui/button';
 import { Skeleton } from '../../components/ui/skeleton';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select';
-import { groupsService, analyticsService, financeService } from '../../services/apiService';
+import { groupsService, analyticsService, financeService, notificationsService } from '../../services/apiService';
 import type { ChamaGroup, Notification } from '../../types/api';
-
-// Enhanced mock data for demonstration (as fallback)
-const mockDashboardData = {
-  summary: {
-    total_balance: 2456789,
-    total_members: 67,
-    active_loans: 8,
-    total_investments: 1560000,
-    growth_rates: {
-      balance: 18.5,
-      members: 12.3,
-      loans: -5.2,
-      investments: 22.7,
-    },
-  },
-  contribution_trend: [
-    { month: 'Jan', amount: 45000, target: 50000 },
-    { month: 'Feb', amount: 52000, target: 50000 },
-    { month: 'Mar', amount: 48000, target: 50000 },
-    { month: 'Apr', amount: 61000, target: 50000 },
-    { month: 'May', amount: 58000, target: 50000 },
-    { month: 'Jun', amount: 70000, target: 50000 },
-    { month: 'Jul', amount: 75000, target: 60000 },
-    { month: 'Aug', amount: 82000, target: 60000 },
-  ],
-  weekly_activity: [
-    { name: 'Mon', contributions: 12, loans: 3, meetings: 2 },
-    { name: 'Tue', contributions: 15, loans: 5, meetings: 1 },
-    { name: 'Wed', contributions: 8, loans: 2, meetings: 3 },
-    { name: 'Thu', contributions: 20, loans: 7, meetings: 0 },
-    { name: 'Fri', contributions: 18, loans: 4, meetings: 1 },
-    { name: 'Sat', contributions: 25, loans: 1, meetings: 2 },
-    { name: 'Sun', contributions: 5, loans: 0, meetings: 0 },
-  ],
-  recent_transactions: [
-    { id: 1, member: 'Jane Doe', type: 'contribution', amount: 15000, time: '2 hours ago', status: 'completed' },
-    { id: 2, member: 'John Smith', type: 'loan_disbursed', amount: 75000, time: '3 hours ago', status: 'completed' },
-    { id: 3, member: 'Mary Johnson', type: 'contribution', amount: 12000, time: '5 hours ago', status: 'pending' },
-    { id: 4, member: 'Peter Brown', type: 'loan_repayment', amount: 25000, time: '1 day ago', status: 'completed' },
-    { id: 5, member: 'Sarah Wilson', type: 'investment', amount: 45000, time: '1 day ago', status: 'completed' },
-    { id: 6, member: 'David Kimani', type: 'contribution', amount: 8000, time: '2 days ago', status: 'completed' },
-  ],
-  quick_stats: {
-    pending_actions: 7,
-    upcoming_meetings: 3,
-    unread_notifications: 5,
-    loan_approvals: 2,
-  },
-  performance_metrics: {
-    roi: 18.2,
-    savings_growth: 22.5,
-    loan_recovery: 94.7,
-    member_satisfaction: 96.3
-  }
-};
-
-const mockNotifications: Notification[] = [
-  {
-    id: '1',
-    title: 'Monthly Meeting Reminder',
-    message: 'Chama meeting tomorrow at 2:00 PM at Community Hall',
-    type: 'info',
-    time: '2 hours ago',
-    read: false,
-  },
-  {
-    id: '2',
-    title: 'Large Contribution Received',
-    message: 'Jane Doe contributed KES 15,000 to group savings',
-    type: 'success',
-    time: '3 hours ago',
-    read: false,
-  },
-];
 
 const containerVariants: Variants = {
   hidden: { opacity: 0 },
@@ -330,7 +256,7 @@ export function DashboardPage() {
   const [dashboardData, setDashboardData] = useState<any>(null);
   const [groups, setGroups] = useState<ChamaGroup[]>([]);
   const [selectedGroupId, setSelectedGroupId] = useState<string>('');
-  const [notifications, setNotifications] = useState<Notification[]>(mockNotifications);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
   const [showNotifications, setShowNotifications] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [apiStatus, setApiStatus] = useState<'loading' | 'success' | 'partial' | 'error'>('loading');
@@ -348,7 +274,7 @@ export function DashboardPage() {
   const userRole = user?.role || 'member';
   const unreadNotificationsCount = notifications.filter(n => !n.read).length;
 
-  // Fetch data from backend with improved error handling and logging
+  // Fetch data from backend
   useEffect(() => {
     const fetchData = async () => {
       setIsLoading(true);
@@ -358,14 +284,22 @@ export function DashboardPage() {
         console.log('🔄 Starting dashboard data fetch...');
         
         // Fetch user's groups
-        console.log('📊 Fetching user groups...');
         const groupsResponse = await groupsService.getMyGroups();
-        console.log('✅ Groups fetched:', groupsResponse);
         setGroups(groupsResponse);
+        
+        // Fetch notifications
+        try {
+          const notificationsResponse = await notificationsService.getNotifications({
+            page_size: 10
+          });
+          setNotifications(notificationsResponse.results || []);
+        } catch (notifError) {
+          console.warn('⚠️ Notifications endpoint not available:', notifError);
+          setNotifications([]);
+        }
         
         if (groupsResponse.length > 0) {
           const firstGroup = groupsResponse[0];
-          console.log(`🎯 Selected first group: ${firstGroup.name} (ID: ${firstGroup.id})`);
           setSelectedGroupId(firstGroup.id.toString());
           await fetchDashboardData(firstGroup.id);
         } else {
@@ -375,21 +309,6 @@ export function DashboardPage() {
         }
       } catch (error: any) {
         console.error('❌ Failed to fetch dashboard data:', error);
-        
-        // Log specific error details
-        if (error.response) {
-          console.error('📡 Response error:', {
-            status: error.response.status,
-            data: error.response.data,
-            headers: error.response.headers
-          });
-        } else if (error.request) {
-          console.error('🌐 No response received. Backend may be unreachable.');
-          console.log('📡 Attempting to connect to:', import.meta.env.VITE_API_URL);
-        } else {
-          console.error('⚡ Request setup error:', error.message);
-        }
-        
         setIsLoading(false);
         setApiStatus('error');
       }
@@ -398,17 +317,13 @@ export function DashboardPage() {
     fetchData();
   }, []);
 
-  // Improved fetchDashboardData function with Promise.allSettled and better error handling
+  // Fetch dashboard data for a specific group
   const fetchDashboardData = async (groupId: number) => {
     try {
       console.log(`🚀 Fetching dashboard data for group ${groupId}...`);
       
       // Use Promise.allSettled to handle partial failures gracefully
-      const [dashboardAnalytics, groupStats, recentActivity, transactions] = await Promise.allSettled([
-        analyticsService.getDashboardAnalytics(groupId).catch(err => {
-          console.warn('⚠️ Dashboard analytics endpoint failed:', err.message);
-          return null;
-        }),
+      const [groupStats, recentActivity, transactions] = await Promise.allSettled([
         analyticsService.getGroupStats(groupId).catch(err => {
           console.warn('⚠️ Group stats endpoint failed:', err.message);
           return null;
@@ -420,118 +335,66 @@ export function DashboardPage() {
         financeService.getTransactions({ 
           group: groupId, 
           page: 1, 
-          page_size: 10 
+          page_size: 10,
+          ordering: '-created_at'
         }).catch(err => {
           console.warn('⚠️ Transactions endpoint failed:', err.message);
           return { results: [] };
         })
       ]);
 
-      console.log('📊 API Response Summary:', {
-        dashboardAnalytics: dashboardAnalytics.status,
-        groupStats: groupStats.status,
-        recentActivity: recentActivity.status,
-        transactions: transactions.status
-      });
-
       let successfulCalls = 0;
       const results: any = {};
 
       // Process each promise result
-      if (dashboardAnalytics.status === 'fulfilled' && dashboardAnalytics.value) {
-        results.dashboardAnalytics = dashboardAnalytics.value;
-        successfulCalls++;
-        console.log('✅ Dashboard analytics loaded');
-      }
-
       if (groupStats.status === 'fulfilled' && groupStats.value) {
         results.groupStats = groupStats.value;
         successfulCalls++;
-        console.log('✅ Group stats loaded:', groupStats.value);
       }
 
       if (recentActivity.status === 'fulfilled' && recentActivity.value) {
         results.recentActivity = recentActivity.value;
         successfulCalls++;
-        console.log('✅ Recent activity loaded');
       }
 
       if (transactions.status === 'fulfilled' && transactions.value) {
         results.transactions = transactions.value;
         successfulCalls++;
-        console.log('✅ Transactions loaded');
       }
 
       // Determine API status
       if (successfulCalls === 0) {
         setApiStatus('error');
-        console.log('⚠️ All API calls failed. Using mock data.');
-        setDashboardData(mockDashboardData);
-      } else if (successfulCalls === 4) {
+      } else if (successfulCalls === 3) {
         setApiStatus('success');
-        console.log('✅ All API calls succeeded!');
       } else {
         setApiStatus('partial');
-        console.log(`⚠️ Partial data loaded: ${successfulCalls}/4 API calls succeeded`);
       }
 
-      // Transform the data with better error handling
-      try {
-        const transformedData = transformDashboardData(
-          results.groupStats,
-          results.recentActivity,
-          results.dashboardAnalytics,
-          results.transactions?.results || []
-        );
+      // Transform the data
+      const transformedData = transformDashboardData(
+        results.groupStats,
+        results.recentActivity,
+        results.transactions?.results || []
+      );
 
-        console.log('📈 Transformed dashboard data:', {
-          summary: transformedData.summary,
-          transactionsCount: transformedData.recent_transactions?.length || 0,
-          chartsData: {
-            contributionTrend: transformedData.contribution_trend?.length || 0,
-            weeklyActivity: transformedData.weekly_activity?.length || 0
-          }
-        });
-
-        setDashboardData(transformedData);
-      } catch (transformError) {
-        console.error('❌ Error transforming data:', transformError);
-        setDashboardData(mockDashboardData);
-      }
+      setDashboardData(transformedData);
       
     } catch (error) {
       console.error('❌ Critical error in fetchDashboardData:', error);
       setApiStatus('error');
-      console.log('🔄 Falling back to mock data');
-      setDashboardData(mockDashboardData);
+      setDashboardData(null);
     } finally {
       setIsLoading(false);
-      console.log('🏁 Dashboard data fetch completed');
     }
   };
 
-  // Updated transformDashboardData function to handle API data better
+  // Transform API data to dashboard format
   const transformDashboardData = (
     groupStats: any,
     recentActivity: any,
-    dashboardAnalytics: any,
     transactionsData: any
   ) => {
-    console.log('🔄 Transforming data from:', {
-      hasGroupStats: !!groupStats,
-      hasRecentActivity: !!recentActivity,
-      hasDashboardAnalytics: !!dashboardAnalytics,
-      hasTransactions: !!transactionsData
-    });
-
-    // Use API data if available, otherwise use mock data
-    const useMockData = !groupStats && !recentActivity && !dashboardAnalytics && !transactionsData;
-
-    if (useMockData) {
-      console.log('🔄 Using mock data for transformation');
-      return mockDashboardData;
-    }
-
     // Transform recent activity to transactions format if available
     const recentTransactions = recentActivity 
       ? recentActivity.slice(0, 6).map((activity: any, index: number) => ({
@@ -542,49 +405,50 @@ export function DashboardPage() {
           time: activity.timestamp ? formatTimeAgo(activity.timestamp) : 'Recently',
           status: activity.status?.toLowerCase() || 'completed'
         }))
-      : mockDashboardData.recent_transactions;
+      : [];
 
-    // Transform analytics data for charts if available
-    const contributionTrend = dashboardAnalytics?.contributions_over_time?.map((item: any, index: number) => ({
-      month: item.date ? new Date(item.date).toLocaleDateString('en-US', { month: 'short' }) : `Month ${index + 1}`,
+    // Create contribution trend from group stats or use empty array
+    const contributionTrend = groupStats?.monthly_contributions?.map((item: any, index: number) => ({
+      month: item.month || `Month ${index + 1}`,
       amount: item.amount || 0,
       target: (item.amount || 0) * 1.1
-    })) || mockDashboardData.contribution_trend;
+    })) || [];
 
-    const weeklyActivity = dashboardAnalytics?.member_activity?.slice(0, 7).map((item: any, index: number) => ({
+    // Create weekly activity from group stats or use empty array
+    const weeklyActivity = groupStats?.weekly_activity?.map((item: any, index: number) => ({
       name: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'][index] || `Day ${index + 1}`,
-      contributions: item.transactions || 0,
-      loans: Math.floor(Math.random() * 5),
-      meetings: Math.floor(Math.random() * 3)
-    })) || mockDashboardData.weekly_activity;
+      contributions: item.contributions || 0,
+      loans: item.loans || 0,
+      meetings: item.meetings || 0
+    })) || [];
 
     return {
       summary: {
-        total_balance: groupStats?.total_balance || mockDashboardData.summary.total_balance,
-        total_members: groupStats?.total_members || mockDashboardData.summary.total_members,
-        active_loans: groupStats?.active_loans || mockDashboardData.summary.active_loans,
-        total_investments: groupStats?.total_investments || mockDashboardData.summary.total_investments,
+        total_balance: groupStats?.total_balance || 0,
+        total_members: groupStats?.total_members || 0,
+        active_loans: groupStats?.active_loans || 0,
+        total_investments: groupStats?.total_investments || 0,
         growth_rates: {
-          balance: groupStats?.growth_rates?.balance || groupStats?.balance_growth || mockDashboardData.summary.growth_rates.balance,
-          members: groupStats?.growth_rates?.members || groupStats?.member_growth || mockDashboardData.summary.growth_rates.members,
-          loans: groupStats?.growth_rates?.loans || groupStats?.loan_growth || mockDashboardData.summary.growth_rates.loans,
-          investments: groupStats?.growth_rates?.investments || groupStats?.investment_growth || mockDashboardData.summary.growth_rates.investments,
+          balance: groupStats?.balance_growth || 0,
+          members: groupStats?.member_growth || 0,
+          loans: groupStats?.loan_growth || 0,
+          investments: groupStats?.investment_growth || 0,
         },
       },
       contribution_trend: contributionTrend,
       weekly_activity: weeklyActivity,
       recent_transactions: recentTransactions,
       quick_stats: {
-        pending_actions: groupStats?.quick_stats?.pending_actions || groupStats?.pending_actions || mockDashboardData.quick_stats.pending_actions,
-        upcoming_meetings: groupStats?.quick_stats?.upcoming_meetings || mockDashboardData.quick_stats.upcoming_meetings,
+        pending_actions: groupStats?.pending_actions || 0,
+        upcoming_meetings: groupStats?.upcoming_meetings || 0,
         unread_notifications: notifications.filter(n => !n.read).length,
-        loan_approvals: groupStats?.quick_stats?.loan_approvals || groupStats?.pending_loans || mockDashboardData.quick_stats.loan_approvals,
+        loan_approvals: groupStats?.pending_loans || 0,
       },
       performance_metrics: {
-        roi: groupStats?.roi || mockDashboardData.performance_metrics.roi,
-        savings_growth: groupStats?.savings_growth || mockDashboardData.performance_metrics.savings_growth,
-        loan_recovery: groupStats?.loan_recovery_rate || groupStats?.loan_recovery || mockDashboardData.performance_metrics.loan_recovery,
-        member_satisfaction: groupStats?.member_satisfaction || mockDashboardData.performance_metrics.member_satisfaction
+        roi: groupStats?.roi || 0,
+        savings_growth: groupStats?.savings_growth || 0,
+        loan_recovery: groupStats?.loan_recovery_rate || 0,
+        member_satisfaction: groupStats?.member_satisfaction || 0
       }
     };
   };
@@ -608,7 +472,6 @@ export function DashboardPage() {
   const handleRefresh = async () => {
     setIsRefreshing(true);
     try {
-      console.log('🔄 Manually refreshing dashboard data...');
       if (selectedGroupId) {
         await fetchDashboardData(parseInt(selectedGroupId));
       }
@@ -619,8 +482,32 @@ export function DashboardPage() {
     }
   };
 
-  const handleMarkAllAsRead = () => {
-    setNotifications(prev => prev.map(notif => ({ ...notif, read: true })));
+  const handleMarkAllAsRead = async () => {
+    try {
+      await notificationsService.markAllAsRead();
+      setNotifications(prev => prev.map(notif => ({ ...notif, read: true })));
+    } catch (error) {
+      console.error('Failed to mark notifications as read:', error);
+    }
+  };
+
+  const handleNotificationClick = async (notification: Notification) => {
+    try {
+      // Mark as read
+      await notificationsService.markAsRead(parseInt(notification.id));
+      setNotifications(prev => 
+        prev.map(n => n.id === notification.id ? { ...n, read: true } : n)
+      );
+      
+      // Navigate if there's an action_url
+      if (notification.action_url) {
+        navigate(notification.action_url);
+      }
+      
+      setShowNotifications(false);
+    } catch (error) {
+      console.error('Failed to handle notification click:', error);
+    }
   };
 
   const filteredTransactions = useMemo(() => {
@@ -640,7 +527,7 @@ export function DashboardPage() {
     const statusConfig = {
       success: { label: 'Live Data', color: 'bg-green-100 text-green-700', icon: '✅' },
       partial: { label: 'Partial Data', color: 'bg-yellow-100 text-yellow-700', icon: '⚠️' },
-      error: { label: 'Demo Data', color: 'bg-blue-100 text-blue-700', icon: '🔴' }
+      error: { label: 'No Data', color: 'bg-red-100 text-red-700', icon: '🔴' }
     };
 
     const config = statusConfig[apiStatus];
@@ -713,7 +600,7 @@ export function DashboardPage() {
         variants={containerVariants}
         className="max-w-7xl mx-auto space-y-8 relative z-10"
       >
-        {/* Enhanced Header with Actions */}
+        {/* Header */}
         <motion.div variants={itemVariants} className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
           <div className="flex items-center gap-6">
             <div className="flex items-center gap-4">
@@ -726,20 +613,6 @@ export function DashboardPage() {
                 <div className="h-16 w-16 rounded-3xl bg-gradient-to-br from-blue-600 via-purple-600 to-pink-600 flex items-center justify-center shadow-2xl">
                   <Crown className="h-8 w-8 text-white" />
                 </div>
-                <motion.div
-                  animate={{ 
-                    rotate: [0, 10, -10, 0],
-                    scale: [1, 1.1, 1]
-                  }}
-                  transition={{ 
-                    duration: 2,
-                    repeat: Infinity,
-                    repeatDelay: 3
-                  }}
-                  className="absolute -top-2 -right-2"
-                >
-                  <Sparkles className="h-5 w-5 text-yellow-500 fill-yellow-500" />
-                </motion.div>
               </motion.div>
               
               <div>
@@ -756,15 +629,9 @@ export function DashboardPage() {
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: 0.3 }}
-                  className="text-xl text-gray-600 flex items-center gap-2"
+                  className="text-xl text-gray-600"
                 >
-                  <Zap className="h-5 w-5 text-yellow-500" />
-                  Welcome back, <span className="font-bold text-gray-800">{userName}</span>! 
-                  {userRole !== 'member' && (
-                    <Badge variant="secondary" className="ml-2 bg-gradient-to-r from-blue-500 to-purple-500 text-white">
-                      {userRole}
-                    </Badge>
-                  )}
+                  Welcome back, <span className="font-bold text-gray-800">{userName}</span>!
                 </motion.p>
               </div>
             </div>
@@ -774,7 +641,6 @@ export function DashboardPage() {
             {/* Group Selector */}
             {groups.length > 0 && (
               <Select value={selectedGroupId} onValueChange={(value) => {
-                console.log(`🔄 Switching to group ${value}`);
                 setSelectedGroupId(value);
                 fetchDashboardData(parseInt(value));
               }}>
@@ -858,21 +724,17 @@ export function DashboardPage() {
                           className={`p-4 border-b border-gray-200/50 last:border-b-0 hover:bg-gray-50/50 cursor-pointer transition-all ${
                             !notification.read ? 'bg-blue-50/50' : ''
                           }`}
-                          onClick={() => {
-                            setNotifications(prev => 
-                              prev.map(n => n.id === notification.id ? { ...n, read: true } : n)
-                            );
-                            setShowNotifications(false);
-                          }}
+                          onClick={() => handleNotificationClick(notification)}
                         >
                           <div className="flex gap-3">
                             <div className={`h-10 w-10 rounded-xl flex items-center justify-center flex-shrink-0 ${
                               notification.type === 'success' ? 'bg-green-100 text-green-600' :
                               notification.type === 'warning' ? 'bg-orange-100 text-orange-600' :
+                              notification.type === 'error' ? 'bg-red-100 text-red-600' :
                               'bg-blue-100 text-blue-600'
                             }`}>
                               {notification.type === 'success' ? <CheckCircle2 className="h-5 w-5" /> :
-                               notification.type === 'warning' ? <XCircle className="h-5 w-5" /> :
+                               notification.type === 'warning' || notification.type === 'error' ? <XCircle className="h-5 w-5" /> :
                                <Bell className="h-5 w-5" />}
                             </div>
                             <div className="flex-1 min-w-0">
@@ -888,6 +750,12 @@ export function DashboardPage() {
                           </div>
                         </motion.div>
                       ))}
+                      {notifications.length === 0 && (
+                        <div className="p-8 text-center text-gray-500">
+                          <Bell className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                          <p className="font-medium">No notifications</p>
+                        </div>
+                      )}
                     </div>
                   </motion.div>
                 )}
@@ -896,37 +764,39 @@ export function DashboardPage() {
           </div>
         </motion.div>
 
-        {/* Performance Metrics */}
-        <motion.div variants={itemVariants} className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-          <PerformanceMetric
-            title="Return on Investment"
-            value={`${dashboardData.performance_metrics.roi}%`}
-            change={dashboardData.performance_metrics.roi - 15}
-            icon={TrendingUp}
-            gradient="from-green-500 to-emerald-500"
-          />
-          <PerformanceMetric
-            title="Savings Growth"
-            value={`${dashboardData.performance_metrics.savings_growth}%`}
-            change={dashboardData.performance_metrics.savings_growth - 18}
-            icon={PiggyBank}
-            gradient="from-blue-500 to-cyan-500"
-          />
-          <PerformanceMetric
-            title="Loan Recovery"
-            value={`${dashboardData.performance_metrics.loan_recovery}%`}
-            change={dashboardData.performance_metrics.loan_recovery - 92}
-            icon={DollarSign}
-            gradient="from-purple-500 to-pink-500"
-          />
-          <PerformanceMetric
-            title="Member Satisfaction"
-            value={`${dashboardData.performance_metrics.member_satisfaction}%`}
-            change={dashboardData.performance_metrics.member_satisfaction - 94}
-            icon={Award}
-            gradient="from-orange-500 to-amber-500"
-          />
-        </motion.div>
+        {/* Performance Metrics - Show only if we have performance data */}
+        {dashboardData.performance_metrics && dashboardData.performance_metrics.roi > 0 && (
+          <motion.div variants={itemVariants} className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+            <PerformanceMetric
+              title="Return on Investment"
+              value={`${dashboardData.performance_metrics.roi}%`}
+              change={dashboardData.performance_metrics.roi - 15}
+              icon={TrendingUp}
+              gradient="from-green-500 to-emerald-500"
+            />
+            <PerformanceMetric
+              title="Savings Growth"
+              value={`${dashboardData.performance_metrics.savings_growth}%`}
+              change={dashboardData.performance_metrics.savings_growth - 18}
+              icon={PiggyBank}
+              gradient="from-blue-500 to-cyan-500"
+            />
+            <PerformanceMetric
+              title="Loan Recovery"
+              value={`${dashboardData.performance_metrics.loan_recovery}%`}
+              change={dashboardData.performance_metrics.loan_recovery - 92}
+              icon={DollarSign}
+              gradient="from-purple-500 to-pink-500"
+            />
+            <PerformanceMetric
+              title="Member Satisfaction"
+              value={`${dashboardData.performance_metrics.member_satisfaction}%`}
+              change={dashboardData.performance_metrics.member_satisfaction - 94}
+              icon={Award}
+              gradient="from-orange-500 to-amber-500"
+            />
+          </motion.div>
+        )}
 
         {/* Quick Stats */}
         <motion.div variants={itemVariants} className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
@@ -953,7 +823,7 @@ export function DashboardPage() {
           />
           <QuickStatCard
             title="Unread Notifications"
-            value={dashboardData.quick_stats.unread_notifications}
+            value={unreadNotificationsCount}
             icon={Bell}
             gradient="from-red-500 to-pink-500"
             onClick={() => setShowNotifications(true)}
@@ -992,105 +862,111 @@ export function DashboardPage() {
           />
         </motion.div>
 
-        {/* Charts Row */}
-        <div className="grid gap-6 lg:grid-cols-2">
-          {/* Contribution Trend */}
-          <motion.div variants={itemVariants}>
-            <Card className="border border-gray-200/50 bg-white/80 backdrop-blur-xl shadow-xl rounded-3xl overflow-hidden">
-              <CardHeader className="flex flex-row items-center justify-between pb-4">
-                <div>
-                  <CardTitle className="text-xl font-black text-gray-800">Contribution Trend</CardTitle>
-                  <CardDescription className="text-gray-600 font-medium">Last 8 months performance vs target</CardDescription>
-                </div>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={() => navigate('/analytics')}
-                  className="rounded-xl border-gray-200/50 bg-white/50 backdrop-blur-sm hover:bg-white"
-                >
-                  <BarChart3 className="h-4 w-4 mr-2" />
-                  View Analytics
-                </Button>
-              </CardHeader>
-              <CardContent>
-                <ResponsiveContainer width="100%" height={300}>
-                  <AreaChart data={dashboardData.contribution_trend}>
-                    <defs>
-                      <linearGradient id="colorAmount" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="hsl(142 76% 36%)" stopOpacity={0.4} />
-                        <stop offset="95%" stopColor="hsl(142 76% 36%)" stopOpacity={0} />
-                      </linearGradient>
-                      <linearGradient id="colorTarget" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="hsl(217 91% 60%)" stopOpacity={0.3} />
-                        <stop offset="95%" stopColor="hsl(217 91% 60%)" stopOpacity={0} />
-                      </linearGradient>
-                    </defs>
-                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.05)" />
-                    <XAxis dataKey="month" className="text-sm font-medium" />
-                    <YAxis className="text-sm font-medium" tickFormatter={(value) => `KES ${value / 1000}k`} />
-                    <Tooltip content={<ChartTooltip />} />
-                    <Area
-                      type="monotone"
-                      dataKey="target"
-                      stroke="hsl(217 91% 60%)"
-                      fill="url(#colorTarget)"
-                      strokeWidth={2}
-                      strokeDasharray="5 5"
-                      name="Target Amount"
-                    />
-                    <Area
-                      type="monotone"
-                      dataKey="amount"
-                      stroke="hsl(142 76% 36%)"
-                      fillOpacity={1}
-                      fill="url(#colorAmount)"
-                      strokeWidth={3}
-                      name="Actual Amount"
-                    />
-                  </AreaChart>
-                </ResponsiveContainer>
-              </CardContent>
-            </Card>
-          </motion.div>
+        {/* Charts Row - Only show if we have data */}
+        {(dashboardData.contribution_trend.length > 0 || dashboardData.weekly_activity.length > 0) && (
+          <div className="grid gap-6 lg:grid-cols-2">
+            {/* Contribution Trend */}
+            {dashboardData.contribution_trend.length > 0 && (
+              <motion.div variants={itemVariants}>
+                <Card className="border border-gray-200/50 bg-white/80 backdrop-blur-xl shadow-xl rounded-3xl overflow-hidden">
+                  <CardHeader className="flex flex-row items-center justify-between pb-4">
+                    <div>
+                      <CardTitle className="text-xl font-black text-gray-800">Contribution Trend</CardTitle>
+                      <CardDescription className="text-gray-600 font-medium">Monthly performance vs target</CardDescription>
+                    </div>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={() => navigate('/analytics')}
+                      className="rounded-xl border-gray-200/50 bg-white/50 backdrop-blur-sm hover:bg-white"
+                    >
+                      <BarChart3 className="h-4 w-4 mr-2" />
+                      View Analytics
+                    </Button>
+                  </CardHeader>
+                  <CardContent>
+                    <ResponsiveContainer width="100%" height={300}>
+                      <AreaChart data={dashboardData.contribution_trend}>
+                        <defs>
+                          <linearGradient id="colorAmount" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor="hsl(142 76% 36%)" stopOpacity={0.4} />
+                            <stop offset="95%" stopColor="hsl(142 76% 36%)" stopOpacity={0} />
+                          </linearGradient>
+                          <linearGradient id="colorTarget" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor="hsl(217 91% 60%)" stopOpacity={0.3} />
+                            <stop offset="95%" stopColor="hsl(217 91% 60%)" stopOpacity={0} />
+                          </linearGradient>
+                        </defs>
+                        <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.05)" />
+                        <XAxis dataKey="month" className="text-sm font-medium" />
+                        <YAxis className="text-sm font-medium" tickFormatter={(value) => `KES ${value / 1000}k`} />
+                        <Tooltip content={<ChartTooltip />} />
+                        <Area
+                          type="monotone"
+                          dataKey="target"
+                          stroke="hsl(217 91% 60%)"
+                          fill="url(#colorTarget)"
+                          strokeWidth={2}
+                          strokeDasharray="5 5"
+                          name="Target Amount"
+                        />
+                        <Area
+                          type="monotone"
+                          dataKey="amount"
+                          stroke="hsl(142 76% 36%)"
+                          fillOpacity={1}
+                          fill="url(#colorAmount)"
+                          strokeWidth={3}
+                          name="Actual Amount"
+                        />
+                      </AreaChart>
+                    </ResponsiveContainer>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            )}
 
-          {/* Weekly Activity */}
-          <motion.div variants={itemVariants}>
-            <Card className="border border-gray-200/50 bg-white/80 backdrop-blur-xl shadow-xl rounded-3xl overflow-hidden">
-              <CardHeader>
-                <CardTitle className="text-xl font-black text-gray-800">Weekly Activity</CardTitle>
-                <CardDescription className="text-gray-600 font-medium">Contributions, loans, and meetings overview</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <ResponsiveContainer width="100%" height={300}>
-                  <BarChart data={dashboardData.weekly_activity}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.05)" />
-                    <XAxis dataKey="name" className="text-sm font-medium" />
-                    <YAxis className="text-sm font-medium" />
-                    <Tooltip content={<ChartTooltip />} />
-                    <Bar 
-                      dataKey="contributions" 
-                      fill="hsl(142 76% 36%)" 
-                      radius={[6, 6, 0, 0]}
-                      name="Contributions"
-                    />
-                    <Bar 
-                      dataKey="loans" 
-                      fill="hsl(217 91% 60%)" 
-                      radius={[6, 6, 0, 0]}
-                      name="Loans Processed"
-                    />
-                    <Bar 
-                      dataKey="meetings" 
-                      fill="hsl(280 90% 60%)" 
-                      radius={[6, 6, 0, 0]}
-                      name="Meetings Held"
-                    />
-                  </BarChart>
-                </ResponsiveContainer>
-              </CardContent>
-            </Card>
-          </motion.div>
-        </div>
+            {/* Weekly Activity */}
+            {dashboardData.weekly_activity.length > 0 && (
+              <motion.div variants={itemVariants}>
+                <Card className="border border-gray-200/50 bg-white/80 backdrop-blur-xl shadow-xl rounded-3xl overflow-hidden">
+                  <CardHeader>
+                    <CardTitle className="text-xl font-black text-gray-800">Weekly Activity</CardTitle>
+                    <CardDescription className="text-gray-600 font-medium">Contributions, loans, and meetings overview</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <ResponsiveContainer width="100%" height={300}>
+                      <BarChart data={dashboardData.weekly_activity}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.05)" />
+                        <XAxis dataKey="name" className="text-sm font-medium" />
+                        <YAxis className="text-sm font-medium" />
+                        <Tooltip content={<ChartTooltip />} />
+                        <Bar 
+                          dataKey="contributions" 
+                          fill="hsl(142 76% 36%)" 
+                          radius={[6, 6, 0, 0]}
+                          name="Contributions"
+                        />
+                        <Bar 
+                          dataKey="loans" 
+                          fill="hsl(217 91% 60%)" 
+                          radius={[6, 6, 0, 0]}
+                          name="Loans Processed"
+                        />
+                        <Bar 
+                          dataKey="meetings" 
+                          fill="hsl(280 90% 60%)" 
+                          radius={[6, 6, 0, 0]}
+                          name="Meetings Held"
+                        />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            )}
+          </div>
+        )}
 
         {/* Bottom Row */}
         <div className="grid gap-6 lg:grid-cols-2">
@@ -1116,7 +992,7 @@ export function DashboardPage() {
                       key={transaction.id}
                       transaction={transaction}
                       index={index}
-                      onClick={() => navigate(`/transaction/${transaction.id}`)}
+                      onClick={() => navigate(`/transactions/${transaction.id}`)}
                     />
                   ))}
                   {filteredTransactions.length === 0 && (
@@ -1125,7 +1001,9 @@ export function DashboardPage() {
                         <Search className="h-8 w-8 text-gray-400" />
                       </div>
                       <p className="font-semibold text-gray-600">No transactions found</p>
-                      <p className="text-sm text-gray-500 mt-1">Try adjusting your search criteria</p>
+                      <p className="text-sm text-gray-500 mt-1">
+                        {searchQuery ? 'Try adjusting your search criteria' : 'No recent transactions available'}
+                      </p>
                     </div>
                   )}
                 </div>
@@ -1144,7 +1022,7 @@ export function DashboardPage() {
                   <QuickActionButton
                     icon={LayoutDashboard}
                     label="Record Contribution"
-                    onClick={() => navigate('/finance?tab=contributions')}
+                    onClick={() => navigate('/contributions/create')}
                     gradient="from-green-500 to-emerald-500"
                   />
                   <QuickActionButton
@@ -1156,13 +1034,13 @@ export function DashboardPage() {
                   <QuickActionButton
                     icon={Vote}
                     label="Start Voting"
-                    onClick={() => navigate('/voting/new')}
+                    onClick={() => navigate('/voting/create')}
                     gradient="from-purple-500 to-pink-500"
                   />
                   <QuickActionButton
                     icon={Users}
                     label="Schedule Meeting"
-                    onClick={() => navigate('/meetings/schedule')}
+                    onClick={() => navigate('/meetings/create')}
                     gradient="from-orange-500 to-amber-500"
                   />
                 </div>
@@ -1180,10 +1058,10 @@ export function DashboardPage() {
                     <RechartsPieChart>
                       <Pie
                         data={[
-                          { name: 'Loans', value: 40, color: 'hsl(142 76% 36%)' },
-                          { name: 'Investments', value: 35, color: 'hsl(217 91% 60%)' },
-                          { name: 'Emergency', value: 15, color: 'hsl(280 90% 60%)' },
-                          { name: 'Operations', value: 10, color: 'hsl(24 95% 53%)' },
+                          { name: 'Savings', value: 40, color: 'hsl(142 76% 36%)' },
+                          { name: 'Loans', value: 25, color: 'hsl(217 91% 60%)' },
+                          { name: 'Investments', value: 20, color: 'hsl(280 90% 60%)' },
+                          { name: 'Operations', value: 15, color: 'hsl(24 95% 53%)' },
                         ]}
                         cx="50%"
                         cy="50%"
@@ -1193,16 +1071,19 @@ export function DashboardPage() {
                         dataKey="value"
                       >
                         {[
-                          { name: 'Loans', value: 40, color: 'hsl(142 76% 36%)' },
-                          { name: 'Investments', value: 35, color: 'hsl(217 91% 60%)' },
-                          { name: 'Emergency', value: 15, color: 'hsl(280 90% 60%)' },
-                          { name: 'Operations', value: 10, color: 'hsl(24 95% 53%)' },
+                          { name: 'Savings', value: 40, color: 'hsl(142 76% 36%)' },
+                          { name: 'Loans', value: 25, color: 'hsl(217 91% 60%)' },
+                          { name: 'Investments', value: 20, color: 'hsl(280 90% 60%)' },
+                          { name: 'Operations', value: 15, color: 'hsl(24 95% 53%)' },
                         ].map((entry, index) => (
                           <Cell key={`cell-${index}`} fill={entry.color} />
                         ))}
                       </Pie>
                       <Tooltip 
-                        formatter={(value: number) => [`KES ${(value * 24567).toLocaleString()}`, 'Amount']}
+                        formatter={(value: number) => [
+                          `KES ${Math.round((value / 100) * dashboardData.summary.total_balance).toLocaleString()}`,
+                          'Amount'
+                        ]}
                         contentStyle={{
                           background: 'white',
                           border: '1px solid rgba(0,0,0,0.1)',
@@ -1215,10 +1096,10 @@ export function DashboardPage() {
                 </div>
                 <div className="grid grid-cols-2 gap-3 mt-4">
                   {[
-                    { label: 'Loans', value: '40%', color: 'bg-green-500' },
-                    { label: 'Investments', value: '35%', color: 'bg-blue-500' },
-                    { label: 'Emergency', value: '15%', color: 'bg-purple-500' },
-                    { label: 'Operations', value: '10%', color: 'bg-orange-500' },
+                    { label: 'Savings', value: '40%', color: 'bg-green-500' },
+                    { label: 'Loans', value: '25%', color: 'bg-blue-500' },
+                    { label: 'Investments', value: '20%', color: 'bg-purple-500' },
+                    { label: 'Operations', value: '15%', color: 'bg-orange-500' },
                   ].map((item, index) => (
                     <div key={index} className="flex items-center gap-2 p-2 rounded-xl bg-gray-50/50">
                       <div className={`h-3 w-3 rounded-full ${item.color}`} />
