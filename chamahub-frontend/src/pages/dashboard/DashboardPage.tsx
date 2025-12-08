@@ -386,23 +386,32 @@ export function DashboardPage() {
     }
   };
 
-  // Transform API data to dashboard format
+  // Transform API data to dashboard format - FIXED: Now uses transactionsData parameter
   const transformDashboardData = (
     groupStats: any,
     recentActivity: any,
     transactionsData: any[]
   ) => {
-    // Transform recent activity to transactions format if available
-    const recentTransactions = recentActivity 
-      ? recentActivity.slice(0, 6).map((activity: any, index: number) => ({
-          id: activity.id || index + 1,
-          member: activity.member_name || activity.user?.full_name || 'Member',
-          type: activity.type || 'contribution',
-          amount: activity.amount || 0,
-          time: activity.timestamp ? formatTimeAgo(activity.timestamp) : 'Recently',
-          status: activity.status?.toLowerCase() || 'completed'
+    // Use transactionsData if available, otherwise use recentActivity
+    const recentTransactions = transactionsData && transactionsData.length > 0 
+      ? transactionsData.slice(0, 6).map((transaction: any, index: number) => ({
+          id: transaction.id || index + 1,
+          member: transaction.member?.full_name || transaction.user?.full_name || 'Member',
+          type: transaction.transaction_type || 'contribution',
+          amount: transaction.amount || 0,
+          time: transaction.created_at ? formatTimeAgo(transaction.created_at) : 'Recently',
+          status: transaction.status?.toLowerCase() || 'completed'
         }))
-      : [];
+      : recentActivity 
+        ? recentActivity.slice(0, 6).map((activity: any, index: number) => ({
+            id: activity.id || index + 1,
+            member: activity.member_name || activity.user?.full_name || 'Member',
+            type: activity.type || 'contribution',
+            amount: activity.amount || 0,
+            time: activity.timestamp ? formatTimeAgo(activity.timestamp) : 'Recently',
+            status: activity.status?.toLowerCase() || 'completed'
+          }))
+        : [];
 
     // Create contribution trend from group stats or use empty array
     const contributionTrend = groupStats?.monthly_contributions?.map((item: any, index: number) => ({
