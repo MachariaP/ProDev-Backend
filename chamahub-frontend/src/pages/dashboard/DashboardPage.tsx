@@ -16,8 +16,6 @@ import {
   Search,
   BarChart3,
   Crown,
-  Zap,
-  Sparkles,
   DollarSign,
   Award,
   TrendingDown,
@@ -262,7 +260,7 @@ export function DashboardPage() {
   const [apiStatus, setApiStatus] = useState<'loading' | 'success' | 'partial' | 'error'>('loading');
 
   // Get user from localStorage
-  const [user] = useState<{ full_name?: string; role?: string }>(() => {
+  const [user] = useState<{ full_name?: string }>(() => {
     try {
       return JSON.parse(localStorage.getItem('user') || '{}');
     } catch {
@@ -271,7 +269,6 @@ export function DashboardPage() {
   });
 
   const userName = user?.full_name || 'Member';
-  const userRole = user?.role || 'member';
   const unreadNotificationsCount = notifications.filter(n => !n.read).length;
 
   // Fetch data from backend
@@ -393,7 +390,7 @@ export function DashboardPage() {
   const transformDashboardData = (
     groupStats: any,
     recentActivity: any,
-    transactionsData: any
+    transactionsData: any[]
   ) => {
     // Transform recent activity to transactions format if available
     const recentTransactions = recentActivity 
