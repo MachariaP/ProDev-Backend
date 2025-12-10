@@ -3,10 +3,10 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { 
   ArrowLeft, Plus, Receipt, DollarSign, CheckCircle, Clock, XCircle, 
-  AlertCircle, Download, Filter, Search, Users, Sparkles,
+  AlertCircle, Download, Search, Users, Sparkles,
   BarChart3, PiggyBank, Eye, MoreHorizontal, Calendar,
   TrendingUp, Shield, CreditCard, RefreshCw
-} from 'lucide-react';
+} from 'lucide-react'; // Removed Filter import
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../../components/ui/card';
 import { financeService } from '../../services/apiService';
 import type { Expense } from '../../types/api';
@@ -455,26 +455,12 @@ export function ExpensesPage() {
   const handleExport = async () => {
     setExporting(true);
     try {
-      // Note: You'll need to add exportExpenses method to your financeService
-      // For now, we'll create a simple CSV export
-      const headers = ['ID', 'Description', 'Category', 'Amount (KES)', 'Status', 'Requested By', 'Requested At', 'Notes'];
-      const rows = expenses.map(expense => [
-        expense.id,
-        expense.description,
-        expense.category,
-        parseFloat(expense.amount).toFixed(2),
-        expense.status,
-        expense.requested_by_name || `Member #${expense.requested_by}`,
-        new Date(expense.requested_at).toLocaleDateString(),
-        expense.notes
-      ]);
-
-      const csvContent = [
-        headers.join(','),
-        ...rows.map(row => row.map(cell => `"${cell}"`).join(','))
-      ].join('\n');
-
-      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      // Use the new exportExpenses method
+      const blob = await financeService.exportExpenses({
+        status: stats.pending > 0 ? 'PENDING' : undefined,
+        date_from: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0] // Last 30 days
+      });
+      
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
