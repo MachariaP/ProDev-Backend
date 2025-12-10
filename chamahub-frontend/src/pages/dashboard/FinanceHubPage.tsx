@@ -30,37 +30,22 @@ import {
   Search,
   ChevronDown
 } from 'lucide-react';
-// Removed: ArrowDownLeft, Filter
 
 // API services
 import { financeService, analyticsService, groupsService } from '../../services/apiService';
+import type { DashboardStats, Transaction, ChamaGroup } from '../../types/api';
+import { formatCurrency, formatTimeAgo } from '../../utils/formatting';
 
 // Types
-type Group = { 
-  id: number; 
-  name: string;
-};
+type Group = ChamaGroup;
 
-type Transaction = {
-  id: number;
-  type: 'contribution' | 'loan' | 'expense' | 'investment';
-  amount: number;
-  user_name: string;
-  created_at: string;
-  status: 'completed' | 'pending' | 'failed';
-  description?: string;
-};
-
-type FinanceSummary = {
-  total_balance: number;
-  monthly_contributions: number;
-  active_loans: number;
-  pending_approvals: number;
-  total_members: number;
+type FinanceSummary = DashboardStats & {
   loan_recovery_rate: number;
   savings_growth: number;
   member_participation: number;
   fund_growth: number;
+  monthly_contributions: number;
+  pending_approvals: number;
 };
 
 // Simple card components as fallback
@@ -74,8 +59,12 @@ const CardContent = ({ children, className = '' }: { children: React.ReactNode; 
   <div className={`p-6 ${className}`}>{children}</div>
 );
 
-// Enhanced Progress Bar with better visuals
-const FundProgress = ({ percentage, availableCash }: { percentage: number; availableCash: number }) => {
+// Enhanced Progress Bar with better visuals - Now using real data
+const FundProgress = ({ percentage, availableCash, targetAmount }: { 
+  percentage: number; 
+  availableCash: number; 
+  targetAmount: number;
+}) => {
   const normalizedPercentage = Math.max(0, Math.min(100, percentage));
 
   const getColorClass = (percent: number) => {
@@ -99,7 +88,7 @@ const FundProgress = ({ percentage, availableCash }: { percentage: number; avail
         </div>
         <div className="text-right">
           <p className="text-sm opacity-90">Available Cash</p>
-          <p className="text-lg font-semibold mt-1">KES {availableCash.toLocaleString()}</p>
+          <p className="text-lg font-semibold mt-1">{formatCurrency(availableCash)}</p>
         </div>
       </div>
       <div className="w-full bg-white/20 rounded-full h-3 mb-2 overflow-hidden">
@@ -207,6 +196,21 @@ const AnimatedStatCard = ({
   );
 };
 
+// Finance Module Type
+type FinanceModule = {
+  title: string;
+  description: string;
+  icon: any;
+  color: string;
+  bgColor: string;
+  borderColor: string;
+  gradient: string;
+  path: string;
+  stats: string;
+  trend: string;
+  badge: string | null;
+};
+
 export function FinanceHubPage() {
   const navigate = useNavigate();
 
@@ -221,21 +225,30 @@ export function FinanceHubPage() {
 
   const [financeSummary, setFinanceSummary] = useState<FinanceSummary>({
     total_balance: 0,
-    monthly_contributions: 0,
-    active_loans: 0,
-    pending_approvals: 0,
     total_members: 0,
+    active_loans: 0,
+    total_investments: 0,
+    monthly_contributions: 0,
+    pending_approvals: 0,
     loan_recovery_rate: 0,
     savings_growth: 0,
     member_participation: 0,
     fund_growth: 0,
+    growth_rates: {
+      balance: 0,
+      members: 0,
+      loans: 0,
+      investments: 0
+    },
+    quick_stats: {
+      pending_actions: 0,
+      upcoming_meetings: 0,
+      unread_notifications: 0,
+      loan_approvals: 0
+    }
   });
 
-  const [recentTransactions, setRecentTransactions] = useState<Transaction[]>([]);
-  const [filteredTransactions, setFilteredTransactions] = useState<Transaction[]>([]);
-
-  // Mock finance modules (can be enhanced with real data)
-  const financeModules = [
+  const [financeModules, setFinanceModules] = useState<FinanceModule[]>([
     {
       title: 'Contributions',
       description: 'Track and manage member contributions',
@@ -288,7 +301,13 @@ export function FinanceHubPage() {
       trend: 'None',
       badge: null,
     },
-  ];
+  ]);
+
+  const [recentTransactions, setRecentTransactions] = useState<Transaction[]>([]);
+  const [filteredTransactions, setFilteredTransactions] = useState<Transaction[]>([]);
+  const [totalExpenses, setTotalExpenses] = useState<number>(0);
+  const [availableCash, setAvailableCash] = useState<number>(0);
+  const [monthlyTarget, setMonthlyTarget] = useState<number>(0);
 
   // Load user's groups
   useEffect(() => {
@@ -344,8 +363,8 @@ export function FinanceHubPage() {
       try {
         console.log(`💰 Fetching finance data for group ${selectedGroupId}...`);
         
-        // Use Promise.allSettled for parallel API calls
-        const [groupStats, transactions, recentActivity] = await Promise.allSettled([
+        // Fetch all financial data in parallel
+        const [groupStats, transactions, expenses] = await Promise.allSettled([
           analyticsService.getGroupStats(parseInt(selectedGroupId)).catch(err => {
             console.warn('⚠️ Group stats endpoint failed:', err.message);
             return null;
@@ -353,21 +372,26 @@ export function FinanceHubPage() {
           financeService.getTransactions({ 
             group: parseInt(selectedGroupId), 
             page: 1, 
-            page_size: 10 
+            page_size: 10,
+            ordering: '-created_at'
           }).catch(err => {
             console.warn('⚠️ Transactions endpoint failed:', err.message);
             return { results: [] };
           }),
-          analyticsService.getRecentActivity(parseInt(selectedGroupId)).catch(err => {
-            console.warn('⚠️ Recent activity endpoint failed:', err.message);
-            return null;
+          financeService.getExpenses({ 
+            group: parseInt(selectedGroupId),
+            page: 1,
+            page_size: 100
+          }).catch(err => {
+            console.warn('⚠️ Expenses endpoint failed:', err.message);
+            return { results: [] };
           })
         ]);
 
         console.log('📊 Finance API Response Summary:', {
           groupStats: groupStats.status,
           transactions: transactions.status,
-          recentActivity: recentActivity.status
+          expenses: expenses.status
         });
 
         let successfulCalls = 0;
@@ -377,7 +401,7 @@ export function FinanceHubPage() {
         if (groupStats.status === 'fulfilled' && groupStats.value) {
           results.groupStats = groupStats.value;
           successfulCalls++;
-          console.log('✅ Group stats loaded');
+          console.log('✅ Group stats loaded:', results.groupStats);
         }
 
         if (transactions.status === 'fulfilled' && transactions.value) {
@@ -386,19 +410,25 @@ export function FinanceHubPage() {
           console.log('✅ Transactions loaded:', results.transactions.length);
         }
 
-        if (recentActivity.status === 'fulfilled' && recentActivity.value) {
-          results.recentActivity = recentActivity.value;
+        if (expenses.status === 'fulfilled' && expenses.value) {
+          results.expenses = expenses.value.results || [];
           successfulCalls++;
-          console.log('✅ Recent activity loaded');
+          console.log('✅ Expenses loaded:', results.expenses.length);
+          
+          // Calculate total expenses
+          const totalExpensesAmount = results.expenses.reduce((sum: number, expense: any) => {
+            return sum + (parseFloat(expense.amount) || 0);
+          }, 0);
+          setTotalExpenses(totalExpensesAmount);
         }
 
         // Determine API status
         if (successfulCalls === 0) {
           setApiStatus('error');
           console.log('⚠️ All finance API calls failed.');
-        } else if (successfulCalls === 3) {
+        } else if (successfulCalls >= 2) {
           setApiStatus('success');
-          console.log('✅ All finance API calls succeeded!');
+          console.log('✅ Finance API calls succeeded!');
         } else {
           setApiStatus('partial');
           console.log(`⚠️ Partial finance data loaded: ${successfulCalls}/3 API calls succeeded`);
@@ -407,40 +437,69 @@ export function FinanceHubPage() {
         // Transform and set data
         const processedSummary = processFinanceData(
           results.groupStats,
-          results.transactions
+          results.transactions,
+          results.expenses || []
         );
 
         setFinanceSummary(processedSummary);
 
         // Update transaction list
         if (results.transactions) {
-          const processedTransactions = results.transactions.map((tx: any, index: number) => ({
-            id: tx.id || index + 1,
-            type: tx.transaction_type?.toLowerCase() || 'contribution',
-            amount: tx.amount || 0,
-            user_name: tx.user?.full_name || tx.member?.name || 'Member',
-            created_at: tx.created_at || new Date().toISOString(),
-            status: tx.status?.toLowerCase() || 'completed',
-            description: tx.description || tx.purpose || ''
-          }));
-          setRecentTransactions(processedTransactions);
-          setFilteredTransactions(processedTransactions);
+          setRecentTransactions(results.transactions);
+          setFilteredTransactions(results.transactions);
         }
 
-        // Update finance modules with real data
-        financeModules[0].stats = `KES ${processedSummary.monthly_contributions.toLocaleString()}`;
-        financeModules[0].trend = processedSummary.savings_growth > 0 ? `+${processedSummary.savings_growth}%` : `${processedSummary.savings_growth}%`;
-        financeModules[1].stats = `${processedSummary.active_loans} Active`;
-        financeModules[1].trend = processedSummary.loan_recovery_rate > 90 ? 'Good' : 'Needs attention';
-        financeModules[2].stats = `KES ${(processedSummary.monthly_contributions * 0.1).toLocaleString()}`; // Estimate 10% as expenses
-        financeModules[3].stats = `${processedSummary.pending_approvals} Pending`;
-        financeModules[3].trend = processedSummary.pending_approvals > 0 ? 'Urgent' : 'None';
+        // Calculate available cash (total balance minus active loans and expenses)
+        const totalBalance = processedSummary.total_balance || 0;
+        const activeLoansTotal = (processedSummary.active_loans || 0) * 10000; // Estimate average loan amount
+        const expensesTotal = totalExpenses || 0;
+        const calculatedAvailableCash = Math.max(0, totalBalance - activeLoansTotal - expensesTotal);
+        setAvailableCash(calculatedAvailableCash);
+
+        // Calculate monthly target (based on group's minimum contribution and members)
+        const group = groups.find(g => g.id.toString() === selectedGroupId);
+        const monthlyTargetAmount = group ? (group.minimum_contribution || 1000) * (group.member_count || 10) : 10000;
+        setMonthlyTarget(monthlyTargetAmount);
+
+        // Update finance modules with REAL data
+        const updatedModules = [...financeModules];
+        
+        // Contributions module
+        updatedModules[0].stats = formatCurrency(processedSummary.monthly_contributions);
+        updatedModules[0].trend = processedSummary.savings_growth > 0 
+          ? `+${processedSummary.savings_growth}%` 
+          : `${processedSummary.savings_growth}%`;
+        
+        // Loans module
+        updatedModules[1].stats = `${processedSummary.active_loans} Active`;
+        updatedModules[1].trend = processedSummary.loan_recovery_rate > 90 
+          ? 'Good' 
+          : processedSummary.loan_recovery_rate > 70 
+            ? 'Fair' 
+            : 'Needs attention';
+        
+        // Expenses module - REAL DATA
+        updatedModules[2].stats = formatCurrency(totalExpenses);
+        updatedModules[2].trend = totalExpenses > (processedSummary.monthly_contributions * 0.3) 
+          ? 'High' 
+          : 'Normal';
+        
+        // Approvals module
+        updatedModules[3].stats = `${processedSummary.pending_approvals} Pending`;
+        updatedModules[3].trend = processedSummary.pending_approvals > 0 
+          ? 'Urgent' 
+          : 'None';
+        
+        setFinanceModules(updatedModules);
 
         console.log('📈 Finance data processed:', {
           totalBalance: processedSummary.total_balance,
           monthlyContributions: processedSummary.monthly_contributions,
           activeLoans: processedSummary.active_loans,
-          transactions: results.transactions?.length || 0
+          pendingApprovals: processedSummary.pending_approvals,
+          expenses: totalExpenses,
+          availableCash: calculatedAvailableCash,
+          monthlyTarget: monthlyTargetAmount
         });
 
       } catch (err: any) {
@@ -454,7 +513,7 @@ export function FinanceHubPage() {
     };
 
     fetchFinanceData();
-  }, [selectedGroupId]);
+  }, [selectedGroupId, groups]);
 
   // Filter transactions based on search query
   useEffect(() => {
@@ -465,32 +524,66 @@ export function FinanceHubPage() {
 
     const query = searchQuery.toLowerCase();
     const filtered = recentTransactions.filter(transaction =>
-      transaction.user_name.toLowerCase().includes(query) ||
-      transaction.type.toLowerCase().includes(query) ||
-      transaction.description?.toLowerCase().includes(query) ||
-      transaction.status.toLowerCase().includes(query)
+      (transaction.user?.full_name || '').toLowerCase().includes(query) ||
+      (transaction.transaction_type || '').toLowerCase().includes(query) ||
+      (transaction.description || '').toLowerCase().includes(query) ||
+      (transaction.status || '').toLowerCase().includes(query)
     );
     
     setFilteredTransactions(filtered);
   }, [searchQuery, recentTransactions]);
 
-  // Process finance data from API responses
-  const processFinanceData = (groupStats: any, transactions: any[]): FinanceSummary => {
-    console.log('🔄 Processing finance data:', {
+  // Process finance data from API responses - NO MORE MOCKED DATA
+  const processFinanceData = (
+    groupStats: any, 
+    transactions: any[], 
+    expenses: any[]
+  ): FinanceSummary => {
+    console.log('🔄 Processing REAL finance data:', {
       hasGroupStats: !!groupStats,
-      hasTransactions: !!transactions
+      hasTransactions: !!transactions,
+      hasExpenses: !!expenses
     });
 
+    // Calculate monthly contributions from transactions
+    const monthlyContributions = transactions
+      .filter((tx: any) => 
+        tx.transaction_type === 'contribution' && 
+        new Date(tx.created_at).getMonth() === new Date().getMonth()
+      )
+      .reduce((sum: number, tx: any) => sum + (parseFloat(tx.amount) || 0), 0);
+
+    // Calculate fund growth (current month vs last month)
+    const currentMonth = new Date().getMonth();
+    const lastMonthContributions = 0; // Would need historical data to calculate properly
+    
+    const fundGrowth = lastMonthContributions > 0 
+      ? ((monthlyContributions - lastMonthContributions) / lastMonthContributions) * 100 
+      : 0;
+
     return {
-      total_balance: groupStats?.total_balance || 1234567,
-      monthly_contributions: groupStats?.monthly_contributions || 145000,
-      active_loans: groupStats?.active_loans || 12,
-      pending_approvals: groupStats?.pending_actions || 5,
-      total_members: groupStats?.total_members || 24,
-      loan_recovery_rate: groupStats?.loan_recovery_rate || 92,
-      savings_growth: groupStats?.savings_growth || 18,
-      member_participation: groupStats?.member_participation || 89,
-      fund_growth: groupStats?.monthly_growth || 245000,
+      total_balance: groupStats?.total_balance || 0,
+      total_members: groupStats?.total_members || 0,
+      active_loans: groupStats?.active_loans || 0,
+      total_investments: groupStats?.total_investments || 0,
+      monthly_contributions: monthlyContributions,
+      pending_approvals: groupStats?.pending_actions || 0,
+      loan_recovery_rate: groupStats?.loan_recovery_rate || 0,
+      savings_growth: groupStats?.savings_growth || 0,
+      member_participation: groupStats?.member_participation || 0,
+      fund_growth: fundGrowth,
+      growth_rates: groupStats?.growth_rates || {
+        balance: 0,
+        members: 0,
+        loans: 0,
+        investments: 0
+      },
+      quick_stats: groupStats?.quick_stats || {
+        pending_actions: 0,
+        upcoming_meetings: 0,
+        unread_notifications: 0,
+        loan_approvals: 0
+      }
     };
   };
 
@@ -502,8 +595,8 @@ export function FinanceHubPage() {
       
       try {
         console.log('🔄 Refreshing finance data...');
-        const response = await analyticsService.getGroupStats(parseInt(selectedGroupId));
-        const processedSummary = processFinanceData(response, []);
+        const groupStats = await analyticsService.getGroupStats(parseInt(selectedGroupId));
+        const processedSummary = processFinanceData(groupStats, recentTransactions, []);
         setFinanceSummary(processedSummary);
         setApiStatus('success');
         console.log('✅ Finance data refreshed');
@@ -523,22 +616,24 @@ export function FinanceHubPage() {
       // Create CSV content from finance data
       const csvContent = [
         ['Finance Report', 'Value'],
-        ['Total Balance', `KES ${financeSummary.total_balance.toLocaleString()}`],
-        ['Monthly Contributions', `KES ${financeSummary.monthly_contributions.toLocaleString()}`],
+        ['Total Balance', formatCurrency(financeSummary.total_balance)],
+        ['Monthly Contributions', formatCurrency(financeSummary.monthly_contributions)],
         ['Active Loans', financeSummary.active_loans],
         ['Pending Approvals', financeSummary.pending_approvals],
         ['Total Members', financeSummary.total_members],
         ['Loan Recovery Rate', `${financeSummary.loan_recovery_rate}%`],
         ['Savings Growth', `${financeSummary.savings_growth}%`],
         ['Member Participation', `${financeSummary.member_participation}%`],
-        ['Fund Growth', `KES ${financeSummary.fund_growth.toLocaleString()}`],
+        ['Fund Growth', formatCurrency(financeSummary.fund_growth)],
+        ['Total Expenses', formatCurrency(totalExpenses)],
+        ['Available Cash', formatCurrency(availableCash)],
         ['', ''],
         ['Date', 'Type', 'User', 'Amount', 'Status'],
         ...recentTransactions.map(tx => [
           new Date(tx.created_at).toLocaleDateString(),
-          tx.type,
-          tx.user_name,
-          `KES ${tx.amount.toLocaleString()}`,
+          tx.transaction_type,
+          tx.user?.full_name || 'Member',
+          formatCurrency(parseFloat(tx.amount || 0)),
           tx.status
         ])
       ].map(row => row.join(',')).join('\n');
@@ -561,28 +656,9 @@ export function FinanceHubPage() {
     }
   };
 
-  const formatCurrency = (amount: number) => {
-    return `KES ${amount.toLocaleString('en-KE')}`;
-  };
-
-  const formatTimeAgo = (dateString: string) => {
-    try {
-      const date = new Date(dateString);
-      const now = new Date();
-      const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
-      
-      if (diffInSeconds < 60) return 'Just now';
-      if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)} minutes ago`;
-      if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)} hours ago`;
-      return `${Math.floor(diffInSeconds / 86400)} days ago`;
-    } catch {
-      return 'Recently';
-    }
-  };
-
   const getTransactionIcon = (type: string) => {
     switch (type) {
-      case 'contribution': return ArrowUpRight;
+      case 'contribution': return DollarSign;
       case 'loan': return TrendingUp;
       case 'expense': return Receipt;
       case 'investment': return TrendingUp;
@@ -630,7 +706,7 @@ export function FinanceHubPage() {
     );
   };
 
-  // Financial insights data
+  // Financial insights data - USING REAL DATA
   const financialInsights = [
     {
       title: 'Savings Growth',
@@ -661,6 +737,11 @@ export function FinanceHubPage() {
       icon: Rocket,
     },
   ];
+
+  // Calculate fund utilization percentage
+  const fundUtilizationPercentage = monthlyTarget > 0 
+    ? Math.min(100, (financeSummary.monthly_contributions / monthlyTarget) * 100)
+    : 0;
 
   if (loading) {
     return <FinanceHubSkeleton />;
@@ -851,9 +932,9 @@ export function FinanceHubPage() {
                   </p>
                   <p className="text-sm opacity-75 mt-4 flex items-center gap-3">
                     <Target className="h-4 w-4" />
-                    <span>Monthly target: {formatCurrency(200000)} • </span>
+                    <span>Monthly target: {formatCurrency(monthlyTarget)} • </span>
                     <span className="text-green-300 font-semibold">
-                      {Math.round((financeSummary.monthly_contributions / 200000) * 100)}% achieved
+                      {Math.round(fundUtilizationPercentage)}% achieved
                     </span>
                   </p>
                 </div>
@@ -876,8 +957,9 @@ export function FinanceHubPage() {
                 </div>
               </div>
               <FundProgress 
-                percentage={Math.round((financeSummary.monthly_contributions / 200000) * 100)} 
-                availableCash={financeSummary.total_balance * 0.35} // Estimate 35% as available cash
+                percentage={fundUtilizationPercentage}
+                availableCash={availableCash}
+                targetAmount={monthlyTarget}
               />
             </CardContent>
           </Card>
@@ -923,7 +1005,7 @@ export function FinanceHubPage() {
           <AnimatedStatCard 
             title="Total Members" 
             value={financeSummary.total_members.toString()} 
-            change={`+${Math.floor(financeSummary.total_members * 0.083)}`} 
+            change={`+${financeSummary.growth_rates?.members || 0}%`} 
             color="text-purple-600"
             delay={0.3}
             icon={Users}
@@ -978,9 +1060,9 @@ export function FinanceHubPage() {
                     <div className="flex items-center justify-between">
                       <span className="font-semibold text-gray-700">{module.stats}</span>
                       <span className={`text-xs font-medium px-2 py-1 rounded-full ${
-                        module.trend === 'Urgent' || module.trend === 'Needs attention'
+                        module.trend === 'Urgent' || module.trend === 'Needs attention' || module.trend === 'High'
                           ? 'text-red-500 bg-red-50'
-                          : module.trend.startsWith('+') || module.trend === 'Good'
+                          : module.trend.startsWith('+') || module.trend === 'Good' || module.trend === 'Normal'
                           ? 'text-green-500 bg-green-50'
                           : 'text-blue-500 bg-blue-50'
                       }`}>
@@ -1051,9 +1133,9 @@ export function FinanceHubPage() {
                 <div className="space-y-4">
                   <AnimatePresence>
                     {filteredTransactions.slice(0, 4).map((transaction, index) => {
-                      const Icon = getTransactionIcon(transaction.type);
-                      const color = getTransactionColor(transaction.type);
-                      const bgColor = getTransactionBgColor(transaction.type);
+                      const Icon = getTransactionIcon(transaction.transaction_type);
+                      const color = getTransactionColor(transaction.transaction_type);
+                      const bgColor = getTransactionBgColor(transaction.transaction_type);
                       
                       return (
                         <motion.div
@@ -1072,10 +1154,10 @@ export function FinanceHubPage() {
                               <Icon className={`h-5 w-5 ${color}`} />
                             </motion.div>
                             <div>
-                              <p className="font-semibold text-gray-800 capitalize">{transaction.type}</p>
+                              <p className="font-semibold text-gray-800 capitalize">{transaction.transaction_type || 'Transaction'}</p>
                               <p className="text-sm text-gray-500 flex items-center gap-1">
                                 <Users className="h-3 w-3" />
-                                {transaction.user_name}
+                                {transaction.user?.full_name || 'Member'}
                               </p>
                               {transaction.description && (
                                 <p className="text-xs text-gray-400 mt-1">{transaction.description}</p>
@@ -1084,11 +1166,11 @@ export function FinanceHubPage() {
                           </div>
                           <div className="text-right">
                             <p className={`font-bold text-lg ${
-                              transaction.type === 'contribution' || transaction.type === 'investment'
+                              transaction.transaction_type === 'contribution' 
                                 ? 'text-green-600'
                                 : 'text-red-600'
                             }`}>
-                              {formatCurrency(transaction.amount)}
+                              {formatCurrency(parseFloat(transaction.amount || 0))}
                             </p>
                             <div className="flex items-center gap-2 justify-end">
                               <span className="text-xs text-gray-400">{formatTimeAgo(transaction.created_at)}</span>
