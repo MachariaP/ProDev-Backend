@@ -1,15 +1,22 @@
 """
-Activity Monitoring Middleware
+Activity Monitoring and Error Handling Middleware
 
 This middleware logs critical details of every user request and response
 to the 'user_activity' logger. It captures request metadata including
 timestamp, HTTP method, path, user agent, IP address, and user ID.
 For responses, it logs status code and processing latency.
+
+Additionally, it handles exceptions and returns proper JSON responses
+to avoid uncaught errors on the frontend.
 """
 
 import logging
 import time
+import json
 from datetime import datetime
+from django.http import JsonResponse
+from django.core.exceptions import PermissionDenied
+from rest_framework.exceptions import APIException
 
 
 # Get the user_activity logger
@@ -92,7 +99,7 @@ class ActivityMonitoringMiddleware:
                 method, path, user_id, latency_ms, str(e)
             )
             
-            # Re-raise the exception so Django can handle it
+            # Re-raise the exception so ErrorHandlingMiddleware can handle it
             raise
     
     def _get_client_ip(self, request):
@@ -149,3 +156,77 @@ class ActivityMonitoringMiddleware:
         if hasattr(request, 'start_time'):
             return (time.time() - request.start_time) * 1000
         return 0
+
+
+class ErrorHandlingMiddleware:
+    """
+    Middleware to handle and log errors gracefully.
+    
+    This middleware catches exceptions and returns proper JSON responses
+    to avoid uncaught errors on the frontend. It handles:
+    1. PermissionDenied exceptions - returns 403 with JSON
+    2. APIException (DRF exceptions) - returns appropriate status with JSON
+    3. Generic exceptions - returns 500 with JSON
+    """
+    
+    def __init__(self, get_response):
+        """
+        Initialize the middleware with the get_response callable.
+        
+        Args:
+            get_response: A callable that takes a request and returns a response.
+        """
+        self.get_response = get_response
+    
+    def __call__(self, request):
+        """
+        Process the request and handle any exceptions.
+        
+        Args:
+            request: The incoming HTTP request object.
+            
+        Returns:
+            The HTTP response object or JSON error response.
+        """
+        try:
+            response = self.get_response(request)
+            return response
+        except Exception as e:
+            return self.process_exception(request, e)
+    
+    def process_exception(self, request, exception):
+        """
+        Handle exceptions that occur during request processing.
+        
+        Args:
+            request: The HTTP request object.
+            exception: The exception that was raised.
+            
+        Returns:
+            JsonResponse with error details.
+        """
+        # Log the error
+        logger = logging.getLogger(__name__)
+        logger.error(f"Error processing request {request.path}: {str(exception)}")
+        
+        # Handle specific exceptions
+        if isinstance(exception, PermissionDenied):
+            return JsonResponse({
+                'error': 'Permission denied',
+                'detail': 'You do not have permission to perform this action.',
+                'code': 'permission_denied'
+            }, status=403)
+        
+        elif isinstance(exception, APIException):
+            return JsonResponse({
+                'error': exception.default_detail,
+                'detail': str(exception),
+                'code': getattr(exception, 'code', 'api_error')
+            }, status=exception.status_code)
+        
+        # Generic error response
+        return JsonResponse({
+            'error': 'Internal server error',
+            'detail': 'An unexpected error occurred. Please try again later.',
+            'code': 'internal_error'
+        }, status=500)
