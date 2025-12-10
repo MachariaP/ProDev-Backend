@@ -1,4 +1,3 @@
-// chamahub-frontend/src/pages/dashboard/DashboardPage.tsx
 import { motion, AnimatePresence, type Variants } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -161,7 +160,7 @@ function PerformanceMetric({ title, value, change, icon: Icon, gradient }: {
   );
 }
 
-// Enhanced Transaction Row Component
+// Enhanced Transaction Row Component - FIXED ROUTING
 function TransactionRow({ transaction, index, onClick }: {
   transaction: any;
   index: number;
@@ -976,7 +975,7 @@ export function DashboardPage() {
 
         {/* Bottom Row */}
         <div className="grid gap-6 lg:grid-cols-2">
-          {/* Recent Transactions */}
+          {/* Recent Transactions - FIXED: Now navigates to transaction details */}
           <motion.div variants={itemVariants}>
             <Card className="border border-gray-200/50 bg-white/80 backdrop-blur-xl shadow-xl rounded-3xl overflow-hidden">
               <CardHeader className="flex flex-row items-center justify-between pb-4">
@@ -984,7 +983,7 @@ export function DashboardPage() {
                 <Button 
                   variant="ghost" 
                   size="sm" 
-                  onClick={() => navigate('/finance')}
+                  onClick={() => navigate('/transactions')}
                   className="rounded-xl text-blue-600 hover:text-blue-700 hover:bg-blue-50 font-semibold"
                 >
                   <Eye className="h-4 w-4 mr-2" />
@@ -998,7 +997,7 @@ export function DashboardPage() {
                       key={transaction.id}
                       transaction={transaction}
                       index={index}
-                      onClick={() => navigate(`/transactions/${transaction.id}`)}
+                      onClick={() => navigate(`/transactions/${transaction.id}`)} // FIXED ROUTE
                     />
                   ))}
                   {filteredTransactions.length === 0 && (
@@ -1017,7 +1016,7 @@ export function DashboardPage() {
             </Card>
           </motion.div>
 
-          {/* Quick Actions & Distribution */}
+          {/* Quick Actions & Distribution - FIXED: All routes corrected */}
           <motion.div variants={itemVariants} className="space-y-6">
             <Card className="border border-gray-200/50 bg-white/80 backdrop-blur-xl shadow-xl rounded-3xl overflow-hidden">
               <CardHeader>
@@ -1025,10 +1024,11 @@ export function DashboardPage() {
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-2 gap-4">
+                  {/* FIXED ROUTES BELOW */}
                   <QuickActionButton
                     icon={LayoutDashboard}
                     label="Record Contribution"
-                    onClick={() => navigate('/contributions/create')}
+                    onClick={() => navigate('/contributions/new')}
                     gradient="from-green-500 to-emerald-500"
                   />
                   <QuickActionButton
@@ -1040,13 +1040,13 @@ export function DashboardPage() {
                   <QuickActionButton
                     icon={Vote}
                     label="Start Voting"
-                    onClick={() => navigate('/voting/create')}
+                    onClick={() => navigate('/voting')}
                     gradient="from-purple-500 to-pink-500"
                   />
                   <QuickActionButton
                     icon={Users}
                     label="Schedule Meeting"
-                    onClick={() => navigate('/meetings/create')}
+                    onClick={() => navigate('/meetings')}
                     gradient="from-orange-500 to-amber-500"
                   />
                 </div>

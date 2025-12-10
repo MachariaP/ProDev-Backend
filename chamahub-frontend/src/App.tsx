@@ -1,3 +1,4 @@
+// chamahub-frontend/src/App.tsx
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 // Layout
 import { DashboardLayout } from './components/DashboardLayout';
@@ -30,6 +31,7 @@ import { InvestmentPortfolioPage } from './pages/financial/InvestmentPortfolioPa
 import { NewInvestmentPage } from './pages/financial/NewInvestmentPage';
 import { InvestmentDetailPage } from './pages/financial/InvestmentDetailPage';
 import { TransactionHistoryPage } from './pages/financial/TransactionHistoryPage';
+import { TransactionDetailsPage } from './pages/financial/TransactionDetailsPage'; // NEW IMPORT
 // Tools pages
 import { VotingPage } from './pages/tools/VotingPage';
 import { ApprovalsPage } from './pages/tools/ApprovalsPage';
@@ -144,6 +146,11 @@ function App() {
         <Route
           path="/transactions"
           element={<AuthenticatedRoute><TransactionHistoryPage /></AuthenticatedRoute>}
+        />
+        {/* ADD TRANSACTION DETAILS ROUTE */}
+        <Route
+          path="/transactions/:id"
+          element={<AuthenticatedRoute><TransactionDetailsPage /></AuthenticatedRoute>}
         />
         <Route
           path="/statements"
