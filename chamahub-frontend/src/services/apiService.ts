@@ -193,6 +193,36 @@ export const financeService = {
     return response.data;
   },
 
+  // Expenses
+  async getExpenses(params?: { 
+    group?: number; 
+    category?: string; 
+    status?: string; 
+    page?: number;
+    page_size?: number;
+  }): Promise<PaginatedResponse<Expense>> {
+    const response = await api.get('/finance/expenses/', { params });
+    return response.data;
+  },
+
+  async createExpense(data: Partial<Expense>): Promise<Expense> {
+    const response = await api.post('/finance/expenses/', data);
+    return response.data;
+  },
+
+  async exportExpenses(params?: { 
+    status?: string;
+    category?: string;
+    date_from?: string;
+    date_to?: string;
+  }): Promise<Blob> {
+    const response = await api.get('/finance/expenses/export/', { 
+      params,
+      responseType: 'blob'
+    });
+    return response.data;
+  },
+
   // Loans
   async getLoans(params?: { 
     group?: number; 
@@ -238,23 +268,6 @@ export const financeService = {
 
   async createLoanRepayment(data: Partial<LoanRepayment>): Promise<LoanRepayment> {
     const response = await api.post('/finance/loan-repayments/', data);
-    return response.data;
-  },
-
-  // Expenses
-  async getExpenses(params?: { 
-    group?: number; 
-    category?: string; 
-    status?: string; 
-    page?: number;
-    page_size?: number;
-  }): Promise<PaginatedResponse<Expense>> {
-    const response = await api.get('/finance/expenses/', { params });
-    return response.data;
-  },
-
-  async createExpense(data: Partial<Expense>): Promise<Expense> {
-    const response = await api.post('/finance/expenses/', data);
     return response.data;
   },
 
