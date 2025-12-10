@@ -1,82 +1,89 @@
+// chamahub-frontend/src/components/StatsCard.tsx
 import { motion } from 'framer-motion';
-import type { LucideIcon } from 'lucide-react';
-import { Card, CardContent } from './ui/card';
-import { cn } from '@/lib/utils';
+import { TrendingUp, TrendingDown } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { formatCurrency, formatPercentage } from '../utils/formatting';
 
 interface StatsCardProps {
   title: string;
-  value: string | number;
-  icon: LucideIcon;
-  trend?: number;
-  className?: string;
-  iconClassName?: string;
+  value: number;
+  trend: number;
+  icon: React.ComponentType<{ className?: string }>;
+  iconClassName: string;
+  formatAsCurrency?: boolean;
+  animateValue?: boolean;
 }
 
-export function StatsCard({
-  title,
-  value,
-  icon: Icon,
-  trend,
-  className,
-  iconClassName,
+export function StatsCard({ 
+  title, 
+  value, 
+  trend, 
+  icon: Icon, 
+  iconClassName, 
+  formatAsCurrency = true,
+  animateValue = true
 }: StatsCardProps) {
-  const isPositiveTrend = trend !== undefined && trend >= 0;
+  const [displayValue, setDisplayValue] = useState(animateValue ? 0 : value);
+  const isPositive = trend >= 0;
+  
+  useEffect(() => {
+    if (!animateValue) return;
+    
+    const duration = 1500; // Animation duration in ms
+    const steps = 60; // Number of animation steps
+    const stepValue = value / steps;
+    let currentStep = 0;
+    
+    const timer = setInterval(() => {
+      currentStep++;
+      setDisplayValue(Math.min(stepValue * currentStep, value));
+      
+      if (currentStep >= steps) {
+        clearInterval(timer);
+        setDisplayValue(value); // Ensure final value is exact
+      }
+    }, duration / steps);
+    
+    return () => clearInterval(timer);
+  }, [value, animateValue]);
+  
+  const formattedValue = formatAsCurrency 
+    ? formatCurrency(displayValue)
+    : Math.round(displayValue).toLocaleString();
   
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5 }}
-      whileHover={{ y: -8, scale: 1.02, transition: { duration: 0.2 } }}
+      whileHover={{ scale: 1.02, y: -2 }}
+      className="p-6 rounded-3xl border border-gray-200/30 bg-white/90 backdrop-blur-md shadow-lg hover:shadow-xl transition-all duration-300"
     >
-      <Card className={cn('overflow-hidden border-border/50 shadow-lg hover:shadow-xl transition-all duration-300 bg-gradient-to-br from-card to-card/95', className)}>
-        <CardContent className="p-6 relative">
-          {/* Background decoration */}
-          <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-primary/5 to-transparent rounded-full -mr-16 -mt-16" />
-          
-          <div className="flex items-center justify-between relative">
-            <div className="space-y-2 flex-1">
-              <p className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
-                {title}
-              </p>
-              <motion.p
-                className="text-3xl font-bold bg-gradient-to-r from-foreground to-foreground/80 bg-clip-text"
-                initial={{ scale: 0.5, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                transition={{ delay: 0.2, type: 'spring', stiffness: 200 }}
-              >
-                {value}
-              </motion.p>
-              {trend !== undefined && (
-                <motion.div
-                  initial={{ opacity: 0, x: -10 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.3 }}
-                  className={cn(
-                    'flex items-center gap-1 text-sm font-semibold px-2 py-1 rounded-full w-fit',
-                    isPositiveTrend 
-                      ? 'text-green-600 bg-green-100 dark:bg-green-900/30 dark:text-green-400' 
-                      : 'text-red-600 bg-red-100 dark:bg-red-900/30 dark:text-red-400'
-                  )}
-                >
-                  <span className="text-base">{isPositiveTrend ? '↑' : '↓'}</span>
-                  <span>{Math.abs(trend).toFixed(1)}%</span>
-                </motion.div>
-              )}
-            </div>
-            <motion.div
-              className={cn(
-                'rounded-xl p-4 shadow-md',
-                iconClassName || 'bg-gradient-to-br from-primary to-primary/80'
-              )}
-              whileHover={{ rotate: [0, -10, 10, -10, 0], scale: 1.1 }}
-              transition={{ duration: 0.5 }}
-            >
-              <Icon className="h-8 w-8 text-white" />
-            </motion.div>
-          </div>
-        </CardContent>
-      </Card>
+      <div className="flex items-center justify-between mb-4">
+        <div className={`h-14 w-14 rounded-2xl ${iconClassName} flex items-center justify-center shadow-lg`}>
+          <Icon className="h-7 w-7 text-white" />
+        </div>
+        <div className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-sm font-semibold ${
+          isPositive ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-red-50 text-red-700 border border-red-200'
+        }`}>
+          {isPositive ? <TrendingUp className="h-4 w-4" /> : <TrendingDown className="h-4 w-4" />}
+          {formatPercentage(trend)}
+        </div>
+      </div>
+      <div>
+        <p className="text-3xl font-black text-gray-900 mb-1 tracking-tight">
+          {formattedValue}
+        </p>
+        <p className="text-sm font-medium text-gray-600">{title}</p>
+      </div>
+      {/* Subtle progress indicator */}
+      <div className="mt-4 h-1 w-full bg-gray-100 rounded-full overflow-hidden">
+        <motion.div
+          initial={{ width: 0 }}
+          animate={{ width: `${Math.min(Math.abs(trend) * 2, 100)}%` }}
+          transition={{ duration: 1, delay: 0.5 }}
+          className={`h-full ${isPositive ? 'bg-green-500' : 'bg-red-500'}`}
+        />
+      </div>
     </motion.div>
   );
 }
