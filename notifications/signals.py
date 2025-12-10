@@ -117,26 +117,31 @@ def create_loan_notification(sender, instance, created, **kwargs):
                 group=instance.group
             )
         
-        # Notify on status changes
-        if instance.tracker.has_changed('status'):
-            if instance.status == 'APPROVED':
-                Notification.objects.create(
-                    user=instance.borrower,
-                    title=f"Loan Approved!",
-                    message=f"Your loan of KES {instance.principal_amount:,.2f} has been approved. It will be disbursed shortly.",
-                    notification_type='LOAN',
-                    priority='HIGH',
-                    group=instance.group
-                )
-            elif instance.status == 'REJECTED':
-                Notification.objects.create(
-                    user=instance.borrower,
-                    title=f"Loan Application Rejected",
-                    message=f"Your loan application of KES {instance.principal_amount:,.2f} has been rejected.",
-                    notification_type='LOAN',
-                    priority='HIGH',
-                    group=instance.group
-                )
+        # Check if status has changed (we'll compare with database)
+        try:
+            old_instance = Loan.objects.get(pk=instance.pk)
+            if old_instance.status != instance.status:
+                if instance.status == 'APPROVED':
+                    Notification.objects.create(
+                        user=instance.borrower,
+                        title=f"Loan Approved!",
+                        message=f"Your loan of KES {instance.principal_amount:,.2f} has been approved. It will be disbursed shortly.",
+                        notification_type='LOAN',
+                        priority='HIGH',
+                        group=instance.group
+                    )
+                elif instance.status == 'REJECTED':
+                    Notification.objects.create(
+                        user=instance.borrower,
+                        title=f"Loan Application Rejected",
+                        message=f"Your loan application of KES {instance.principal_amount:,.2f} has been rejected.",
+                        notification_type='LOAN',
+                        priority='HIGH',
+                        group=instance.group
+                    )
+        except Loan.DoesNotExist:
+            pass
+            
     except Exception as e:
         logger.error(f"Failed to create loan notification: {str(e)}")
 
@@ -168,21 +173,30 @@ def create_group_update_notification(sender, instance, created, **kwargs):
     if created:
         return  # Handled by group membership signal
     
-    # Check for specific field changes
-    if instance.tracker.has_changed('name'):
-        # Notify all members about name change
-        try:
-            for membership in instance.memberships.filter(status='ACTIVE'):
-                Notification.objects.create(
-                    user=membership.user,
-                    title=f"Group Name Updated",
-                    message=f"The group '{instance.tracker.previous('name')}' has been renamed to '{instance.name}'.",
-                    notification_type='GENERAL',
-                    priority='MEDIUM',
-                    group=instance
-                )
-        except Exception as e:
-            logger.error(f"Failed to create group name change notifications: {str(e)}")
+    # Check for specific field changes by comparing with database
+    try:
+        old_instance = ChamaGroup.objects.get(pk=instance.pk)
+        
+        # Check if name has changed
+        if old_instance.name != instance.name:
+            # Notify all members about name change
+            try:
+                for membership in instance.memberships.filter(status='ACTIVE'):
+                    Notification.objects.create(
+                        user=membership.user,
+                        title=f"Group Name Updated",
+                        message=f"The group '{old_instance.name}' has been renamed to '{instance.name}'.",
+                        notification_type='GENERAL',
+                        priority='MEDIUM',
+                        group=instance
+                    )
+            except Exception as e:
+                logger.error(f"Failed to create group name change notifications: {str(e)}")
+                
+    except ChamaGroup.DoesNotExist:
+        pass
+    except Exception as e:
+        logger.error(f"Failed to check group updates: {str(e)}")
 
 
 @receiver(post_save)
