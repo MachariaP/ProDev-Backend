@@ -1,16 +1,26 @@
-# analytics_dashboard/urls.py
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from . import views
+from .views import (
+    AnalyticsReportViewSet,
+    FinancialHealthScoreViewSet,
+    PredictiveCashFlowViewSet,
+    dashboard_analytics,
+    group_stats,
+    recent_activity
+)
 
 router = DefaultRouter()
-router.register(r'reports', views.AnalyticsReportViewSet, basename='analyticsreport')
-router.register(r'health-scores', views.FinancialHealthScoreViewSet)
-router.register(r'cashflow-predictions', views.PredictiveCashFlowViewSet)
+router.register(r'reports', AnalyticsReportViewSet, basename='analytics-report')
+router.register(r'health-scores', FinancialHealthScoreViewSet, basename='financial-health-score')
+router.register(r'cashflow-predictions', PredictiveCashFlowViewSet, basename='predictive-cashflow')
 
 urlpatterns = [
     path('', include(router.urls)),
-    path('dashboard/', views.dashboard_analytics, name='dashboard-analytics'),
-    path('groups/<int:group_id>/stats/', views.group_stats, name='group-stats'),
-    path('groups/<int:group_id>/recent-activity/', views.recent_activity, name='recent-activity'),
+    
+    # Dashboard endpoints
+    path('dashboard/', dashboard_analytics, name='dashboard-analytics'),
+    
+    # Group-specific endpoints (these need to come after the router)
+    path('groups/<int:group_id>/stats/', group_stats, name='group-stats'),
+    path('groups/<int:group_id>/recent-activity/', recent_activity, name='recent-activity'),
 ]

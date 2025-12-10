@@ -1,5 +1,5 @@
 # analytics_dashboard/views.py
-from typing import Any
+from typing import Any, List, Dict
 from rest_framework import viewsets, status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
@@ -7,8 +7,9 @@ from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
 from django.db.models import QuerySet, Sum, Count, Q, Avg
 from django.utils import timezone
-from datetime import timedelta
+from datetime import timedelta, datetime
 import logging
+from decimal import Decimal
 from .models import AnalyticsReport, FinancialHealthScore, PredictiveCashFlow
 from .serializers import (
     AnalyticsReportSerializer,
@@ -114,6 +115,7 @@ def group_stats(request, group_id: int) -> Response:
     """
     Get comprehensive statistics for a group.
     Returns dashboard stats including balances, members, loans, investments, etc.
+    Fixed: monthly_contributions now returns an array of monthly data for the last 12 months
     """
     group = get_object_or_404(ChamaGroup, id=group_id)
     
@@ -128,7 +130,7 @@ def group_stats(request, group_id: int) -> Response:
     total_investments = Investment.objects.filter(
         group=group,
         status__in=['ACTIVE', 'MATURED']
-    ).aggregate(total=Sum('principal_amount'))['total'] or 0
+    ).aggregate(total=Sum('principal_amount'))['total'] or Decimal('0')
     
     # Count active loans
     active_loans = Loan.objects.filter(
@@ -136,13 +138,40 @@ def group_stats(request, group_id: int) -> Response:
         status__in=['APPROVED', 'DISBURSED', 'ACTIVE']
     ).count()
     
-    # Calculate monthly contributions (last 30 days)
-    thirty_days_ago = timezone.now() - timedelta(days=30)
-    monthly_contributions = Contribution.objects.filter(
+    # Calculate monthly contributions for the last 12 months
+    now = timezone.now()
+    monthly_contributions_data = []
+    
+    # Get contributions for the last 12 months
+    for i in range(11, -1, -1):  # From 11 months ago to current month
+        month_start = (now.replace(day=1) - timedelta(days=30*i)).replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+        if i == 0:
+            month_end = now
+        else:
+            next_month = month_start + timedelta(days=32)
+            month_end = next_month.replace(day=1) - timedelta(days=1)
+        
+        monthly_total = Contribution.objects.filter(
+            group=group,
+            status='COMPLETED',
+            created_at__gte=month_start,
+            created_at__lte=month_end
+        ).aggregate(total=Sum('amount'))['total'] or Decimal('0')
+        
+        monthly_contributions_data.append({
+            'month': month_start.strftime('%b %Y'),
+            'amount': float(monthly_total),
+            'month_number': month_start.month,
+            'year': month_start.year
+        })
+    
+    # Calculate current month's contributions (last 30 days)
+    thirty_days_ago = now - timedelta(days=30)
+    current_month_contributions = Contribution.objects.filter(
         group=group,
         status='COMPLETED',
         created_at__gte=thirty_days_ago
-    ).aggregate(total=Sum('amount'))['total'] or 0
+    ).aggregate(total=Sum('amount'))['total'] or Decimal('0')
     
     # Count pending approvals (pending loans and expenses)
     pending_loans = Loan.objects.filter(group=group, status='PENDING').count()
@@ -150,19 +179,21 @@ def group_stats(request, group_id: int) -> Response:
     pending_approvals = pending_loans + pending_expenses
     
     # Calculate growth rates (compare current month to previous month)
-    now = timezone.now()
     current_month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
     previous_month_start = (current_month_start - timedelta(days=1)).replace(day=1)
     
     # Balance growth
-    current_balance = float(group.total_balance)
-    previous_contributions = Contribution.objects.filter(
+    current_balance = group.total_balance
+    previous_balance = Contribution.objects.filter(
         group=group,
         status='COMPLETED',
         created_at__lt=current_month_start
-    ).aggregate(total=Sum('amount'))['total'] or 0
-    previous_balance = float(previous_contributions)
-    balance_growth = ((current_balance - previous_balance) / previous_balance * 100) if previous_balance > 0 else 0
+    ).aggregate(total=Sum('amount'))['total'] or Decimal('0')
+    
+    if previous_balance > Decimal('0'):
+        balance_growth = ((current_balance - previous_balance) / previous_balance) * 100
+    else:
+        balance_growth = 0
     
     # Member growth
     current_members = GroupMembership.objects.filter(group=group, status='ACTIVE').count()
@@ -171,7 +202,11 @@ def group_stats(request, group_id: int) -> Response:
         status='ACTIVE',
         joined_at__lt=current_month_start
     ).count()
-    member_growth = ((current_members - previous_members) / previous_members * 100) if previous_members > 0 else 0
+    
+    if previous_members > 0:
+        member_growth = ((current_members - previous_members) / previous_members) * 100
+    else:
+        member_growth = 0
     
     # Loan growth
     current_month_loans = Loan.objects.filter(
@@ -183,34 +218,43 @@ def group_stats(request, group_id: int) -> Response:
         applied_at__gte=previous_month_start,
         applied_at__lt=current_month_start
     ).count()
-    loan_growth = ((current_month_loans - previous_month_loans) / previous_month_loans * 100) if previous_month_loans > 0 else 0
+    
+    if previous_month_loans > 0:
+        loan_growth = ((current_month_loans - previous_month_loans) / previous_month_loans) * 100
+    else:
+        loan_growth = 0
     
     # Investment growth
-    current_investments = float(total_investments)
+    current_investments = total_investments
     previous_investments = Investment.objects.filter(
         group=group,
         status__in=['ACTIVE', 'MATURED'],
         created_at__lt=current_month_start
-    ).aggregate(total=Sum('principal_amount'))['total'] or 0
-    investment_growth = ((current_investments - float(previous_investments)) / float(previous_investments) * 100) if previous_investments > 0 else 0
+    ).aggregate(total=Sum('principal_amount'))['total'] or Decimal('0')
+    
+    if previous_investments > Decimal('0'):
+        investment_growth = ((current_investments - previous_investments) / previous_investments) * 100
+    else:
+        investment_growth = 0
     
     stats = {
         'total_balance': float(group.total_balance),
         'total_members': current_members,
         'active_loans': active_loans,
         'total_investments': float(total_investments),
-        'monthly_contributions': float(monthly_contributions),
+        'monthly_contributions': monthly_contributions_data,  # Now an array of objects
+        'current_month_contributions': float(current_month_contributions),
         'pending_approvals': pending_approvals,
         'growth_rates': {
-            'balance': round(balance_growth, 1),
-            'members': round(member_growth, 1),
-            'loans': round(loan_growth, 1),
-            'investments': round(investment_growth, 1),
+            'balance': round(float(balance_growth), 1),
+            'members': round(float(member_growth), 1),
+            'loans': round(float(loan_growth), 1),
+            'investments': round(float(investment_growth), 1),
         },
         'quick_stats': {
             'pending_actions': pending_approvals,
             'upcoming_meetings': 0,  # TODO: Implement meetings model
-            'unread_notifications': 0,  # TODO: Implement notifications
+            'unread_notifications': 0,  # TODO: Now available via notifications app
             'loan_approvals': pending_loans,
         }
     }
@@ -243,7 +287,8 @@ def recent_activity(request, group_id: int) -> Response:
     contributions = Contribution.objects.filter(
         group=group, 
         created_at__gte=ninety_days_ago
-    ).order_by('-created_at')[:20]
+    ).select_related('member').order_by('-created_at')[:20]
+    
     for contrib in contributions:
         activities.append({
             'id': f'contrib_{contrib.id}',
@@ -256,13 +301,15 @@ def recent_activity(request, group_id: int) -> Response:
             'is_positive': True,
             'status': contrib.status.lower(),
             'member_name': contrib.member.get_full_name(),
+            'action': 'contributed'
         })
     
     # Get recent loans
     loans = Loan.objects.filter(
         group=group,
         applied_at__gte=ninety_days_ago
-    ).order_by('-applied_at')[:10]
+    ).select_related('borrower').order_by('-applied_at')[:10]
+    
     for loan in loans:
         activities.append({
             'id': f'loan_{loan.id}',
@@ -275,6 +322,7 @@ def recent_activity(request, group_id: int) -> Response:
             'is_positive': False,
             'status': loan.status.lower(),
             'member_name': loan.borrower.get_full_name(),
+            'action': 'requested loan'
         })
     
     # Get recent loan repayments
@@ -283,6 +331,7 @@ def recent_activity(request, group_id: int) -> Response:
         paid_at__gte=ninety_days_ago,
         status='COMPLETED'
     ).select_related('loan__borrower').order_by('-paid_at')[:10]
+    
     for repayment in repayments:
         activities.append({
             'id': f'repayment_{repayment.id}',
@@ -295,6 +344,7 @@ def recent_activity(request, group_id: int) -> Response:
             'is_positive': True,
             'status': repayment.status.lower(),
             'member_name': repayment.loan.borrower.get_full_name(),
+            'action': 'repaid loan'
         })
     
     # Get recent expenses
@@ -302,6 +352,7 @@ def recent_activity(request, group_id: int) -> Response:
         group=group,
         requested_at__gte=ninety_days_ago
     ).select_related('requested_by').order_by('-requested_at')[:10]
+    
     for expense in expenses:
         activities.append({
             'id': f'expense_{expense.id}',
@@ -314,13 +365,15 @@ def recent_activity(request, group_id: int) -> Response:
             'is_positive': False,
             'status': expense.status.lower(),
             'member_name': expense.requested_by.get_full_name(),
+            'action': 'requested expense'
         })
     
     # Get recent investments
     investments = Investment.objects.filter(
         group=group,
         created_at__gte=ninety_days_ago
-    ).order_by('-created_at')[:10]
+    ).select_related('created_by').order_by('-created_at')[:10]
+    
     for investment in investments:
         activities.append({
             'id': f'investment_{investment.id}',
@@ -333,6 +386,7 @@ def recent_activity(request, group_id: int) -> Response:
             'is_positive': False,
             'status': investment.status.lower(),
             'member_name': investment.created_by.get_full_name(),
+            'action': 'created investment'
         })
     
     # Sort all activities by timestamp (most recent first)
