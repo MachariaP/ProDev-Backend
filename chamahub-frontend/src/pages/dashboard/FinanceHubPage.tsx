@@ -33,7 +33,7 @@ import {
 
 // API services
 import { financeService, analyticsService, groupsService } from '../../services/apiService';
-import type { DashboardStats, Contribution, ChamaGroup } from '../../types/api';
+import type { DashboardStats, ChamaGroup } from '../../types/api';
 import { formatCurrency, formatTimeAgo } from '../../utils/formatting';
 
 // Types
@@ -406,6 +406,7 @@ export function FinanceHubPage() {
 
         let successfulCalls = 0;
         const results: any = {};
+        let calculatedTotalExpenses = 0;
 
         // Process each promise result
         if (groupStats.status === 'fulfilled' && groupStats.value) {
@@ -426,10 +427,10 @@ export function FinanceHubPage() {
           console.log('✅ Expenses loaded:', results.expenses.length);
           
           // Calculate total expenses
-          const totalExpensesAmount = results.expenses.reduce((sum: number, expense: any) => {
+          calculatedTotalExpenses = results.expenses.reduce((sum: number, expense: any) => {
             return sum + (parseFloat(expense.amount) || 0);
           }, 0);
-          setTotalExpenses(totalExpensesAmount);
+          setTotalExpenses(calculatedTotalExpenses);
         }
 
         // Determine API status
@@ -447,8 +448,7 @@ export function FinanceHubPage() {
         // Transform and set data
         const processedSummary = processFinanceData(
           results.groupStats,
-          results.transactions,
-          results.expenses || []
+          results.transactions
         );
 
         setFinanceSummary(processedSummary);
@@ -462,8 +462,7 @@ export function FinanceHubPage() {
         // Calculate available cash (total balance minus active loans and expenses)
         const totalBalance = processedSummary.total_balance || 0;
         const activeLoansTotal = (processedSummary.active_loans || 0) * 10000; // Estimate average loan amount
-        const expensesTotal = totalExpensesAmount || 0;
-        const calculatedAvailableCash = Math.max(0, totalBalance - activeLoansTotal - expensesTotal);
+        const calculatedAvailableCash = Math.max(0, totalBalance - activeLoansTotal - calculatedTotalExpenses);
         setAvailableCash(calculatedAvailableCash);
 
         // Calculate monthly target (based on group's minimum contribution and members)
@@ -489,8 +488,8 @@ export function FinanceHubPage() {
             : 'Needs attention';
         
         // Expenses module - REAL DATA
-        updatedModules[2].stats = formatCurrency(totalExpensesAmount);
-        updatedModules[2].trend = totalExpensesAmount > (processedSummary.monthly_contributions * 0.3) 
+        updatedModules[2].stats = formatCurrency(calculatedTotalExpenses);
+        updatedModules[2].trend = calculatedTotalExpenses > (processedSummary.monthly_contributions * 0.3) 
           ? 'High' 
           : 'Normal';
         
@@ -507,7 +506,7 @@ export function FinanceHubPage() {
           monthlyContributions: processedSummary.monthly_contributions,
           activeLoans: processedSummary.active_loans,
           pendingApprovals: processedSummary.pending_approvals,
-          expenses: totalExpensesAmount,
+          expenses: calculatedTotalExpenses,
           availableCash: calculatedAvailableCash,
           monthlyTarget: monthlyTargetAmount
         });
@@ -546,13 +545,11 @@ export function FinanceHubPage() {
   // Process finance data from API responses - NO MORE MOCKED DATA
   const processFinanceData = (
     groupStats: any, 
-    transactions: any[], 
-    expenses: any[]
+    transactions: any[]
   ): FinanceSummary => {
     console.log('🔄 Processing REAL finance data:', {
       hasGroupStats: !!groupStats,
-      hasTransactions: !!transactions,
-      hasExpenses: !!expenses
+      hasTransactions: !!transactions
     });
 
     // Calculate monthly contributions from transactions
@@ -562,6 +559,7 @@ export function FinanceHubPage() {
     
     const monthlyContributions = transactions
       .filter((tx: any) => {
+        if (!tx.created_at) return false;
         const txDate = new Date(tx.created_at);
         return tx.transaction_type === 'contribution' && 
                txDate.getMonth() === currentMonth &&
@@ -611,7 +609,7 @@ export function FinanceHubPage() {
       try {
         console.log('🔄 Refreshing finance data...');
         const groupStats = await analyticsService.getGroupStats(parseInt(selectedGroupId));
-        const processedSummary = processFinanceData(groupStats, recentTransactions, []);
+        const processedSummary = processFinanceData(groupStats, recentTransactions);
         setFinanceSummary(processedSummary);
         setApiStatus('success');
         console.log('✅ Finance data refreshed');
