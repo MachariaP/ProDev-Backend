@@ -14,5 +14,5 @@ router.register(r'bulk-notifications', BulkNotificationViewSet, basename='bulk-n
 
 urlpatterns = [
     path('', include(router.urls)),
-    path('notifications/recent/', recent_notifications, name='recent-notifications'),
+    path('recent/', recent_notifications, name='recent-notifications'),
 ]

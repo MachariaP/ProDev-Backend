@@ -7,4 +7,9 @@ class NotificationsConfig(AppConfig):
     
     def ready(self):
         """Import signals when app is ready"""
-        import notifications.signals
+        # Import signals module to register signal handlers
+        try:
+            import notifications.signals
+        except ImportError:
+            # Signals module might not exist yet, which is fine
+            pass
