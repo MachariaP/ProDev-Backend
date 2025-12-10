@@ -94,6 +94,9 @@ INSTALLED_APPS = [
     'api_gateway',
     'gamification',
     'education_hub',
+
+    # New notifications app
+    'notifications',
 ]
 
 MIDDLEWARE = [
@@ -107,8 +110,12 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'auditlog.middleware.AuditlogMiddleware',
+
     # Custom activity monitoring middleware
     'chamahub.middleware.ActivityMonitoringMiddleware',
+
+    # Add error handling middleware
+    'chamahub.middleware.ErrorHandlingMiddleware',
 ]
 
 ROOT_URLCONF = 'chamahub.urls'
