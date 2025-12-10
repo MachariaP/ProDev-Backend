@@ -33,11 +33,22 @@ import {
 
 // API services
 import { financeService, analyticsService, groupsService } from '../../services/apiService';
-import type { DashboardStats, Transaction, ChamaGroup } from '../../types/api';
+import type { DashboardStats, Contribution, ChamaGroup } from '../../types/api';
 import { formatCurrency, formatTimeAgo } from '../../utils/formatting';
 
 // Types
 type Group = ChamaGroup;
+
+// Define Transaction type since it's not in the API types
+interface Transaction {
+  id: number;
+  transaction_type: 'contribution' | 'loan' | 'expense' | 'investment' | 'loan_repayment' | string;
+  amount: string | number;
+  user?: { full_name: string };
+  description?: string;
+  status: string;
+  created_at: string;
+}
 
 type FinanceSummary = DashboardStats & {
   loan_recovery_rate: number;
@@ -60,10 +71,9 @@ const CardContent = ({ children, className = '' }: { children: React.ReactNode; 
 );
 
 // Enhanced Progress Bar with better visuals - Now using real data
-const FundProgress = ({ percentage, availableCash, targetAmount }: { 
+const FundProgress = ({ percentage, availableCash }: { 
   percentage: number; 
   availableCash: number; 
-  targetAmount: number;
 }) => {
   const normalizedPercentage = Math.max(0, Math.min(100, percentage));
 
@@ -452,7 +462,7 @@ export function FinanceHubPage() {
         // Calculate available cash (total balance minus active loans and expenses)
         const totalBalance = processedSummary.total_balance || 0;
         const activeLoansTotal = (processedSummary.active_loans || 0) * 10000; // Estimate average loan amount
-        const expensesTotal = totalExpenses || 0;
+        const expensesTotal = totalExpensesAmount || 0;
         const calculatedAvailableCash = Math.max(0, totalBalance - activeLoansTotal - expensesTotal);
         setAvailableCash(calculatedAvailableCash);
 
@@ -479,8 +489,8 @@ export function FinanceHubPage() {
             : 'Needs attention';
         
         // Expenses module - REAL DATA
-        updatedModules[2].stats = formatCurrency(totalExpenses);
-        updatedModules[2].trend = totalExpenses > (processedSummary.monthly_contributions * 0.3) 
+        updatedModules[2].stats = formatCurrency(totalExpensesAmount);
+        updatedModules[2].trend = totalExpensesAmount > (processedSummary.monthly_contributions * 0.3) 
           ? 'High' 
           : 'Normal';
         
@@ -497,7 +507,7 @@ export function FinanceHubPage() {
           monthlyContributions: processedSummary.monthly_contributions,
           activeLoans: processedSummary.active_loans,
           pendingApprovals: processedSummary.pending_approvals,
-          expenses: totalExpenses,
+          expenses: totalExpensesAmount,
           availableCash: calculatedAvailableCash,
           monthlyTarget: monthlyTargetAmount
         });
@@ -546,15 +556,20 @@ export function FinanceHubPage() {
     });
 
     // Calculate monthly contributions from transactions
+    const now = new Date();
+    const currentMonth = now.getMonth();
+    const currentYear = now.getFullYear();
+    
     const monthlyContributions = transactions
-      .filter((tx: any) => 
-        tx.transaction_type === 'contribution' && 
-        new Date(tx.created_at).getMonth() === new Date().getMonth()
-      )
+      .filter((tx: any) => {
+        const txDate = new Date(tx.created_at);
+        return tx.transaction_type === 'contribution' && 
+               txDate.getMonth() === currentMonth &&
+               txDate.getFullYear() === currentYear;
+      })
       .reduce((sum: number, tx: any) => sum + (parseFloat(tx.amount) || 0), 0);
 
     // Calculate fund growth (current month vs last month)
-    const currentMonth = new Date().getMonth();
     const lastMonthContributions = 0; // Would need historical data to calculate properly
     
     const fundGrowth = lastMonthContributions > 0 
@@ -633,7 +648,7 @@ export function FinanceHubPage() {
           new Date(tx.created_at).toLocaleDateString(),
           tx.transaction_type,
           tx.user?.full_name || 'Member',
-          formatCurrency(parseFloat(tx.amount || 0)),
+          formatCurrency(typeof tx.amount === 'string' ? parseFloat(tx.amount) : tx.amount || 0),
           tx.status
         ])
       ].map(row => row.join(',')).join('\n');
@@ -959,7 +974,6 @@ export function FinanceHubPage() {
               <FundProgress 
                 percentage={fundUtilizationPercentage}
                 availableCash={availableCash}
-                targetAmount={monthlyTarget}
               />
             </CardContent>
           </Card>
@@ -1170,7 +1184,7 @@ export function FinanceHubPage() {
                                 ? 'text-green-600'
                                 : 'text-red-600'
                             }`}>
-                              {formatCurrency(parseFloat(transaction.amount || 0))}
+                              {formatCurrency(typeof transaction.amount === 'string' ? parseFloat(transaction.amount) : transaction.amount || 0)}
                             </p>
                             <div className="flex items-center gap-2 justify-end">
                               <span className="text-xs text-gray-400">{formatTimeAgo(transaction.created_at)}</span>
