@@ -20,7 +20,7 @@ import {
   Eye,
   Shield
 } from 'lucide-react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
 import api from '../../services/api';
 
 interface TransactionDetails {
