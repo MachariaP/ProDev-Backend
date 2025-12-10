@@ -97,9 +97,30 @@ export function WealthEnginePage() {
         </motion.div>
 
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <StatsCard title="Automated Investments" value={`KES ${stats.total_automated.toLocaleString()}`} icon={Zap} iconClassName="bg-purple-100 text-purple-600" />
-          <StatsCard title="Projected Returns" value={`KES ${stats.projected_returns.toLocaleString()}`} icon={TrendingUp} iconClassName="bg-green-100 text-green-600" />
-          <StatsCard title="Active Investments" value={stats.active_investments} icon={Target} iconClassName="bg-blue-100 text-blue-600" />
+          <StatsCard 
+            title="Automated Investments" 
+            value={stats.total_automated} 
+            trend={0}
+            icon={Zap} 
+            iconClassName="bg-purple-100 text-purple-600" 
+            formatAsCurrency={true}
+          />
+          <StatsCard 
+            title="Projected Returns" 
+            value={stats.projected_returns} 
+            trend={0}
+            icon={TrendingUp} 
+            iconClassName="bg-green-100 text-green-600" 
+            formatAsCurrency={true}
+          />
+          <StatsCard 
+            title="Active Investments" 
+            value={stats.active_investments} 
+            trend={0}
+            icon={Target} 
+            iconClassName="bg-blue-100 text-blue-600" 
+            formatAsCurrency={false}
+          />
         </motion.div>
 
         <Card>

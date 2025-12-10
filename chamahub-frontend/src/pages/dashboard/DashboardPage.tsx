@@ -22,15 +22,13 @@ import {
   CheckCircle2,
   XCircle,
   Calendar,
-  Filter,
-  ChevronDown,
   AlertCircle,
   Target,
   Sparkles
 } from 'lucide-react';
 import { StatsCard } from '../../components/StatsCard';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../../components/ui/card';
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, PieChart as RechartsPieChart, Pie, Cell, LineChart, Line, Brush } from 'recharts';
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, PieChart as RechartsPieChart, Pie, Cell, Brush } from 'recharts';
 import { useState, useEffect, useMemo } from 'react';
 import { Badge } from '../../components/ui/badge';
 import { Button } from '../../components/ui/button';
@@ -39,7 +37,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Tabs, TabsList, TabsTrigger } from '../../components/ui/tabs';
 import { groupsService, analyticsService, financeService, notificationsService } from '../../services/apiService';
 import type { ChamaGroup, Notification } from '../../types/api';
-import { formatCurrency, formatPercentage, formatTimeAgo, abbreviateNumber } from '../../utils/formatting';
+import { formatCurrency, formatTimeAgo, abbreviateNumber } from '../../utils/formatting';
 
 const containerVariants: Variants = {
   hidden: { opacity: 0 },
@@ -433,7 +431,6 @@ export function DashboardPage() {
       // Transform the data with time range filter
       const transformedData = transformDashboardData(
         results.groupStats,
-        results.recentActivity,
         results.transactions?.results || [],
         timeRange
       );
@@ -452,7 +449,6 @@ export function DashboardPage() {
   // Transform API data with time range filtering
   const transformDashboardData = (
     groupStats: any,
-    recentActivity: any,
     transactionsData: any[],
     range: string
   ) => {
@@ -555,7 +551,6 @@ export function DashboardPage() {
       // Re-transform data with new time range
       const transformedData = transformDashboardData(
         dashboardData.rawStats,
-        dashboardData.rawActivity,
         dashboardData.rawTransactions || [],
         range
       );
