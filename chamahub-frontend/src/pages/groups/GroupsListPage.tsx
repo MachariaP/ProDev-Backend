@@ -1,5 +1,5 @@
-import React, { createContext } from 'react';
-import { useState, useEffect, useContext } from 'react';
+// chamahub-frontend/src/pages/groups/GroupsListPage.tsx
+import { useState, useEffect, createContext } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -25,10 +25,9 @@ import {
   Filter,
   Search,
   Clock,
-  ChartNoAxesCombined,
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/card';
-import { groupsService, analyticsService } from '../../services/apiService';
+import { groupsService } from '../../services/apiService';
 import type { ChamaGroup } from '../../types/api';
 
 // Create Groups Context
@@ -132,6 +131,14 @@ const AnimatedStatCard = ({
   );
 };
 
+// Interface for QuickStat
+interface QuickStat {
+  title: string;
+  value: string | number;
+  icon: React.ComponentType<{ className?: string }>;
+  color: string;
+}
+
 // Group Insights Component with Real Data
 const GroupInsights = ({ groups }: { groups: ChamaGroup[] }) => {
   const navigate = useNavigate();
@@ -140,7 +147,7 @@ const GroupInsights = ({ groups }: { groups: ChamaGroup[] }) => {
   const calculateInsights = () => {
     if (!groups || groups.length === 0) {
       return {
-        mostActiveGroup: { name: 'No groups', balance: 0, id: null },
+        mostActiveGroup: { name: 'No groups', balance: 0, id: null, type: null },
         growthRate: 0,
         memberEngagement: 0,
         totalGroups: 0,
@@ -219,7 +226,7 @@ const GroupInsights = ({ groups }: { groups: ChamaGroup[] }) => {
     },
   ];
 
-  const quickStats = [
+  const quickStats: QuickStat[] = [
     {
       title: 'Total Groups',
       value: calculatedInsights.totalGroups,
@@ -260,7 +267,7 @@ const GroupInsights = ({ groups }: { groups: ChamaGroup[] }) => {
     }
   };
 
-  const handleQuickStatClick = (stat: { title: string }) => {
+  const handleQuickStatClick = (stat: QuickStat) => {
     switch (stat.title) {
       case 'Total Groups':
         document.getElementById('groups-list')?.scrollIntoView({ behavior: 'smooth' });

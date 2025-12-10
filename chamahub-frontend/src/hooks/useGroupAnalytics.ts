@@ -1,9 +1,10 @@
 // chamahub-frontend/src/hooks/useGroupAnalytics.ts
 import { useState, useEffect } from 'react';
 import { analyticsService } from '../services/apiService';
+import type { AnalyticsData } from '../types/api';
 
 export const useGroupAnalytics = (groupId?: number) => {
-  const [analytics, setAnalytics] = useState(null);
+  const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -15,7 +16,8 @@ export const useGroupAnalytics = (groupId?: number) => {
       const data = await analyticsService.getDashboardAnalytics(id);
       setAnalytics(data);
     } catch (err) {
-      setError(err.message || 'Failed to fetch analytics');
+      const errorMessage = err instanceof Error ? err.message : 'Failed to fetch analytics';
+      setError(errorMessage);
       console.error('Analytics fetch error:', err);
     } finally {
       setLoading(false);
@@ -65,7 +67,7 @@ const convertToCSV = (data: any): string => {
   Object.entries(data.analytics).forEach(([key, value]) => {
     if (Array.isArray(value)) {
       rows.push([key, JSON.stringify(value)]);
-    } else if (typeof value === 'object') {
+    } else if (typeof value === 'object' && value !== null) {
       rows.push([key, JSON.stringify(value)]);
     } else {
       rows.push([key, value]);
