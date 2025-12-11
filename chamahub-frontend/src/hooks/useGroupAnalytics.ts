@@ -1,10 +1,14 @@
-// chamahub-frontend/src/hooks/useGroupAnalytics.ts
 import { useState, useEffect } from 'react';
 import { analyticsService } from '../services/apiService';
 import type { AnalyticsData } from '../types/api';
 
+// Create a partial version of AnalyticsData since weekly_activity is optional
+type PartialAnalyticsData = Omit<AnalyticsData, 'weekly_activity'> & {
+  weekly_activity?: AnalyticsData['weekly_activity'];
+};
+
 export const useGroupAnalytics = (groupId?: number) => {
-  const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
+  const [analytics, setAnalytics] = useState<PartialAnalyticsData | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -14,7 +18,17 @@ export const useGroupAnalytics = (groupId?: number) => {
     setLoading(true);
     try {
       const data = await analyticsService.getDashboardAnalytics(id);
-      setAnalytics(data);
+      // Transform the API response to match our PartialAnalyticsData type
+      const transformedData: PartialAnalyticsData = {
+        ...data,
+        member_activity: (data.member_activity || []).map(item => ({
+          member_name: item.member_name,
+          transactions: item.transactions,
+          contributions: (item as any).contributions || 0, // Default to 0 if not provided
+        })),
+        weekly_activity: (data as any).weekly_activity || undefined,
+      };
+      setAnalytics(transformedData);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to fetch analytics';
       setError(errorMessage);
@@ -45,7 +59,6 @@ export const useGroupAnalytics = (groupId?: number) => {
       };
       
       if (format === 'csv') {
-        // Convert to CSV
         const csv = convertToCSV(exportData);
         downloadFile(csv, `analytics-${groupId}-${new Date().toISOString().split('T')[0]}.csv`, 'text/csv');
       } else {
@@ -60,7 +73,6 @@ export const useGroupAnalytics = (groupId?: number) => {
 };
 
 const convertToCSV = (data: any): string => {
-  // Simple CSV conversion
   const rows = [];
   rows.push(['Metric', 'Value']);
   

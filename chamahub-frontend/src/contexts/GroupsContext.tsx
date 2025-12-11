@@ -1,5 +1,5 @@
-// chamahub-frontend/src/contexts/GroupsContext.tsx
-import React, { createContext, useState, useContext, ReactNode } from 'react';
+import { createContext, useState, useContext } from 'react';
+import type { ReactNode } from 'react';
 import type { ChamaGroup } from '../types/api';
 
 interface GroupsContextType {
@@ -27,8 +27,6 @@ export const GroupsProvider: React.FC<GroupsProviderProps> = ({ children }) => {
   const [groups, setGroups] = useState<ChamaGroup[]>([]);
 
   const refreshGroups = async () => {
-    // This would fetch from API in real implementation
-    // For now, we'll just keep the existing groups
     return Promise.resolve();
   };
 
