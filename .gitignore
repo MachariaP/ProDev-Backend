@@ -75,3 +75,10 @@ chamahub-frontend/.env.test.local
 
 test_chat.db
 celery_config_old.py.bak
+
+.env.backup.20251216_105723
+.env.backup.20251216_110550
+.env.backup.20251216_131244
+.env10
+mpesa.sh
+
