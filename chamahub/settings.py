@@ -79,6 +79,7 @@ INSTALLED_APPS = [
     'api_gateway',
     'gamification',
     'education_hub',
+    'notifications',
 ]
 
 MIDDLEWARE = [
