@@ -220,8 +220,7 @@ SIMPLE_JWT = {
 # CORS Configuration
 CORS_ALLOWED_ORIGINS = config(
     'CORS_ALLOWED_ORIGINS',
-    'https://chama-hub-qe2d.onrender.com',
-    default='http://localhost:3000,http://localhost:5173'
+    default='https://chama-hub-qe2d.onrender.com,http://localhost:3000,http://localhost:5173'
 ).split(',')
 
 # Additional CORS configuration for production deployments
