@@ -12,7 +12,6 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 
 import os
 import dj_database_url
-
 from pathlib import Path
 from datetime import timedelta
 from decouple import config
@@ -22,8 +21,9 @@ from decouple import config
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 
-# Quick-start development settings - unsuitable for production
-# See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
+# ============================================================================
+# SECURITY & DEPLOYMENT SETTINGS
+# ============================================================================
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = config('SECRET_KEY', default='django-insecure-cg+((k*kk=t^*x09(3npqs0-7rg)zl&@a4eqlb8kyvvtz!-icn')
@@ -31,6 +31,7 @@ SECRET_KEY = config('SECRET_KEY', default='django-insecure-cg+((k*kk=t^*x09(3npq
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = config('DEBUG', default=True, cast=bool)
 
+# Application deployment hosts
 ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='localhost,127.0.0.1').split(',')
 
 # Add Render.com hostname support
@@ -45,7 +46,7 @@ ALLOWED_HOSTS.extend([
     'chama-hub-qe2d.onrender.com',
 ])
 
-# Security settings
+# Cross-Site Request Forgery protection
 CSRF_TRUSTED_ORIGINS = [
     'https://chama-hub.onrender.com',
     'https://*.onrender.com',
@@ -54,9 +55,13 @@ CSRF_TRUSTED_ORIGINS = [
     'https://chama-hub-qe2d.onrender.com',
 ]
 
-# Application definition
+
+# ============================================================================
+# APPLICATION DEFINITION
+# ============================================================================
 
 INSTALLED_APPS = [
+    # Django core applications
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -64,7 +69,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     
-    # Third-party apps
+    # Third-party applications
     'rest_framework',
     'rest_framework_simplejwt',
     'rest_framework_simplejwt.token_blacklist',
@@ -72,15 +77,17 @@ INSTALLED_APPS = [
     'django_filters',
     'auditlog',
     'drf_spectacular',
+    'whitenoise.runserver_nostatic',  # For serving static files in development
     
-    # Local apps
+    # Local applications - Core
     'accounts',
     'groups',
     'finance',
     'governance',
     'investments',
+    'notifications',
     
-    # New fintech apps
+    # Local applications - Fintech & Integration
     'mpesa_integration',
     'wealth_engine',
     'credit_scoring',
@@ -94,27 +101,27 @@ INSTALLED_APPS = [
     'api_gateway',
     'gamification',
     'education_hub',
-
-    # New notifications app
-    'notifications',
 ]
 
 MIDDLEWARE = [
+    # Security and CORS
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',
+    
+    # Django core middleware
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    
+    # Audit and monitoring
     'auditlog.middleware.AuditlogMiddleware',
-
-    # Custom activity monitoring middleware
+    
+    # Custom middleware
     'chamahub.middleware.ActivityMonitoringMiddleware',
-
-    # Add error handling middleware
     'chamahub.middleware.ErrorHandlingMiddleware',
 ]
 
@@ -138,10 +145,17 @@ TEMPLATES = [
 WSGI_APPLICATION = 'chamahub.wsgi.application'
 
 
-# Database configuration
+# ============================================================================
+# DATABASE CONFIGURATION
+# ============================================================================
+
 DATABASE_URL = os.environ.get('DATABASE_URL')
 
 if DATABASE_URL:
+    """
+    Production database configuration using PostgreSQL.
+    Parses the DATABASE_URL environment variable and configures SSL.
+    """
     # Parse the database URL
     db_config = dj_database_url.parse(DATABASE_URL)
     
@@ -155,6 +169,10 @@ if DATABASE_URL:
         'default': db_config
     }
 else:
+    """
+    Development database configuration using SQLite.
+    Used when DATABASE_URL environment variable is not set.
+    """
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.sqlite3',
@@ -162,7 +180,11 @@ else:
         }
     }
 
-# Password validation
+
+# ============================================================================
+# PASSWORD VALIDATION
+# ============================================================================
+
 AUTH_PASSWORD_VALIDATORS = [
     {
         'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
@@ -178,25 +200,45 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-# Internationalization
+
+# ============================================================================
+# INTERNATIONALIZATION
+# ============================================================================
+
 LANGUAGE_CODE = 'en-us'
 TIME_ZONE = 'Africa/Nairobi'
 USE_I18N = True
 USE_TZ = True
 
-# Static files
+
+# ============================================================================
+# STATIC & MEDIA FILES
+# ============================================================================
+
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 STATIC_URL = 'static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 
-# WhiteNoise configuration
+# Additional static file directories
+STATICFILES_DIRS = [
+    BASE_DIR / 'static',
+]
+
+# WhiteNoise configuration for serving static files
 WHITENOISE_AUTOREFRESH = True
 WHITENOISE_USE_FINDERS = True
 
+# Media files (uploads)
 MEDIA_URL = 'media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
+# Default primary key field type
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+
+# ============================================================================
+# AUTHENTICATION & USER MODEL
+# ============================================================================
 
 # Custom User Model
 AUTH_USER_MODEL = 'accounts.User'
@@ -221,9 +263,10 @@ REST_FRAMEWORK = {
         'rest_framework.renderers.JSONRenderer',
         'rest_framework.renderers.BrowsableAPIRenderer',
     ],
+    'EXCEPTION_HANDLER': 'rest_framework.views.exception_handler',
 }
 
-# JWT Configuration
+# JSON Web Token Configuration
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60),
     'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
@@ -236,9 +279,14 @@ SIMPLE_JWT = {
     'AUTH_HEADER_NAME': 'HTTP_AUTHORIZATION',
     'USER_ID_FIELD': 'id',
     'USER_ID_CLAIM': 'user_id',
+    'TOKEN_TYPE_CLAIM': 'token_type',
 }
 
-# CORS Configuration
+
+# ============================================================================
+# CORS (CROSS-ORIGIN RESOURCE SHARING) CONFIGURATION
+# ============================================================================
+
 CORS_ALLOWED_ORIGINS = config(
     'CORS_ALLOWED_ORIGINS',
     default='http://localhost:5173,http://127.0.0.1:5173,https://chama-hub.onrender.com,https://chama-hub-qe2d.onrender.com'
@@ -257,14 +305,18 @@ CORS_ALLOW_METHODS = [
 CORS_ALLOW_HEADERS = [
     'accept', 'accept-encoding', 'authorization', 'content-type',
     'dnt', 'origin', 'user-agent', 'x-csrftoken', 'x-requested-with',
-    'x-api-key',
+    'x-api-key', 'x-mpesa-signature', 'x-mpesa-request-id',
 ]
 
 CORS_EXPOSE_HEADERS = [
-    'content-type', 'x-csrftoken', 'x-api-version',
+    'content-type', 'x-csrftoken', 'x-api-version', 'x-transaction-id',
 ]
 
-# Email Configuration (Enhanced for production)
+
+# ============================================================================
+# EMAIL CONFIGURATION
+# ============================================================================
+
 EMAIL_BACKEND = config('EMAIL_BACKEND', default='django.core.mail.backends.console.EmailBackend')
 EMAIL_HOST = config('EMAIL_HOST', default='smtp.gmail.com')
 EMAIL_PORT = config('EMAIL_PORT', default=587, cast=int)
@@ -280,32 +332,199 @@ FRONTEND_URL = config('FRONTEND_URL', default='http://localhost:5173')
 # Password reset settings
 PASSWORD_RESET_TIMEOUT = 86400  # 24 hours in seconds
 
-# API Documentation
+
+# ============================================================================
+# M-PESA DARAJA API CONFIGURATION
+# ============================================================================
+
+MPESA_ENVIRONMENT = config('MPESA_ENVIRONMENT', default='sandbox')  # 'sandbox' or 'production'
+MPESA_CONSUMER_KEY = config('MPESA_CONSUMER_KEY', default='')
+MPESA_CONSUMER_SECRET = config('MPESA_CONSUMER_SECRET', default='')
+MPESA_BUSINESS_SHORTCODE = config('MPESA_BUSINESS_SHORTCODE', default='')
+MPESA_PASSKEY = config('MPESA_PASSKEY', default='')
+MPESA_CALLBACK_URL = config(
+    'MPESA_CALLBACK_URL', 
+    default='http://localhost:8000/api/v1/mpesa/callbacks/mpesa/'
+)
+
+# Set base URL based on environment
+if MPESA_ENVIRONMENT == 'production':
+    MPESA_BASE_URL = 'https://api.safaricom.co.ke'
+    MPESA_CALLBACK_URL = config('MPESA_PRODUCTION_CALLBACK_URL', MPESA_CALLBACK_URL)
+else:
+    MPESA_BASE_URL = 'https://sandbox.safaricom.co.ke'
+    MPESA_CALLBACK_URL = config('MPESA_SANDBOX_CALLBACK_URL', MPESA_CALLBACK_URL)
+
+# Public key for callback signature validation
+MPESA_PUBLIC_KEY = config('MPESA_PUBLIC_KEY', default='''-----BEGIN PUBLIC KEY-----
+MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAvVjllJcVQi4TXgiPHWRF
+xpTHGX6sz0jQXgq9a1jF6W3Z1JXqR0p0xYv2N0R5fK5R7U5Xw5X5K5R7U5Xw5X5
+... (Your public key here) ...
+-----END PUBLIC KEY-----
+''')
+
+# M-Pesa transaction limits (in KES)
+MPESA_TRANSACTION_LIMIT = 150000  # Maximum per transaction
+MPESA_DAILY_LIMIT = 300000  # Maximum daily per customer
+MPESA_STK_PUSH_TIMEOUT = 600  # 10 minutes in seconds
+
+
+# ============================================================================
+# FINANCIAL & PAYMENT SETTINGS
+# ============================================================================
+
+# Default currency
+DEFAULT_CURRENCY = 'KES'
+
+# Transaction fees configuration
+MPESA_TRANSACTION_FEES = {
+    '1_100': 0,  # KES 0 for 1-100
+    '101_1000': 27.5,  # KES 27.5 for 101-1000
+    '1001_10000': 27.5,  # KES 27.5 for 1001-10000
+    '10001_150000': 27.5,  # KES 27.5 for 10001-150000
+}
+
+# Contribution settings
+MINIMUM_CONTRIBUTION_AMOUNT = 50.00  # Minimum contribution amount
+CONTRIBUTION_REMINDER_DAYS = 3  # Days before contribution due date
+
+
+# ============================================================================
+# API DOCUMENTATION (DRF SPECTACULAR)
+# ============================================================================
+
 SPECTACULAR_SETTINGS = {
     'TITLE': 'ChamaHub API',
-    'DESCRIPTION': 'API for managing Chama (savings groups) operations including onboarding, finances, governance, and investments',
+    'DESCRIPTION': '''
+    # ChamaHub API Documentation
+    
+    REST API for managing Chama (savings groups) operations including:
+    - User authentication and management
+    - Group creation and membership
+    - Financial transactions (contributions, loans, expenses)
+    - M-Pesa payment integration
+    - Investment portfolio management
+    - Governance and voting systems
+    
+    ## Authentication
+    All endpoints require JWT authentication except:
+    - User registration
+    - Password reset
+    - M-Pesa callbacks
+    
+    ## Versioning
+    API version: v1
+    
+    ## Base URL
+    Production: https://chama-hub.onrender.com/api/v1/
+    Development: http://localhost:8000/api/v1/
+    ''',
     'VERSION': '1.0.0',
     'SERVE_INCLUDE_SCHEMA': False,
     'SERVE_PUBLIC': True,
     'COMPONENT_SPLIT_REQUEST': True,
     'SCHEMA_PATH_PREFIX': r'/api/v[0-9]',
+    'SCHEMA_COERCE_PATH_PK_SUFFIX': True,
+    'ENUM_NAME_OVERRIDES': {
+        'TransactionStatusEnum': 'finance.models.Contribution.STATUS_CHOICES',
+        'MPesaStatusEnum': 'mpesa_integration.models.MPesaTransaction.STATUS_CHOICES',
+    },
+    'POSTPROCESSING_HOOKS': [
+        'drf_spectacular.hooks.postprocess_schema_enums',
+    ],
+    'SWAGGER_UI_SETTINGS': {
+        'deepLinking': True,
+        'persistAuthorization': True,
+        'displayOperationId': True,
+        'filter': True,
+    },
+    'TAGS': [
+        {'name': 'Authentication', 'description': 'User registration and authentication endpoints'},
+        {'name': 'Users', 'description': 'User profile and management'},
+        {'name': 'Groups', 'description': 'Chama group management'},
+        {'name': 'Finance', 'description': 'Contributions, loans, expenses, and transactions'},
+        {'name': 'M-Pesa', 'description': 'M-Pesa payment integration endpoints'},
+        {'name': 'Investments', 'description': 'Investment portfolio management'},
+        {'name': 'Governance', 'description': 'Voting and decision making'},
+        {'name': 'Reports', 'description': 'Financial reports and analytics'},
+    ],
 }
 
-# File Upload Settings
-FILE_UPLOAD_MAX_MEMORY_SIZE = 5242880  # 5MB
-DATA_UPLOAD_MAX_MEMORY_SIZE = 5242880  # 5MB
 
-# Security settings for production
+# ============================================================================
+# FILE UPLOAD SETTINGS
+# ============================================================================
+
+FILE_UPLOAD_MAX_MEMORY_SIZE = 10 * 1024 * 1024  # 10MB
+DATA_UPLOAD_MAX_MEMORY_SIZE = 10 * 1024 * 1024  # 10MB
+FILE_UPLOAD_PERMISSIONS = 0o644
+FILE_UPLOAD_DIRECTORY_PERMISSIONS = 0o755
+
+# Allowed file upload extensions
+ALLOWED_UPLOAD_EXTENSIONS = [
+    '.pdf', '.doc', '.docx', '.xls', '.xlsx', '.csv',
+    '.jpg', '.jpeg', '.png', '.gif',
+    '.mp3', '.mp4', '.wav',
+]
+
+# Maximum file sizes for different types
+MAX_FILE_SIZES = {
+    'image': 5 * 1024 * 1024,  # 5MB
+    'document': 10 * 1024 * 1024,  # 10MB
+    'video': 50 * 1024 * 1024,  # 50MB
+    'audio': 10 * 1024 * 1024,  # 10MB
+}
+
+
+# ============================================================================
+# SECURITY SETTINGS FOR PRODUCTION
+# ============================================================================
+
 if not DEBUG:
+    # HTTPS/SSL settings
     SECURE_SSL_REDIRECT = True
     SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
     SECURE_HSTS_SECONDS = 31536000  # 1 year
     SECURE_HSTS_INCLUDE_SUBDOMAINS = True
     SECURE_HSTS_PRELOAD = True
+    
+    # Cookie settings
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
+    SESSION_COOKIE_HTTPONLY = True
+    CSRF_COOKIE_HTTPONLY = True
+    SESSION_COOKIE_SAMESITE = 'Lax'
+    CSRF_COOKIE_SAMESITE = 'Lax'
+    
+    # Additional security headers
+    SECURE_BROWSER_XSS_FILTER = True
+    SECURE_CONTENT_TYPE_NOSNIFF = True
+    X_FRAME_OPTIONS = 'DENY'
+    
+    # Password validation
+    AUTH_PASSWORD_VALIDATORS = [
+        {
+            'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
+        },
+        {
+            'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
+            'OPTIONS': {
+                'min_length': 12,
+            }
+        },
+        {
+            'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
+        },
+        {
+            'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
+        },
+    ]
 
-# Logging Configuration
+
+# ============================================================================
+# LOGGING CONFIGURATION
+# ============================================================================
+
 LOGS_DIR = BASE_DIR / 'logs'
 LOGS_DIR.mkdir(parents=True, exist_ok=True)
 
@@ -326,6 +545,11 @@ LOGGING = {
             'style': '{',
             'datefmt': '%Y-%m-%d %H:%M:%S',
         },
+        'mpesa_formatter': {
+            'format': '[{asctime}] {levelname} M-Pesa {transaction_id}: {message}',
+            'style': '{',
+            'datefmt': '%Y-%m-%d %H:%M:%S',
+        },
     },
     'handlers': {
         'console': {
@@ -334,17 +558,17 @@ LOGGING = {
         },
         'file': {
             'class': 'logging.FileHandler',
-            'filename': BASE_DIR / 'logs' / 'django.log',
+            'filename': LOGS_DIR / 'django.log',
             'formatter': 'verbose',
         },
         'auth_file': {
             'class': 'logging.FileHandler',
-            'filename': BASE_DIR / 'logs' / 'auth.log',
+            'filename': LOGS_DIR / 'auth.log',
             'formatter': 'verbose',
         },
         'email_file': {
             'class': 'logging.FileHandler',
-            'filename': BASE_DIR / 'logs' / 'email.log',
+            'filename': LOGS_DIR / 'email.log',
             'formatter': 'verbose',
         },
         'user_activity_console': {
@@ -353,13 +577,28 @@ LOGGING = {
         },
         'user_activity_file': {
             'class': 'logging.FileHandler',
-            'filename': BASE_DIR / 'logs' / 'user_activity.log',
+            'filename': LOGS_DIR / 'user_activity.log',
             'formatter': 'user_activity_formatter',
+        },
+        'mpesa_console': {
+            'class': 'logging.StreamHandler',
+            'formatter': 'mpesa_formatter',
+        },
+        'mpesa_file': {
+            'class': 'logging.FileHandler',
+            'filename': LOGS_DIR / 'mpesa.log',
+            'formatter': 'mpesa_formatter',
+        },
+        'error_file': {
+            'class': 'logging.FileHandler',
+            'filename': LOGS_DIR / 'errors.log',
+            'formatter': 'verbose',
+            'level': 'ERROR',
         },
     },
     'loggers': {
         'django': {
-            'handlers': ['console', 'file'],
+            'handlers': ['console', 'file', 'error_file'],
             'level': 'INFO',
             'propagate': True,
         },
@@ -378,5 +617,298 @@ LOGGING = {
             'level': 'INFO',
             'propagate': False,
         },
+        'mpesa_integration': {
+            'handlers': ['mpesa_console', 'mpesa_file', 'error_file'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+        'finance': {
+            'handlers': ['console', 'file', 'error_file'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+        'groups': {
+            'handlers': ['console', 'file'],
+            'level': 'INFO',
+            'propagate': False,
+        },
     },
 }
+
+
+# ============================================================================
+# CACHE CONFIGURATION
+# ============================================================================
+
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        'LOCATION': 'unique-snowflake',
+    }
+}
+
+# Cache timeouts (in seconds)
+CACHE_TIMEOUTS = {
+    'mpesa_token': 3000,  # 50 minutes (M-Pesa token expires in 1 hour)
+    'user_sessions': 3600,  # 1 hour
+    'group_data': 1800,  # 30 minutes
+    'financial_reports': 900,  # 15 minutes
+}
+
+
+# ============================================================================
+# CELERY CONFIGURATION (FOR BACKGROUND TASKS)
+# ============================================================================
+
+CELERY_BROKER_URL = config('CELERY_BROKER_URL', default='redis://localhost:6379/0')
+CELERY_RESULT_BACKEND = config('CELERY_RESULT_BACKEND', default='redis://localhost:6379/0')
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
+CELERY_TIMEZONE = TIME_ZONE
+CELERY_TASK_TRACK_STARTED = True
+CELERY_TASK_TIME_LIMIT = 30 * 60  # 30 minutes
+
+# Task queues
+CELERY_TASK_ROUTES = {
+    'mpesa_integration.tasks.*': {'queue': 'mpesa'},
+    'finance.tasks.*': {'queue': 'finance'},
+    'notifications.tasks.*': {'queue': 'notifications'},
+    'analytics_dashboard.tasks.*': {'queue': 'analytics'},
+}
+
+
+# ============================================================================
+# API RATE LIMITING
+# ============================================================================
+
+RATELIMIT_ENABLE = config('RATELIMIT_ENABLE', default=True, cast=bool)
+RATELIMIT_CACHE_PREFIX = 'rl:'
+RATELIMIT_USE_CACHE = 'default'
+
+# Rate limits for different endpoints
+RATE_LIMITS = {
+    'login': '5/minute',
+    'register': '3/hour',
+    'mpesa_stk_push': '10/minute',
+    'api_default': '1000/hour',
+    'admin_api': '10000/hour',
+}
+
+
+# ============================================================================
+# NOTIFICATION SETTINGS
+# ============================================================================
+
+# Email notification templates
+EMAIL_TEMPLATES = {
+    'welcome': 'emails/welcome.html',
+    'password_reset': 'emails/password_reset.html',
+    'contribution_reminder': 'emails/contribution_reminder.html',
+    'loan_approval': 'emails/loan_approval.html',
+    'mpesa_payment_confirmation': 'emails/mpesa_payment_confirmation.html',
+}
+
+# Push notification configuration
+FIREBASE_CREDENTIALS_PATH = config('FIREBASE_CREDENTIALS_PATH', default='')
+ONESIGNAL_APP_ID = config('ONESIGNAL_APP_ID', default='')
+ONESIGNAL_REST_API_KEY = config('ONESIGNAL_REST_API_KEY', default='')
+
+
+# ============================================================================
+# THIRD-PARTY API INTEGRATIONS
+# ============================================================================
+
+# Google Maps API for location services
+GOOGLE_MAPS_API_KEY = config('GOOGLE_MAPS_API_KEY', default='')
+
+# Exchange rate API
+EXCHANGERATE_API_KEY = config('EXCHANGERATE_API_KEY', default='')
+EXCHANGERATE_API_URL = 'https://api.exchangerate-api.com/v4/latest/KES'
+
+# SMS Gateway Configuration
+AFRICASTALKING_API_KEY = config('AFRICASTALKING_API_KEY', default='')
+AFRICASTALKING_USERNAME = config('AFRICASTALKING_USERNAME', default='')
+AFRICASTALKING_SENDER_ID = config('AFRICASTALKING_SENDER_ID', default='CHAMAHUB')
+
+
+# ============================================================================
+# TESTING CONFIGURATION
+# ============================================================================
+
+TEST_RUNNER = 'django.test.runner.DiscoverRunner'
+TEST_OUTPUT_DIR = BASE_DIR / 'test_reports'
+TEST_OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+
+# Test database
+if 'test' in sys.argv:
+    DATABASES['default'] = {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': ':memory:',
+    }
+
+
+# ============================================================================
+# PERFORMANCE OPTIMIZATION
+# ============================================================================
+
+# Database connection pooling
+DATABASE_CONN_MAX_AGE = 60  # 1 minute
+
+# Template caching
+TEMPLATE_LOADERS = [
+    ('django.template.loaders.cached.Loader', [
+        'django.template.loaders.filesystem.Loader',
+        'django.template.loaders.app_directories.Loader',
+    ]),
+]
+
+# Session engine
+SESSION_ENGINE = 'django.contrib.sessions.backends.cached_db'
+
+# Static file compression
+STATICFILES_STORAGE_OPTIONS = {
+    'compressed': True,
+    'manifest': True,
+    'max_age': 31536000,  # 1 year
+}
+
+
+# ============================================================================
+# DEVELOPMENT-SPECIFIC SETTINGS
+# ============================================================================
+
+if DEBUG:
+    # Allow Django Debug Toolbar
+    INSTALLED_APPS += ['debug_toolbar']
+    MIDDLEWARE.insert(0, 'debug_toolbar.middleware.DebugToolbarMiddleware')
+    
+    INTERNAL_IPS = [
+        '127.0.0.1',
+        'localhost',
+    ]
+    
+    # Disable some security features for development
+    CORS_ALLOW_ALL_ORIGINS = True
+    CSRF_COOKIE_SECURE = False
+    SESSION_COOKIE_SECURE = False
+    
+    # Enable SQL logging
+    LOGGING['loggers']['django.db.backends'] = {
+        'level': 'DEBUG',
+        'handlers': ['console'],
+        'propagate': False,
+    }
+
+
+# ============================================================================
+# APPLICATION-SPECIFIC CONSTANTS
+# ============================================================================
+
+# Group types for validation
+GROUP_TYPES = [
+    ('SAVINGS', 'Savings Group'),
+    ('INVESTMENT', 'Investment Group'),
+    ('WELFARE', 'Welfare Group'),
+    ('MIXED', 'Mixed Purpose'),
+]
+
+# Contribution frequencies
+CONTRIBUTION_FREQUENCIES = [
+    ('DAILY', 'Daily'),
+    ('WEEKLY', 'Weekly'),
+    ('BIWEEKLY', 'Bi-Weekly'),
+    ('MONTHLY', 'Monthly'),
+]
+
+# Transaction statuses
+TRANSACTION_STATUSES = [
+    ('PENDING', 'Pending'),
+    ('SUCCESS', 'Success'),
+    ('FAILED', 'Failed'),
+    ('CANCELLED', 'Cancelled'),
+    ('RECONCILED', 'Reconciled'),
+]
+
+# Loan statuses
+LOAN_STATUSES = [
+    ('PENDING', 'Pending'),
+    ('APPROVED', 'Approved'),
+    ('DISBURSED', 'Disbursed'),
+    ('REPAYING', 'Repaying'),
+    ('COMPLETED', 'Completed'),
+    ('DEFAULTED', 'Defaulted'),
+]
+
+# Investment types
+INVESTMENT_TYPES = [
+    ('SAVINGS', 'Savings Account'),
+    ('STOCKS', 'Stock Market'),
+    ('BONDS', 'Government Bonds'),
+    ('REAL_ESTATE', 'Real Estate'),
+    ('MUTUAL_FUNDS', 'Mutual Funds'),
+    ('FOREIGN_EXCHANGE', 'Foreign Exchange'),
+]
+
+# Audit log actions
+AUDIT_LOG_ACTIONS = [
+    ('CREATE', 'Create'),
+    ('UPDATE', 'Update'),
+    ('DELETE', 'Delete'),
+    ('VIEW', 'View'),
+    ('LOGIN', 'Login'),
+    ('LOGOUT', 'Logout'),
+    ('PAYMENT', 'Payment'),
+    ('APPROVAL', 'Approval'),
+]
+
+
+# ============================================================================
+# ENVIRONMENT VALIDATION
+# ============================================================================
+
+def validate_environment():
+    """
+    Validate critical environment variables on application startup.
+    Logs warnings for missing configuration in production.
+    """
+    import logging
+    
+    logger = logging.getLogger(__name__)
+    
+    # Check M-Pesa configuration in production
+    if not DEBUG and MPESA_ENVIRONMENT == 'production':
+        required_mpesa_vars = [
+            'MPESA_CONSUMER_KEY',
+            'MPESA_CONSUMER_SECRET',
+            'MPESA_BUSINESS_SHORTCODE',
+            'MPESA_PASSKEY',
+        ]
+        
+        missing_vars = []
+        for var in required_mpesa_vars:
+            if not globals().get(var):
+                missing_vars.append(var)
+        
+        if missing_vars:
+            logger.warning(
+                f"Missing M-Pesa production configuration: {', '.join(missing_vars)}. "
+                f"M-Pesa integration will not work properly."
+            )
+    
+    # Check email configuration
+    if EMAIL_BACKEND == 'django.core.mail.backends.smtp.EmailBackend':
+        if not EMAIL_HOST_USER or not EMAIL_HOST_PASSWORD:
+            logger.warning(
+                "Email credentials not configured. Email functionality will not work."
+            )
+    
+    # Check database configuration
+    if DATABASES['default']['ENGINE'] == 'django.db.backends.sqlite3' and not DEBUG:
+        logger.warning(
+            "Using SQLite database in production. Consider switching to PostgreSQL."
+        )
+
+
+# Run environment validation when settings are loaded
+validate_environment()
