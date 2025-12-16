@@ -1,8 +1,13 @@
+// chamahub-frontend/src/pages/tools/MPesaIntegrationPage.tsx
+/**
+ * M-Pesa Integration Page for handling mobile payments
+ * This page allows users to make M-Pesa payments and view transaction history
+ */
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate, useParams } from 'react-router-dom';
 import { 
-  ArrowLeft, Smartphone, Check, X, Phone, CreditCard, 
+  ArrowLeft, Smartphone, Check, CreditCard, 
   History, RefreshCw, AlertCircle, Loader2, DollarSign,
   ChevronRight, ExternalLink, BarChart3
 } from 'lucide-react';
@@ -52,6 +57,10 @@ interface MpesaTransaction {
   is_expired: boolean;
 }
 
+/**
+ * M-Pesa Integration Page Component
+ * Handles M-Pesa payment initiation and transaction history
+ */
 export function MPesaIntegrationPage() {
   const navigate = useNavigate();
   const { tab = 'pay' } = useParams<{ tab: string }>();
@@ -83,7 +92,9 @@ export function MPesaIntegrationPage() {
   const [success, setSuccess] = useState('');
   const [error, setError] = useState('');
   
-  // Fetch user's groups
+  /**
+   * Fetch user's groups on component mount
+   */
   useEffect(() => {
     const fetchGroups = async () => {
       try {
@@ -107,7 +118,9 @@ export function MPesaIntegrationPage() {
     fetchGroups();
   }, []);
   
-  // Fetch transaction history
+  /**
+   * Fetch transaction history
+   */
   const fetchTransactions = async () => {
     try {
       setIsLoadingTransactions(true);
@@ -143,13 +156,19 @@ export function MPesaIntegrationPage() {
     }
   };
   
-  // Load transactions when tab changes to history
+  /**
+   * Load transactions when tab changes to history
+   */
   useEffect(() => {
     if (tab === 'history') {
       fetchTransactions();
     }
   }, [tab]);
   
+  /**
+   * Handle payment form submission
+   * @param e - Form event
+   */
   const handlePayment = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsProcessing(true);
@@ -186,6 +205,10 @@ export function MPesaIntegrationPage() {
     }
   };
   
+  /**
+   * Check status of a specific transaction
+   * @param transactionId - Transaction ID to check
+   */
   const handleCheckStatus = async (transactionId: string) => {
     try {
       const response = await api.post(`/mpesa/transactions/${transactionId}/query_payment_status/`);
@@ -196,6 +219,11 @@ export function MPesaIntegrationPage() {
     }
   };
   
+  /**
+   * Get CSS classes for transaction status badge
+   * @param status - Transaction status
+   * @returns CSS class string
+   */
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'SUCCESS': return 'bg-green-100 text-green-800';
@@ -364,7 +392,7 @@ export function MPesaIntegrationPage() {
                             id="phone"
                             type="tel"
                             value={phoneNumber}
-                            onChange={(e) => setPhoneNumber(e.target.value)}
+                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPhoneNumber(e.target.value)}
                             required
                             placeholder="712345678"
                             className="rounded-l-none"
@@ -383,7 +411,7 @@ export function MPesaIntegrationPage() {
                             id="amount"
                             type="number"
                             value={amount}
-                            onChange={(e) => setAmount(e.target.value)}
+                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setAmount(e.target.value)}
                             required
                             min="1"
                             max="150000"
@@ -426,7 +454,7 @@ export function MPesaIntegrationPage() {
                       <Input
                         id="reference"
                         value={accountReference}
-                        onChange={(e) => setAccountReference(e.target.value)}
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setAccountReference(e.target.value)}
                         required
                         placeholder="CONT001, INVOICE123, etc."
                       />
@@ -440,7 +468,7 @@ export function MPesaIntegrationPage() {
                       <Textarea
                         id="description"
                         value={transactionDesc}
-                        onChange={(e) => setTransactionDesc(e.target.value)}
+                        onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setTransactionDesc(e.target.value)}
                         required
                         placeholder="Describe this payment"
                         className="min-h-[100px]"
