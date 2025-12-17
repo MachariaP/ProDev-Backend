@@ -4,3 +4,6 @@ from django.apps import AppConfig
 class EducationHubConfig(AppConfig):
     default_auto_field = 'django.db.models.BigAutoField'
     name = 'education_hub'
+    
+    def ready(self):
+        import education_hub.signals
