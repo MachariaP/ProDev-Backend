@@ -4,7 +4,7 @@ import axios from 'axios';
 // Use the correct environment variable name
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
-console.log('API Base URL:', API_BASE_URL); // Debug log
+console.log('📡 API Base URL:', API_BASE_URL); // Debug log
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -52,6 +52,7 @@ api.interceptors.response.use(
     if (import.meta.env.DEV) {
       console.error(`❌ API Error: ${error.response?.status || 'Network'} ${error.config?.url}`, {
         data: error.response?.data,
+        status: error.response?.status,
       });
     }
 
@@ -67,17 +68,39 @@ api.interceptors.response.use(
         
         console.log('🔄 Attempting token refresh...');
         
-        // FIX: Use the correct refresh endpoint (without duplicating /api/v1)
-        const refreshResponse = await axios.post(`${API_BASE_URL}/token/refresh/`, {
-          refresh: refreshToken,
-        });
+        // Try multiple refresh endpoints for compatibility
+        const refreshEndpoints = [
+          `${API_BASE_URL}/api/v1/token/refresh/`,
+          `${API_BASE_URL}/token/refresh/`,
+          `${API_BASE_URL}/api/token/refresh/`,
+        ];
+        
+        let refreshResponse = null;
+        let refreshError = null;
+        
+        for (const endpoint of refreshEndpoints) {
+          try {
+            console.log(`🔄 Trying refresh endpoint: ${endpoint}`);
+            refreshResponse = await axios.post(endpoint, {
+              refresh: refreshToken,
+            });
+            console.log('✅ Token refreshed successfully');
+            break;
+          } catch (err) {
+            refreshError = err;
+            continue;
+          }
+        }
+        
+        if (!refreshResponse) {
+          throw refreshError || new Error('All refresh endpoints failed');
+        }
         
         const { access } = refreshResponse.data;
         localStorage.setItem('access_token', access);
         
         // Retry original request with new token
         originalRequest.headers.Authorization = `Bearer ${access}`;
-        console.log('✅ Token refreshed successfully');
         return api(originalRequest);
         
       } catch (refreshError) {
@@ -97,27 +120,70 @@ api.interceptors.response.use(
       }
     }
     
-    // Handle other errors
-    if (error.response?.status === 403) {
-      console.error('🚫 Access forbidden - insufficient permissions');
-    }
-    
+    // Handle 404 errors specifically
     if (error.response?.status === 404) {
       console.error('🔍 Resource not found:', error.config.url);
+      const errorMsg = `API endpoint not found: ${error.config.url}`;
+      
+      // Check if it's the groups endpoint error we're fixing
+      if (error.config.url?.includes('/groups/my-groups/')) {
+        console.error('⚠️  This is the known groups endpoint issue. The correct endpoint is:');
+        console.error('✅ /api/v1/groups/chama-groups/my_groups/');
+        console.error('💡 Please update the frontend API call to use the correct endpoint.');
+      }
+      
+      // Return a more descriptive error
+      return Promise.reject({
+        ...error,
+        message: errorMsg,
+        is404: true,
+        originalUrl: error.config.url,
+      });
     }
     
+    // Handle 500 errors
     if (error.response?.status >= 500) {
       console.error('💥 Server error occurred');
+      
+      // Check if it's M-Pesa related
+      if (error.config.url?.includes('mpesa') || error.config.url?.includes('transactions/initiate_stk_push')) {
+        console.error('⚠️  M-Pesa error detected. This could be due to:');
+        console.error('1. Invalid M-Pesa passkey in backend .env file');
+        console.error('2. Incorrect business shortcode (should be 174379 for sandbox)');
+        console.error('3. Network issues with Safaricom API');
+        console.error('💡 Check the backend logs for more details.');
+      }
     }
     
     // Handle network errors
     if (!error.response) {
       console.error('🌐 Network error - backend may be unreachable');
       console.log('📡 Attempting to connect to:', API_BASE_URL);
+      console.log('💡 Check if the backend server is running and accessible');
     }
     
     return Promise.reject(error);
   }
 );
+
+// Helper function to check API health
+export const checkApiHealth = async () => {
+  try {
+    const response = await api.get('/health/');
+    return {
+      healthy: true,
+      status: response.status,
+      data: response.data,
+    };
+  } catch (error) {
+    return {
+      healthy: false,
+      error: error instanceof Error ? error.message : 'Unknown error',
+    };
+  }
+};
+
+// Helper function to get API base URL (useful for debugging)
+export const getApiBaseUrl = () => API_BASE_URL;
 
 export default api;

@@ -285,7 +285,7 @@ DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL', default='noreply@chamahub.com'
 FRONTEND_URL = config('FRONTEND_URL', default='http://localhost:5173')
 
 # ============================================================================
-# 📱 M-PESA DARAJA API CONFIGURATION
+# 📱 M-PESA DARAJA API CONFIGURATION - WITH VERIFICATION ✅
 # ============================================================================
 
 # M-Pesa Environment (sandbox for development, production for live)
@@ -294,8 +294,22 @@ MPESA_ENVIRONMENT = config('MPESA_ENVIRONMENT', default='sandbox')
 # M-Pesa Daraja API Credentials
 MPESA_CONSUMER_KEY = config('MPESA_CONSUMER_KEY', default='')
 MPESA_CONSUMER_SECRET = config('MPESA_CONSUMER_SECRET', default='')
-MPESA_BUSINESS_SHORTCODE = config('MPESA_BUSINESS_SHORTCODE', default='')
-MPESA_PASSKEY = config('MPESA_PASSKEY', default='')
+
+# 🎯 VERIFIED SANDBOX BUSINESS SHORTCODE (174379 for Safaricom sandbox)
+MPESA_BUSINESS_SHORTCODE = config('MPESA_BUSINESS_SHORTCODE', default='174379')
+
+# 🔐 CORRECT SANDBOX PASSKEY - UPDATED ✅
+MPESA_PASSKEY = config('MPESA_PASSKEY', default='bfb279f9aa9bdbcf158e97dd71a467cd2e0c893059b10f78e6b72ada1ed2c919')
+
+# Validate M-Pesa configuration on startup
+if MPESA_ENVIRONMENT == 'sandbox':
+    # Verify sandbox configuration
+    if not MPESA_CONSUMER_KEY or not MPESA_CONSUMER_SECRET:
+        print("⚠️ WARNING: M-Pesa sandbox credentials are not set. M-Pesa integration will not work.")
+    
+    if MPESA_BUSINESS_SHORTCODE != '174379':
+        print(f"⚠️ WARNING: Using non-standard sandbox business shortcode: {MPESA_BUSINESS_SHORTCODE}")
+        print("💡 TIP: For Safaricom sandbox, use '174379' as the business shortcode")
 
 # M-Pesa Callback URLs
 MPESA_CALLBACK_URL = config('MPESA_CALLBACK_URL', default='')
@@ -451,7 +465,7 @@ SPECTACULAR_SETTINGS = {
 FILE_UPLOAD_MAX_MEMORY_SIZE = 5242880  # 5MB
 DATA_UPLOAD_MAX_MEMORY_SIZE = 5242880  # 5MB
 
-# Logging Configuration
+# Logging Configuration with M-Pesa debug logging
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
@@ -462,6 +476,10 @@ LOGGING = {
         },
         'simple': {
             'format': '{levelname} {message}',
+            'style': '{',
+        },
+        'mpesa_debug': {
+            'format': '{asctime} - MPESA - {levelname} - {message}',
             'style': '{',
         },
     },
@@ -476,6 +494,12 @@ LOGGING = {
             'filename': BASE_DIR / 'debug.log',
             'formatter': 'verbose',
         },
+        'mpesa_file': {
+            'level': 'DEBUG',
+            'class': 'logging.FileHandler',
+            'filename': BASE_DIR / 'mpesa.log',
+            'formatter': 'mpesa_debug',
+        },
     },
     'loggers': {
         'django': {
@@ -484,9 +508,43 @@ LOGGING = {
             'propagate': True,
         },
         'mpesa_integration': {
-            'handlers': ['console', 'file'],
+            'handlers': ['console', 'mpesa_file'],
             'level': 'DEBUG',
-            'propagate': True,
+            'propagate': False,
+        },
+        'mpesa_integration.utils': {
+            'handlers': ['mpesa_file'],
+            'level': 'DEBUG',
+            'propagate': False,
         },
     },
 }
+
+# Configuration validation on startup
+def validate_mpesa_configuration():
+    """Validate M-Pesa configuration on startup"""
+    required_configs = ['MPESA_CONSUMER_KEY', 'MPESA_CONSUMER_SECRET', 'MPESA_PASSKEY']
+    missing_configs = []
+    
+    for config_name in required_configs:
+        if not globals().get(config_name):
+            missing_configs.append(config_name)
+    
+    if missing_configs:
+        print(f"⚠️  M-Pesa Configuration Warning: Missing {', '.join(missing_configs)}")
+        if MPESA_ENVIRONMENT == 'sandbox':
+            print("💡 For sandbox testing, get credentials from: https://developer.safaricom.co.ke")
+    else:
+        print("✅ M-Pesa configuration validated successfully")
+        
+    # Log configuration (without sensitive data)
+    safe_passkey = MPESA_PASSKEY[:10] + '...' + MPESA_PASSKEY[-10:] if MPESA_PASSKEY else 'Not set'
+    print(f"📱 M-Pesa Environment: {MPESA_ENVIRONMENT}")
+    print(f"🔑 Consumer Key: {'Set' if MPESA_CONSUMER_KEY else 'Not set'}")
+    print(f"🔑 Consumer Secret: {'Set' if MPESA_CONSUMER_SECRET else 'Not set'}")
+    print(f"🏦 Business Shortcode: {MPESA_BUSINESS_SHORTCODE}")
+    print(f"🔐 Passkey: {safe_passkey}")
+
+# Validate configuration when settings are loaded
+if not os.environ.get('DJANGO_SETTINGS_MODULE', '').endswith('test'):
+    validate_mpesa_configuration()

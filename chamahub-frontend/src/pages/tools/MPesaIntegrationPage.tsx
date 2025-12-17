@@ -29,6 +29,7 @@ import { Alert, AlertDescription, AlertTitle } from '../../components/ui/alert';
 import { Separator } from '../../components/ui/separator';
 import api from '../../services/api';
 import { formatCurrency, formatDate } from '../../utils/formatters';
+import { groupsService, mpesaService } from '../../services/apiService'; // ✅ Updated import
 
 interface Group {
   id: number;
@@ -93,23 +94,29 @@ export function MPesaIntegrationPage() {
   const [error, setError] = useState('');
   
   /**
-   * Fetch user's groups on component mount
+   * Fetch user's groups on component mount - UPDATED TO USE CORRECT ENDPOINT ✅
    */
   useEffect(() => {
     const fetchGroups = async () => {
       try {
         setIsLoadingGroups(true);
-        const response = await api.get('/groups/my-groups/');
-        setGroups(response.data);
+        console.log('🔄 Fetching user groups for M-Pesa page...');
+        
+        // ✅ Use the corrected groupsService.getMyGroups() which uses the correct endpoint
+        const userGroups = await groupsService.getMyGroups();
+        setGroups(userGroups);
         
         // Set default group if available
-        if (response.data.length > 0) {
-          setSelectedGroup(response.data[0].id.toString());
-          setAccountReference(`CONT${response.data[0].id.toString().padStart(3, '0')}`);
-          setTransactionDesc(`Contribution to ${response.data[0].name}`);
+        if (userGroups.length > 0) {
+          setSelectedGroup(userGroups[0].id.toString());
+          setAccountReference(`CONT${userGroups[0].id.toString().padStart(3, '0')}`);
+          setTransactionDesc(`Contribution to ${userGroups[0].name}`);
         }
+        
+        console.log(`✅ Loaded ${userGroups.length} groups for M-Pesa`);
       } catch (err) {
-        console.error('Failed to fetch groups:', err);
+        console.error('❌ Failed to fetch groups:', err);
+        setError('Failed to load groups. Please try again.');
       } finally {
         setIsLoadingGroups(false);
       }
@@ -119,38 +126,44 @@ export function MPesaIntegrationPage() {
   }, []);
   
   /**
-   * Fetch transaction history
+   * Fetch transaction history using M-Pesa service
    */
   const fetchTransactions = async () => {
     try {
       setIsLoadingTransactions(true);
-      const response = await api.get('/mpesa/transactions/', {
-        params: { page_size: 20, ordering: '-created_at' }
+      console.log('📋 Fetching M-Pesa transaction history...');
+      
+      const response = await mpesaService.getMpesaTransactions({
+        page_size: 20,
+        ordering: '-created_at'
       });
       
-      setTransactions(response.data.results || response.data);
+      // Handle both paginated and non-paginated responses
+      const transactionData = response.results || response || [];
+      setTransactions(transactionData);
       
       // Calculate stats
-      if (response.data.results) {
-        const stats = {
-          total: response.data.count || 0,
-          success: 0,
-          pending: 0,
-          failed: 0,
-          totalAmount: 0
-        };
-        
-        (response.data.results as MpesaTransaction[]).forEach(transaction => {
-          stats.totalAmount += parseFloat(transaction.amount);
-          if (transaction.status === 'SUCCESS') stats.success++;
-          else if (transaction.status === 'PENDING') stats.pending++;
-          else if (transaction.status === 'FAILED' || transaction.status === 'CANCELLED') stats.failed++;
-        });
-        
-        setTransactionStats(stats);
-      }
+      const stats = {
+        total: response.count || transactionData.length || 0,
+        success: 0,
+        pending: 0,
+        failed: 0,
+        totalAmount: 0
+      };
+      
+      transactionData.forEach((transaction: MpesaTransaction) => {
+        stats.totalAmount += parseFloat(transaction.amount);
+        if (transaction.status === 'SUCCESS') stats.success++;
+        else if (transaction.status === 'PENDING') stats.pending++;
+        else if (transaction.status === 'FAILED' || transaction.status === 'CANCELLED') stats.failed++;
+      });
+      
+      setTransactionStats(stats);
+      console.log(`✅ Loaded ${transactionData.length} transactions`);
+      
     } catch (err) {
-      console.error('Failed to fetch transactions:', err);
+      console.error('❌ Failed to fetch transactions:', err);
+      setError('Failed to load transaction history. Please try again.');
     } finally {
       setIsLoadingTransactions(false);
     }
@@ -166,8 +179,7 @@ export function MPesaIntegrationPage() {
   }, [tab]);
   
   /**
-   * Handle payment form submission
-   * @param e - Form event
+   * Handle payment form submission using M-Pesa service
    */
   const handlePayment = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -176,29 +188,64 @@ export function MPesaIntegrationPage() {
     setSuccess('');
     
     try {
+      // Validate phone number
+      if (!phoneNumber.match(/^(07|01|2547|2541)\d{8}$/)) {
+        throw new Error('Please enter a valid Kenyan phone number (e.g., 0712345678)');
+      }
+      
+      // Validate amount
+      const amountNum = parseFloat(amount);
+      if (isNaN(amountNum) || amountNum < 10 || amountNum > 150000) {
+        throw new Error('Amount must be between KES 10 and KES 150,000');
+      }
+      
       const payload = {
         phone_number: phoneNumber,
-        amount: parseFloat(amount),
-        account_reference: accountReference,
-        transaction_desc: transactionDesc,
+        amount: amountNum,
+        account_reference: accountReference || `MPESA-${Date.now()}`,
+        transaction_desc: transactionDesc || 'ChamaHub Payment',
         group_id: selectedGroup ? parseInt(selectedGroup) : undefined
       };
       
-      const response = await api.post('/mpesa/transactions/initiate_stk_push/', payload);
+      console.log('💰 Sending M-Pesa payment request:', payload);
       
-      setSuccess(response.data.message || 'Payment initiated successfully!');
+      // ✅ Use the M-Pesa service
+      const response = await mpesaService.initiateSTKPush(payload);
+      
+      setSuccess(response.message || 'Payment initiated successfully! Check your phone for the M-Pesa prompt.');
       
       // Reset form
       setAmount('');
       setPhoneNumber('');
+      setTransactionDesc('');
       
-      // Refresh transactions
-      fetchTransactions();
+      // Refresh transactions if on history tab
+      if (tab === 'history') {
+        setTimeout(() => fetchTransactions(), 2000);
+      }
       
     } catch (err: any) {
-      const errorMessage = err.response?.data?.error || 
-                          err.response?.data?.details || 
-                          'Failed to initiate payment. Please try again.';
+      console.error('❌ M-Pesa payment error:', err);
+      
+      let errorMessage = 'Failed to initiate payment. Please try again.';
+      
+      if (err.response?.data?.error) {
+        errorMessage = err.response.data.error;
+      } else if (err.response?.data?.details) {
+        errorMessage = `Payment failed: ${JSON.stringify(err.response.data.details)}`;
+      } else if (err.message) {
+        errorMessage = err.message;
+      }
+      
+      // Specific error handling for common issues
+      if (errorMessage.includes('500') || errorMessage.includes('Internal Server Error')) {
+        errorMessage = 'M-Pesa service temporarily unavailable. Please try again in a few moments.';
+      }
+      
+      if (errorMessage.includes('passkey') || errorMessage.includes('password')) {
+        errorMessage = 'M-Pesa configuration error. Please contact support.';
+      }
+      
       setError(errorMessage);
     } finally {
       setIsProcessing(false);
@@ -207,12 +254,12 @@ export function MPesaIntegrationPage() {
   
   /**
    * Check status of a specific transaction
-   * @param transactionId - Transaction ID to check
    */
   const handleCheckStatus = async (transactionId: string) => {
     try {
-      const response = await api.post(`/mpesa/transactions/${transactionId}/query_payment_status/`);
-      setSuccess(response.data.message || 'Status updated successfully');
+      setError('');
+      const response = await mpesaService.queryPaymentStatus(transactionId);
+      setSuccess(response.message || 'Status updated successfully');
       fetchTransactions(); // Refresh list
     } catch (err: any) {
       setError(err.response?.data?.error || 'Failed to check status');
@@ -220,17 +267,39 @@ export function MPesaIntegrationPage() {
   };
   
   /**
+   * Format phone number for display
+   */
+  const formatPhoneForDisplay = (phone: string) => {
+    if (phone.startsWith('254')) {
+      return `+${phone}`;
+    } else if (phone.startsWith('07') || phone.startsWith('01')) {
+      return `+254${phone.slice(1)}`;
+    }
+    return phone;
+  };
+  
+  /**
    * Get CSS classes for transaction status badge
-   * @param status - Transaction status
-   * @returns CSS class string
    */
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'SUCCESS': return 'bg-green-100 text-green-800';
-      case 'PENDING': return 'bg-yellow-100 text-yellow-800';
-      case 'FAILED': return 'bg-red-100 text-red-800';
-      case 'CANCELLED': return 'bg-gray-100 text-gray-800';
-      default: return 'bg-blue-100 text-blue-800';
+      case 'SUCCESS': return 'bg-green-100 text-green-800 border-green-200';
+      case 'PENDING': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+      case 'FAILED': return 'bg-red-100 text-red-800 border-red-200';
+      case 'CANCELLED': return 'bg-gray-100 text-gray-800 border-gray-200';
+      default: return 'bg-blue-100 text-blue-800 border-blue-200';
+    }
+  };
+  
+  /**
+   * Get status icon
+   */
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case 'SUCCESS': return <Check className="h-4 w-4 text-green-600" />;
+      case 'PENDING': return <Loader2 className="h-4 w-4 text-yellow-600 animate-spin" />;
+      case 'FAILED': return <AlertCircle className="h-4 w-4 text-red-600" />;
+      default: return <AlertCircle className="h-4 w-4 text-gray-600" />;
     }
   };
   
@@ -396,10 +465,11 @@ export function MPesaIntegrationPage() {
                             required
                             placeholder="712345678"
                             className="rounded-l-none"
+                            disabled={isProcessing}
                           />
                         </div>
                         <p className="text-xs text-muted-foreground">
-                          Enter your Safaricom M-Pesa number
+                          Enter your Safaricom M-Pesa number (e.g., 712345678)
                         </p>
                       </div>
                       
@@ -413,15 +483,16 @@ export function MPesaIntegrationPage() {
                             value={amount}
                             onChange={(e: React.ChangeEvent<HTMLInputElement>) => setAmount(e.target.value)}
                             required
-                            min="1"
+                            min="10"
                             max="150000"
                             step="0.01"
                             placeholder="1000.00"
                             className="pl-10"
+                            disabled={isProcessing}
                           />
                         </div>
                         <p className="text-xs text-muted-foreground">
-                          Maximum: KES 150,000 per transaction
+                          Minimum: KES 10 • Maximum: KES 150,000
                         </p>
                       </div>
                     </div>
@@ -431,10 +502,10 @@ export function MPesaIntegrationPage() {
                       <Select 
                         value={selectedGroup} 
                         onValueChange={setSelectedGroup}
-                        disabled={isLoadingGroups}
+                        disabled={isLoadingGroups || isProcessing}
                       >
                         <SelectTrigger>
-                          <SelectValue placeholder="Select a group" />
+                          <SelectValue placeholder={isLoadingGroups ? "Loading groups..." : "Select a group"} />
                         </SelectTrigger>
                         <SelectContent>
                           {groups.map(group => (
@@ -457,6 +528,7 @@ export function MPesaIntegrationPage() {
                         onChange={(e: React.ChangeEvent<HTMLInputElement>) => setAccountReference(e.target.value)}
                         required
                         placeholder="CONT001, INVOICE123, etc."
+                        disabled={isProcessing}
                       />
                       <p className="text-xs text-muted-foreground">
                         This will appear on your M-Pesa statement
@@ -472,12 +544,13 @@ export function MPesaIntegrationPage() {
                         required
                         placeholder="Describe this payment"
                         className="min-h-[100px]"
+                        disabled={isProcessing}
                       />
                     </div>
                     
                     <Button 
                       type="submit" 
-                      disabled={isProcessing || !phoneNumber || !amount}
+                      disabled={isProcessing || !phoneNumber || !amount || !accountReference || !transactionDesc}
                       className="w-full bg-green-600 hover:bg-green-700"
                     >
                       {isProcessing ? (
@@ -568,6 +641,7 @@ export function MPesaIntegrationPage() {
                         <li>Transaction limit: KES 150,000 per transaction</li>
                         <li>STK Push expires after 10 minutes</li>
                         <li>You'll be charged KES 27.50 for transactions over KES 100</li>
+                        <li>For testing, use Safaricom test numbers (254708374149, etc.)</li>
                       </ul>
                     </AlertDescription>
                   </Alert>
@@ -621,14 +695,17 @@ export function MPesaIntegrationPage() {
                                 variant="outline" 
                                 className={getStatusColor(transaction.status)}
                               >
-                                {transaction.status_display}
+                                <div className="flex items-center gap-1">
+                                  {getStatusIcon(transaction.status)}
+                                  {transaction.status_display}
+                                </div>
                               </Badge>
                               {transaction.is_expired && transaction.status === 'PENDING' && (
                                 <Badge variant="destructive">Expired</Badge>
                               )}
                             </div>
                             <p className="text-sm text-muted-foreground">
-                              {transaction.formatted_phone} • {transaction.account_reference}
+                              {formatPhoneForDisplay(transaction.phone_number)} • {transaction.account_reference}
                             </p>
                             {transaction.group_name && (
                               <p className="text-sm">
@@ -640,7 +717,10 @@ export function MPesaIntegrationPage() {
                           <div className="text-right">
                             <p className="text-lg font-bold">{transaction.formatted_amount}</p>
                             <p className="text-sm text-muted-foreground">
-                              {formatDate(transaction.created_at)}
+                              {transaction.transaction_date 
+                                ? formatDate(transaction.transaction_date)
+                                : formatDate(transaction.created_at)
+                              }
                             </p>
                           </div>
                         </div>
@@ -653,7 +733,7 @@ export function MPesaIntegrationPage() {
                               </p>
                             )}
                             <p className="text-muted-foreground">
-                              ID: {transaction.transaction_id}
+                              Transaction ID: {transaction.transaction_id}
                             </p>
                           </div>
                           
@@ -688,7 +768,7 @@ export function MPesaIntegrationPage() {
               <CardFooter>
                 <div className="flex items-center justify-between w-full">
                   <p className="text-sm text-muted-foreground">
-                    Showing {transactions.length} of {transactionStats.total} transactions
+                    Showing {transactions.length} {transactionStats.total > transactions.length ? `of ${transactionStats.total}` : ''} transactions
                   </p>
                   {transactions.length > 0 && (
                     <Button 

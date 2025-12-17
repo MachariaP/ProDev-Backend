@@ -77,7 +77,7 @@ export const authService = {
   },
 };
 
-// Groups Services
+// Groups Services - UPDATED ENDPOINTS ✅
 export const groupsService = {
   async getGroups(params?: { page?: number; group_type?: string }): Promise<PaginatedResponse<ChamaGroup>> {
     const response = await api.get('/groups/chama-groups/', { params });
@@ -87,11 +87,44 @@ export const groupsService = {
   async getMyGroups(): Promise<ChamaGroup[]> {
     try {
       console.log('📊 Fetching user groups...');
-      const response = await api.get('/groups/chama-groups/my_groups/');
-      console.log('✅ Groups fetched:', response.data);
-      return response.data;
+      console.log('🔗 Using endpoint: /api/v1/groups/chama-groups/my_groups/');
+      
+      // Try multiple endpoint formats for compatibility
+      const endpoints = [
+        '/api/v1/groups/chama-groups/my_groups/',  // ✅ Primary correct endpoint
+        '/groups/chama-groups/my_groups/',         // ✅ Backward compatible
+      ];
+      
+      let response = null;
+      let lastError = null;
+      
+      for (const endpoint of endpoints) {
+        try {
+          console.log(`🔄 Trying endpoint: ${endpoint}`);
+          response = await api.get(endpoint);
+          console.log(`✅ Success with endpoint: ${endpoint}`);
+          console.log('📦 Groups fetched:', response.data.length || 0, 'groups');
+          return response.data;
+        } catch (error: any) {
+          lastError = error;
+          console.warn(`⚠️ Endpoint failed: ${endpoint}`, error.message);
+          continue;
+        }
+      }
+      
+      // If all endpoints fail
+      if (lastError?.is404 && lastError?.originalUrl?.includes('/groups/my-groups/')) {
+        console.error('❌ ERROR: Frontend is calling the wrong endpoint!');
+        console.error('❌ WRONG: /groups/my-groups/');
+        console.error('✅ CORRECT: /api/v1/groups/chama-groups/my_groups/');
+        console.error('💡 Please update the API call in your code.');
+      }
+      
+      throw lastError || new Error('Failed to fetch groups from all endpoints');
+      
     } catch (error) {
       console.error('❌ Failed to fetch groups:', error);
+      // Return empty array instead of throwing to prevent UI crashes
       return [];
     }
   },
@@ -332,6 +365,43 @@ export const financeService = {
     });
     return response.data;
   },
+
+  // M-Pesa Transactions
+  async initiateMpesaPayment(data: {
+    phone_number: string;
+    amount: number;
+    account_reference: string;
+    transaction_desc: string;
+    group_id?: number;
+  }): Promise<{
+    message: string;
+    transaction_uuid: string;
+    transaction_id: string;
+    checkout_request_id: string;
+    status: string;
+    amount: string;
+    phone_number: string;
+  }> {
+    console.log('💰 Initiating M-Pesa payment...');
+    const response = await api.post('/mpesa/transactions/initiate_stk_push/', data);
+    return response.data;
+  },
+
+  async getMpesaTransactions(params?: {
+    status?: string;
+    transaction_type?: string;
+    group?: number;
+    page?: number;
+    page_size?: number;
+  }): Promise<PaginatedResponse<any>> {
+    const response = await api.get('/mpesa/transactions/', { params });
+    return response.data;
+  },
+
+  async checkMpesaStatus(transactionId: string): Promise<any> {
+    const response = await api.get(`/mpesa/transactions/${transactionId}/check_status/`);
+    return response.data;
+  },
 };
 
 // Governance Services
@@ -519,6 +589,42 @@ export const notificationsService = {
   },
 };
 
+// M-Pesa Integration Service
+export const mpesaService = {
+  async initiateSTKPush(data: {
+    phone_number: string;
+    amount: number;
+    account_reference: string;
+    transaction_desc: string;
+    group_id?: number;
+  }) {
+    console.log('💰 Initiating M-Pesa STK Push...');
+    const response = await api.post('/mpesa/transactions/initiate_stk_push/', data);
+    return response.data;
+  },
+
+  async getMpesaTransactions(params?: {
+    status?: string;
+    transaction_type?: string;
+    group?: number;
+    page?: number;
+    page_size?: number;
+  }) {
+    const response = await api.get('/mpesa/transactions/', { params });
+    return response.data;
+  },
+
+  async checkTransactionStatus(transactionId: string) {
+    const response = await api.get(`/mpesa/transactions/${transactionId}/check_status/`);
+    return response.data;
+  },
+
+  async queryPaymentStatus(transactionId: string) {
+    const response = await api.post(`/mpesa/transactions/${transactionId}/query_payment_status/`);
+    return response.data;
+  },
+};
+
 // Combined Dashboard Service for easier data fetching
 export const dashboardService = {
   async getFullDashboard(groupId: number) {
@@ -550,6 +656,23 @@ export const dashboardService = {
   }
 };
 
+// Utility function to check API connectivity
+export const checkApiConnectivity = async () => {
+  try {
+    const response = await api.get('/health/');
+    return {
+      connected: true,
+      status: response.status,
+      data: response.data,
+    };
+  } catch (error) {
+    return {
+      connected: false,
+      error: error instanceof Error ? error.message : 'Unknown error',
+    };
+  }
+};
+
 export default {
   auth: authService,
   groups: groupsService,
@@ -559,4 +682,6 @@ export default {
   analytics: analyticsService,
   dashboard: dashboardService,
   notifications: notificationsService,
+  mpesa: mpesaService,
+  checkApiConnectivity,
 };
