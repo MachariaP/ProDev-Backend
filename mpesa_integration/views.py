@@ -1,3 +1,4 @@
+# mpesa_integration/views.py
 """
 Views for M-Pesa integration.
 
@@ -6,6 +7,9 @@ and reconciliation with actual Safaricom Daraja API integration.
 """
 import json
 import logging
+import uuid
+import time
+import datetime
 from rest_framework import viewsets, status, permissions
 from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.response import Response
@@ -15,6 +19,7 @@ from django.utils import timezone
 from django.http import HttpResponse, JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.db import transaction as db_transaction
+from django.db import IntegrityError
 from django.conf import settings
 
 from groups.models import ChamaGroup, GroupMembership
@@ -33,30 +38,15 @@ logger = logging.getLogger(__name__)
 class IsGroupAdminOrTreasurer(permissions.BasePermission):
     """
     Custom permission to allow access only to group administrators or treasurers.
-    
-    This permission checks if the user has ADMIN, CHAIRPERSON, or TREASURER role
-    in the specified group.
     """
     
     def has_permission(self, request, view):
-        """
-        Check if user has admin/treasurer permissions.
-        
-        Args:
-            request: HTTP request object
-            view: View being accessed
-        
-        Returns:
-            bool: True if user has permission, False otherwise
-        """
         if not request.user.is_authenticated:
             return False
         
-        # Get group_id from query params or request data
         group_id = request.query_params.get('group') or request.data.get('group')
         
         if group_id:
-            # Check specific group
             return GroupMembership.objects.filter(
                 group_id=group_id,
                 user=request.user,
@@ -68,7 +58,6 @@ class IsGroupAdminOrTreasurer(permissions.BasePermission):
 
 
 class MPesaTransactionPagination(PageNumberPagination):
-    """Pagination class for M-Pesa transactions."""
     page_size = 50
     page_size_query_param = 'page_size'
     max_page_size = 200
@@ -77,17 +66,6 @@ class MPesaTransactionPagination(PageNumberPagination):
 class MPesaTransactionViewSet(viewsets.ModelViewSet):
     """
     ViewSet for managing M-Pesa transactions.
-    
-    Provides CRUD operations for M-Pesa transactions with integrated
-    Daraja API for STK Push initiation and callback handling.
-    
-    Actions:
-        - list: Get all M-Pesa transactions (filterable)
-        - retrieve: Get specific transaction
-        - create: Create transaction record (for manual entry)
-        - initiate_stk_push: Initiate STK Push payment
-        - check_status: Check transaction status
-        - query_payment_status: Query Daraja API for payment status
     """
     
     queryset = MPesaTransaction.objects.all()
@@ -97,7 +75,7 @@ class MPesaTransactionViewSet(viewsets.ModelViewSet):
     filterset_fields = ['status', 'transaction_type', 'group', 'user']
     search_fields = [
         'transaction_id', 'phone_number', 'mpesa_receipt_number',
-        'account_reference', 'transaction_desc'
+        'account_reference', 'transaction_desc', 'uuid'
     ]
     ordering_fields = [
         'created_at', 'amount', 'transaction_date', 'updated_at'
@@ -105,12 +83,6 @@ class MPesaTransactionViewSet(viewsets.ModelViewSet):
     ordering = ['-created_at']
     
     def get_queryset(self):
-        """
-        Filter transactions based on user permissions.
-        
-        Returns:
-            QuerySet: Filtered transactions queryset
-        """
         user = self.request.user
         
         if user.is_staff:
@@ -118,10 +90,8 @@ class MPesaTransactionViewSet(viewsets.ModelViewSet):
                 'group', 'user', 'contribution'
             )
         
-        # Regular users can see their own transactions and group transactions
         user_transactions = MPesaTransaction.objects.filter(user=user)
         
-        # Get groups where user is a member
         user_groups = ChamaGroup.objects.filter(
             memberships__user=user,
             memberships__status='ACTIVE'
@@ -135,40 +105,41 @@ class MPesaTransactionViewSet(viewsets.ModelViewSet):
         ).distinct()
     
     def perform_create(self, serializer):
-        """
-        Set user when creating a transaction.
-        
-        Args:
-            serializer: Transaction serializer instance
-        """
         if not serializer.validated_data.get('user'):
             serializer.save(user=self.request.user)
         else:
             serializer.save()
     
+    def create_mpesa_transaction_safe(self, **kwargs):
+        """
+        Safely create M-Pesa transaction with unique transaction_id
+        """
+        max_retries = 3
+        for attempt in range(max_retries):
+            try:
+                # Generate a temporary unique ID
+                temp_id = f"TEMP-{int(time.time())}-{uuid.uuid4().hex[:8]}"
+                
+                # Ensure we have a transaction_id
+                if not kwargs.get('transaction_id'):
+                    kwargs['transaction_id'] = temp_id
+                
+                transaction = MPesaTransaction.objects.create(**kwargs)
+                return transaction
+                
+            except IntegrityError as e:
+                if 'transaction_id' in str(e) and attempt < max_retries - 1:
+                    # Wait and retry with new ID
+                    time.sleep(0.1)
+                    continue
+                else:
+                    logger.error(f"Failed to create transaction after {max_retries} attempts: {e}")
+                    raise
+    
     @action(detail=False, methods=['post'], permission_classes=[IsAuthenticated])
     def initiate_stk_push(self, request):
         """
         Initiate STK Push payment request.
-        
-        This endpoint integrates with Safaricom Daraja API to initiate
-        an STK Push payment request to the user's phone.
-        
-        Args:
-            request: HTTP request with payment details
-        
-        Returns:
-            Response: Transaction details or error
-        
-        Example request:
-            POST /api/v1/mpesa/transactions/initiate_stk_push/
-            {
-                "phone_number": "254712345678",
-                "amount": "1000.00",
-                "account_reference": "CONT001",
-                "transaction_desc": "Monthly contribution",
-                "group_id": 1
-            }
         """
         serializer = STKPushRequestSerializer(data=request.data)
         if not serializer.is_valid():
@@ -190,7 +161,6 @@ class MPesaTransactionViewSet(viewsets.ModelViewSet):
             if group_id:
                 try:
                     group = ChamaGroup.objects.get(id=group_id)
-                    # Verify user has access to this group
                     if not GroupMembership.objects.filter(
                         group=group,
                         user=request.user,
@@ -206,8 +176,12 @@ class MPesaTransactionViewSet(viewsets.ModelViewSet):
                         status=status.HTTP_404_NOT_FOUND
                     )
             
-            # Create transaction record
-            transaction = MPesaTransaction.objects.create(
+            # Generate unique IDs
+            merchant_request_id = f"MR-{timezone.now().strftime('%Y%m%d%H%M%S')}-{uuid.uuid4().hex[:8]}"
+            checkout_request_id = f"CR-{timezone.now().strftime('%Y%m%d%H%M%S')}-{uuid.uuid4().hex[:8]}"
+            
+            # Create transaction record with unique transaction_id
+            transaction = self.create_mpesa_transaction_safe(
                 transaction_type='STK_PUSH',
                 amount=amount,
                 phone_number=formatted_phone,
@@ -215,7 +189,10 @@ class MPesaTransactionViewSet(viewsets.ModelViewSet):
                 transaction_desc=transaction_desc,
                 user=request.user,
                 group=group,
-                status='PENDING'
+                status='PENDING',
+                merchant_request_id=merchant_request_id,
+                checkout_request_id=checkout_request_id,
+                transaction_id=f"TXN-{uuid.uuid4().hex[:12]}"
             )
             
             # Initialize Daraja API
@@ -231,18 +208,25 @@ class MPesaTransactionViewSet(viewsets.ModelViewSet):
             
             # Update transaction with Daraja response
             if response.get('ResponseCode') == '0':
-                transaction.merchant_request_id = response.get('MerchantRequestID')
-                transaction.checkout_request_id = response.get('CheckoutRequestID')
-                transaction.transaction_id = response.get('MerchantRequestID') or f"TXN{transaction.id:08d}"
+                # Use Daraja's MerchantRequestID as our transaction_id
+                merchant_id = response.get('MerchantRequestID')
+                checkout_id = response.get('CheckoutRequestID')
+                
+                if merchant_id:
+                    transaction.transaction_id = merchant_id
+                if checkout_id:
+                    transaction.checkout_request_id = checkout_id
+                
                 transaction.save()
                 
                 logger.info(
-                    f"STK Push initiated for transaction {transaction.id}. "
+                    f"STK Push initiated for transaction {transaction.uuid}. "
                     f"MerchantRequestID: {transaction.merchant_request_id}"
                 )
                 
                 return Response({
                     'message': 'STK Push initiated successfully. Please check your phone to complete payment.',
+                    'transaction_uuid': str(transaction.uuid),
                     'transaction_id': transaction.transaction_id,
                     'checkout_request_id': transaction.checkout_request_id,
                     'status': transaction.status,
@@ -250,14 +234,13 @@ class MPesaTransactionViewSet(viewsets.ModelViewSet):
                     'phone_number': phone_number
                 }, status=status.HTTP_201_CREATED)
             else:
-                # Update transaction status to failed
                 transaction.status = 'FAILED'
                 transaction.result_code = response.get('ResponseCode', '9999')
                 transaction.result_desc = response.get('ResponseDescription', 'Unknown error')
                 transaction.save()
                 
                 logger.error(
-                    f"STK Push failed for transaction {transaction.id}. "
+                    f"STK Push failed for transaction {transaction.uuid}. "
                     f"Response: {response}"
                 )
                 
@@ -283,17 +266,9 @@ class MPesaTransactionViewSet(viewsets.ModelViewSet):
     def check_status(self, request, pk=None):
         """
         Check transaction status.
-        
-        Args:
-            request: HTTP request
-            pk: Transaction primary key
-        
-        Returns:
-            Response: Transaction status details
         """
         transaction = self.get_object()
         
-        # Check if user has permission to view this transaction
         if (transaction.user != request.user and 
             not (transaction.group and 
                  GroupMembership.objects.filter(
@@ -307,6 +282,7 @@ class MPesaTransactionViewSet(viewsets.ModelViewSet):
             )
         
         return Response({
+            'transaction_uuid': str(transaction.uuid),
             'transaction_id': transaction.transaction_id,
             'status': transaction.status,
             'amount': str(transaction.amount),
@@ -320,16 +296,6 @@ class MPesaTransactionViewSet(viewsets.ModelViewSet):
     def query_payment_status(self, request, pk=None):
         """
         Query Daraja API for payment status.
-        
-        This endpoint queries the Daraja API to get the current status
-        of an STK Push transaction.
-        
-        Args:
-            request: HTTP request
-            pk: Transaction primary key
-        
-        Returns:
-            Response: Updated transaction status
         """
         transaction = self.get_object()
         
@@ -351,12 +317,10 @@ class MPesaTransactionViewSet(viewsets.ModelViewSet):
             
             # Update transaction based on response
             if response.get('ResultCode') == '0':
-                # Payment successful
                 transaction.status = 'SUCCESS'
                 transaction.result_code = '0'
                 transaction.result_desc = 'The service request is processed successfully.'
                 
-                # Update callback timestamp if not already set
                 if not transaction.callback_received_at:
                     transaction.callback_received_at = timezone.now()
                 
@@ -376,7 +340,7 @@ class MPesaTransactionViewSet(viewsets.ModelViewSet):
                         )
                         transaction.contribution = contribution
                     except Exception as e:
-                        logger.error(f"Failed to create contribution for transaction {transaction.id}: {str(e)}")
+                        logger.error(f"Failed to create contribution for transaction {transaction.uuid}: {str(e)}")
                 
                 transaction.save()
                 
@@ -386,7 +350,6 @@ class MPesaTransactionViewSet(viewsets.ModelViewSet):
                     'mpesa_receipt_number': transaction.mpesa_receipt_number
                 })
             else:
-                # Payment failed
                 transaction.status = 'FAILED'
                 transaction.result_code = response.get('ResultCode', '9999')
                 transaction.result_desc = response.get('ResultDesc', 'Unknown error')
@@ -407,39 +370,19 @@ class MPesaTransactionViewSet(viewsets.ModelViewSet):
 
 
 @api_view(['POST'])
-@permission_classes([])  # No authentication required for callbacks
+@permission_classes([])
 @csrf_exempt
 def mpesa_callback(request):
     """
     Webhook endpoint for M-Pesa payment callbacks.
-    
-    This endpoint receives callbacks from Safaricom Daraja API when
-    transactions are completed. It validates the signature and updates
-    the transaction status.
-    
-    Args:
-        request: HTTP request with callback data
-    
-    Returns:
-        JsonResponse: Confirmation response
-    
-    Security:
-        - Validates signature using Daraja public key
-        - Verifies transaction data integrity
-        - Logs all callback attempts for audit
     """
     try:
-        # Get raw request body for signature validation
         raw_body = request.body.decode('utf-8')
-        
-        # Get signature from header
         signature = request.headers.get('Signature', '')
         
-        # Log callback for debugging
-        logger.info(f"M-Pesa callback received: {raw_body}")
-        logger.info(f"Signature: {signature}")
+        logger.info(f"M-Pesa callback received: {raw_body[:200]}...")
+        logger.info(f"Signature: {signature[:50]}...")
         
-        # Parse JSON data
         try:
             data = json.loads(raw_body)
         except json.JSONDecodeError:
@@ -450,7 +393,7 @@ def mpesa_callback(request):
             )
         
         # Validate signature if in production mode
-        if not settings.DEBUG:
+        if not settings.DEBUG and settings.MPESA_ENVIRONMENT == 'production':
             daraja_api = MpesaDarajaAPI()
             if not daraja_api.validate_callback_signature(raw_body, signature):
                 logger.error("Invalid signature in callback")
@@ -477,7 +420,7 @@ def mpesa_callback(request):
         )
         
     except Exception as e:
-        logger.error(f"Error processing callback: {str(e)}")
+        logger.error(f"Error processing callback: {str(e)}", exc_info=True)
         return JsonResponse(
             {'ResultCode': 1, 'ResultDesc': f'Error: {str(e)}'},
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
@@ -487,13 +430,6 @@ def mpesa_callback(request):
 def process_stk_callback(stk_callback, full_data):
     """
     Process STK Push callback from Daraja API.
-    
-    Args:
-        stk_callback (dict): STK callback data
-        full_data (dict): Full callback data
-    
-    Returns:
-        JsonResponse: Processing result
     """
     checkout_request_id = stk_callback.get('CheckoutRequestID')
     result_code = stk_callback.get('ResultCode')
@@ -523,22 +459,34 @@ def process_stk_callback(stk_callback, full_data):
     transaction.callback_received_at = timezone.now()
     
     # Extract M-Pesa receipt number and transaction date
+    mpesa_receipt_number = None
+    transaction_date = None
+    
     for item in callback_items:
         if item.get('Name') == 'MpesaReceiptNumber':
-            transaction.mpesa_receipt_number = item.get('Value')
+            mpesa_receipt_number = item.get('Value')
+            transaction.mpesa_receipt_number = mpesa_receipt_number
         elif item.get('Name') == 'TransactionDate':
-            # Convert Daraja date format (YYYYMMDDHHMMSS) to datetime
             try:
                 date_str = str(item.get('Value'))
-                transaction.transaction_date = datetime.datetime.strptime(
+                transaction_date = datetime.datetime.strptime(
                     date_str, '%Y%m%d%H%M%S'
                 )
-            except (ValueError, TypeError):
-                pass
+                transaction.transaction_date = transaction_date
+            except (ValueError, TypeError) as e:
+                logger.warning(f"Could not parse transaction date: {e}")
     
     # Update status based on result code
     if result_code == 0:
         transaction.status = 'SUCCESS'
+        
+        # Update transaction_id with M-Pesa receipt number if available
+        if mpesa_receipt_number:
+            try:
+                transaction.transaction_id = mpesa_receipt_number
+            except IntegrityError:
+                # If this receipt number already exists, keep the current transaction_id
+                logger.warning(f"M-Pesa receipt number {mpesa_receipt_number} already exists")
         
         # Create contribution if this is for a group
         if transaction.group and not transaction.contribution:
@@ -562,7 +510,7 @@ def process_stk_callback(stk_callback, full_data):
                     
                     logger.info(
                         f"Created contribution {contribution.id} for "
-                        f"transaction {transaction.id}"
+                        f"transaction {transaction.uuid}"
                     )
             except Exception as e:
                 logger.error(f"Failed to create contribution: {str(e)}")
@@ -572,7 +520,7 @@ def process_stk_callback(stk_callback, full_data):
     transaction.save()
     
     logger.info(
-        f"Updated transaction {transaction.id} to status {transaction.status}. "
+        f"Updated transaction {transaction.uuid} to status {transaction.status}. "
         f"M-Pesa Receipt: {transaction.mpesa_receipt_number}"
     )
     
@@ -585,13 +533,6 @@ def process_stk_callback(stk_callback, full_data):
 def process_c2b_callback(result_data, full_data):
     """
     Process C2B (Customer to Business) callback.
-    
-    Args:
-        result_data (dict): C2B result data
-        full_data (dict): Full callback data
-    
-    Returns:
-        JsonResponse: Processing result
     """
     result_code = result_data.get('ResultCode')
     result_desc = result_data.get('ResultDesc')
@@ -633,7 +574,7 @@ def process_c2b_callback(result_data, full_data):
     transaction.save()
     
     logger.info(
-        f"Updated C2B transaction {transaction.id} to status {transaction.status}"
+        f"Updated C2B transaction {transaction.uuid} to status {transaction.status}"
     )
     
     return JsonResponse(
@@ -645,16 +586,6 @@ def process_c2b_callback(result_data, full_data):
 class MPesaBulkPaymentViewSet(viewsets.ModelViewSet):
     """
     ViewSet for managing M-Pesa bulk payments.
-    
-    Provides CRUD operations for bulk payments to multiple recipients
-    with integrated Daraja B2C API.
-    
-    Actions:
-        - list: Get all bulk payments (filterable)
-        - retrieve: Get specific bulk payment
-        - create: Create new bulk payment batch
-        - process_batch: Process batch payments
-        - retry_failed: Retry failed payments in batch
     """
     
     queryset = MPesaBulkPayment.objects.all()
@@ -665,12 +596,6 @@ class MPesaBulkPaymentViewSet(viewsets.ModelViewSet):
     ordering = ['-created_at']
     
     def get_queryset(self):
-        """
-        Filter bulk payments based on user permissions.
-        
-        Returns:
-            QuerySet: Filtered bulk payments queryset
-        """
         user = self.request.user
         
         if user.is_staff:
@@ -678,7 +603,6 @@ class MPesaBulkPaymentViewSet(viewsets.ModelViewSet):
                 'group', 'initiated_by'
             )
         
-        # Get groups where user is admin/treasurer
         admin_groups = ChamaGroup.objects.filter(
             memberships__user=user,
             memberships__role__in=['ADMIN', 'CHAIRPERSON', 'TREASURER'],
@@ -691,19 +615,6 @@ class MPesaBulkPaymentViewSet(viewsets.ModelViewSet):
     
     @action(detail=True, methods=['post'])
     def process_batch(self, request, pk=None):
-        """
-        Process bulk payment batch.
-        
-        This endpoint initiates the actual payment processing for a
-        bulk payment batch using Daraja B2C API.
-        
-        Args:
-            request: HTTP request
-            pk: Bulk payment primary key
-        
-        Returns:
-            Response: Processing result
-        """
         bulk_payment = self.get_object()
         
         if bulk_payment.status not in ['PENDING', 'PARTIAL']:
@@ -712,8 +623,6 @@ class MPesaBulkPaymentViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST
             )
         
-        # TODO: Implement actual B2C API integration
-        # For now, update status to processing
         bulk_payment.status = 'PROCESSING'
         bulk_payment.save()
         
@@ -725,16 +634,6 @@ class MPesaBulkPaymentViewSet(viewsets.ModelViewSet):
     
     @action(detail=True, methods=['post'])
     def retry_failed(self, request, pk=None):
-        """
-        Retry failed payments in a batch.
-        
-        Args:
-            request: HTTP request
-            pk: Bulk payment primary key
-        
-        Returns:
-            Response: Retry result
-        """
         bulk_payment = self.get_object()
         
         if bulk_payment.status not in ['PARTIAL', 'FAILED']:
@@ -743,7 +642,6 @@ class MPesaBulkPaymentViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST
             )
         
-        # TODO: Implement retry logic
         return Response({
             'message': 'Retry initiated for failed payments',
             'batch_id': bulk_payment.batch_id,
@@ -754,17 +652,6 @@ class MPesaBulkPaymentViewSet(viewsets.ModelViewSet):
 class PaymentReconciliationViewSet(viewsets.ModelViewSet):
     """
     ViewSet for payment reconciliation.
-    
-    Provides CRUD operations for reconciling M-Pesa transactions
-    with system contributions.
-    
-    Actions:
-        - list: Get all reconciliations (filterable)
-        - retrieve: Get specific reconciliation
-        - create: Create manual reconciliation
-        - mark_matched: Mark reconciliation as matched
-        - mark_disputed: Mark reconciliation as disputed
-        - auto_reconcile: Attempt automatic reconciliation
     """
     
     queryset = PaymentReconciliation.objects.all()
@@ -775,12 +662,6 @@ class PaymentReconciliationViewSet(viewsets.ModelViewSet):
     ordering = ['-created_at']
     
     def get_queryset(self):
-        """
-        Filter reconciliations based on user permissions.
-        
-        Returns:
-            QuerySet: Filtered reconciliations queryset
-        """
         user = self.request.user
         
         if user.is_staff:
@@ -788,7 +669,6 @@ class PaymentReconciliationViewSet(viewsets.ModelViewSet):
                 'mpesa_transaction', 'contribution', 'reconciled_by'
             )
         
-        # Get groups where user is admin/treasurer
         admin_groups = ChamaGroup.objects.filter(
             memberships__user=user,
             memberships__role__in=['ADMIN', 'CHAIRPERSON', 'TREASURER'],
@@ -801,16 +681,6 @@ class PaymentReconciliationViewSet(viewsets.ModelViewSet):
     
     @action(detail=True, methods=['post'])
     def mark_matched(self, request, pk=None):
-        """
-        Mark reconciliation as matched.
-        
-        Args:
-            request: HTTP request
-            pk: Reconciliation primary key
-        
-        Returns:
-            Response: Updated reconciliation
-        """
         reconciliation = self.get_object()
         
         if reconciliation.status == 'MATCHED':
@@ -829,16 +699,6 @@ class PaymentReconciliationViewSet(viewsets.ModelViewSet):
     
     @action(detail=True, methods=['post'])
     def mark_disputed(self, request, pk=None):
-        """
-        Mark reconciliation as disputed.
-        
-        Args:
-            request: HTTP request
-            pk: Reconciliation primary key
-        
-        Returns:
-            Response: Updated reconciliation
-        """
         reconciliation = self.get_object()
         
         if reconciliation.status == 'DISPUTED':
@@ -857,27 +717,9 @@ class PaymentReconciliationViewSet(viewsets.ModelViewSet):
     
     @action(detail=False, methods=['post'])
     def auto_reconcile(self, request):
-        """
-        Attempt automatic reconciliation of unmatched transactions.
-        
-        This endpoint attempts to automatically match M-Pesa transactions
-        with contributions based on amount, date, and reference.
-        
-        Args:
-            request: HTTP request with optional filters
-        
-        Returns:
-            Response: Reconciliation results
-        """
         group_id = request.data.get('group_id')
         date_from = request.data.get('date_from')
         date_to = request.data.get('date_to')
-        
-        # TODO: Implement automatic reconciliation logic
-        # This would match transactions with contributions based on:
-        # 1. Same amount within tolerance
-        # 2. Same date/time window
-        # 3. Matching reference/description
         
         return Response({
             'message': 'Auto-reconciliation not yet implemented',
