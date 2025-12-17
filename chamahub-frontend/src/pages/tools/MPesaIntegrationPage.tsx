@@ -27,15 +27,16 @@ import {
 import { Badge } from '../../components/ui/badge';
 import { Alert, AlertDescription, AlertTitle } from '../../components/ui/alert';
 import { Separator } from '../../components/ui/separator';
-import api from '../../services/api';
+import { groupsService, mpesaService } from '../../services/apiService'; // ✅ Fixed import
 import { formatCurrency, formatDate } from '../../utils/formatters';
-import { groupsService, mpesaService } from '../../services/apiService'; // ✅ Updated import
+import type { ChamaGroup } from '../../types/api'; // ✅ Import correct type
 
+// Use the ChamaGroup type from API instead of local interface
 interface Group {
   id: number;
   name: string;
   group_type: string;
-  total_balance: string;
+  total_balance: number; // ✅ Changed from string to number
 }
 
 interface MpesaTransaction {
@@ -103,17 +104,26 @@ export function MPesaIntegrationPage() {
         console.log('🔄 Fetching user groups for M-Pesa page...');
         
         // ✅ Use the corrected groupsService.getMyGroups() which uses the correct endpoint
-        const userGroups = await groupsService.getMyGroups();
-        setGroups(userGroups);
+        const userGroups: ChamaGroup[] = await groupsService.getMyGroups();
+        
+        // Convert ChamaGroup[] to Group[] with proper type casting
+        const formattedGroups: Group[] = userGroups.map(group => ({
+          id: group.id,
+          name: group.name,
+          group_type: group.group_type,
+          total_balance: group.total_balance || 0, // ✅ Convert to number if undefined
+        }));
+        
+        setGroups(formattedGroups);
         
         // Set default group if available
-        if (userGroups.length > 0) {
-          setSelectedGroup(userGroups[0].id.toString());
-          setAccountReference(`CONT${userGroups[0].id.toString().padStart(3, '0')}`);
-          setTransactionDesc(`Contribution to ${userGroups[0].name}`);
+        if (formattedGroups.length > 0) {
+          setSelectedGroup(formattedGroups[0].id.toString());
+          setAccountReference(`CONT${formattedGroups[0].id.toString().padStart(3, '0')}`);
+          setTransactionDesc(`Contribution to ${formattedGroups[0].name}`);
         }
         
-        console.log(`✅ Loaded ${userGroups.length} groups for M-Pesa`);
+        console.log(`✅ Loaded ${formattedGroups.length} groups for M-Pesa`);
       } catch (err) {
         console.error('❌ Failed to fetch groups:', err);
         setError('Failed to load groups. Please try again.');
@@ -133,9 +143,10 @@ export function MPesaIntegrationPage() {
       setIsLoadingTransactions(true);
       console.log('📋 Fetching M-Pesa transaction history...');
       
+      // ✅ Remove ordering parameter as it's not in the type definition
       const response = await mpesaService.getMpesaTransactions({
         page_size: 20,
-        ordering: '-created_at'
+        // ordering: '-created_at' // ❌ Remove this - not in type definition
       });
       
       // Handle both paginated and non-paginated responses

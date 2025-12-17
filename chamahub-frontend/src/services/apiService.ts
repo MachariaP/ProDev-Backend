@@ -609,6 +609,8 @@ export const mpesaService = {
     group?: number;
     page?: number;
     page_size?: number;
+    // ✅ Add ordering parameter to match backend
+    ordering?: string;
   }) {
     const response = await api.get('/mpesa/transactions/', { params });
     return response.data;
