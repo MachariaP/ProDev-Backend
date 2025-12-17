@@ -1,3 +1,5 @@
+# mpesa_integration/models.py
+import uuid
 from django.db import models
 from django.conf import settings
 from django.utils.translation import gettext_lazy as _
@@ -22,10 +24,13 @@ class MPesaTransaction(models.Model):
         ('TIMEOUT', 'Timeout'),
     ]
     
+    # Internal unique identifier (UUID)
+    uuid = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
+    
     # Transaction identifiers
-    transaction_id = models.CharField(_('transaction ID'), max_length=100, unique=True)
-    merchant_request_id = models.CharField(_('merchant request ID'), max_length=100, blank=True)
-    checkout_request_id = models.CharField(_('checkout request ID'), max_length=100, blank=True)
+    transaction_id = models.CharField(_('transaction ID'), max_length=100, unique=True, null=True, blank=True)
+    merchant_request_id = models.CharField(_('merchant request ID'), max_length=100, unique=True, null=True, blank=True)
+    checkout_request_id = models.CharField(_('checkout request ID'), max_length=100, unique=True, null=True, blank=True)
     
     # Transaction details
     transaction_type = models.CharField(_('transaction type'), max_length=20, choices=TRANSACTION_TYPE_CHOICES)
@@ -57,13 +62,25 @@ class MPesaTransaction(models.Model):
         ordering = ['-created_at']
         indexes = [
             models.Index(fields=['transaction_id']),
+            models.Index(fields=['uuid']),
             models.Index(fields=['status']),
             models.Index(fields=['phone_number']),
             models.Index(fields=['created_at']),
         ]
     
     def __str__(self):
-        return f"{self.transaction_type} - KES {self.amount} - {self.phone_number}"
+        return f"{self.uuid} - {self.transaction_type} - KES {self.amount}"
+    
+    def save(self, *args, **kwargs):
+        # Ensure transaction_id is not empty string
+        if self.transaction_id == '':
+            self.transaction_id = None
+        
+        # Generate a temporary transaction ID if not set
+        if not self.transaction_id and self.pk:
+            self.transaction_id = f"TEMP-{self.pk:08d}"
+        
+        super().save(*args, **kwargs)
 
 
 class MPesaBulkPayment(models.Model):
@@ -77,6 +94,7 @@ class MPesaBulkPayment(models.Model):
         ('PARTIAL', 'Partially Completed'),
     ]
     
+    uuid = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
     batch_id = models.CharField(_('batch ID'), max_length=100, unique=True)
     group = models.ForeignKey('groups.ChamaGroup', on_delete=models.CASCADE, related_name='bulk_payments')
     total_amount = models.DecimalField(_('total amount'), max_digits=15, decimal_places=2)
@@ -96,6 +114,12 @@ class MPesaBulkPayment(models.Model):
     
     def __str__(self):
         return f"Bulk Payment {self.batch_id} - {self.status}"
+    
+    def save(self, *args, **kwargs):
+        # Generate batch ID if not set
+        if not self.batch_id:
+            self.batch_id = f"BATCH-{self.uuid.hex[:8]}"
+        super().save(*args, **kwargs)
 
 
 class PaymentReconciliation(models.Model):
@@ -108,6 +132,7 @@ class PaymentReconciliation(models.Model):
         ('RESOLVED', 'Resolved'),
     ]
     
+    uuid = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
     mpesa_transaction = models.OneToOneField(MPesaTransaction, on_delete=models.CASCADE, related_name='reconciliation')
     contribution = models.ForeignKey('finance.Contribution', on_delete=models.CASCADE, related_name='reconciliations', null=True, blank=True)
     status = models.CharField(_('status'), max_length=20, choices=STATUS_CHOICES, default='UNMATCHED')
@@ -126,4 +151,4 @@ class PaymentReconciliation(models.Model):
         ordering = ['-created_at']
     
     def __str__(self):
-        return f"Reconciliation - {self.mpesa_transaction.transaction_id} - {self.status}"
+        return f"Reconciliation {self.uuid} - {self.status}"
