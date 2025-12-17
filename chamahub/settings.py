@@ -277,6 +277,23 @@ DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL', default='noreply@chamahub.com'
 # Frontend URL for password reset links
 FRONTEND_URL = config('FRONTEND_URL', default='http://localhost:5173')
 
+# M-Pesa Daraja API Configuration
+MPESA_ENVIRONMENT = config('MPESA_ENVIRONMENT', default='sandbox')
+MPESA_CONSUMER_KEY = config('MPESA_CONSUMER_KEY', default='')
+MPESA_CONSUMER_SECRET = config('MPESA_CONSUMER_SECRET', default='')
+MPESA_BUSINESS_SHORTCODE = config('MPESA_BUSINESS_SHORTCODE', default='')
+MPESA_PASSKEY = config('MPESA_PASSKEY', default='')
+MPESA_CALLBACK_URL = config('MPESA_CALLBACK_URL', default='')
+MPESA_PUBLIC_KEY = config('MPESA_PUBLIC_KEY', default='')
+MPESA_TRANSACTION_LIMIT = config('MPESA_TRANSACTION_LIMIT', default=150000, cast=int)
+MPESA_DAILY_LIMIT = config('MPESA_DAILY_LIMIT', default=300000, cast=int)
+MPESA_STK_PUSH_TIMEOUT = config('MPESA_STK_PUSH_TIMEOUT', default=600, cast=int)
+
+# For the public key which is multi-line, you might need to handle it differently
+# If it's stored as a single string with \n characters in .env:
+if MPESA_PUBLIC_KEY:
+    MPESA_PUBLIC_KEY = MPESA_PUBLIC_KEY.replace('\\n', '\n')
+
 # API Documentation with drf-spectacular
 SPECTACULAR_SETTINGS = {
     'TITLE': 'ChamaHub API',
