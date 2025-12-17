@@ -226,7 +226,7 @@ CORS_ALLOWED_ORIGINS = config(
 
 # Additional CORS configuration for production deployments
 # This allows more flexible CORS handling when CORS_ALLOW_ALL_ORIGINS is set to True
-CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOW_ALL_ORIGINS = config('CORS_ALLOW_ALL_ORIGINS', default=True, cast=bool)
 
 # Allowed origin regex patterns for dynamic subdomains (e.g., *.onrender.com)
 CORS_ALLOWED_ORIGIN_REGEXES = []
@@ -247,6 +247,7 @@ CORS_ALLOW_HEADERS = [
     'user-agent',
     'x-csrftoken',
     'x-requested-with',
+    'signature',  # Added for M-Pesa callback signature validation
 ]
 
 # HTTP methods allowed in CORS requests
@@ -265,6 +266,12 @@ CORS_EXPOSE_HEADERS = [
     'x-csrftoken',
 ]
 
+# CSRF Trusted Origins
+CSRF_TRUSTED_ORIGINS = config(
+    'CSRF_TRUSTED_ORIGINS',
+    default='http://localhost:5173,http://127.0.0.1:5173,https://chama-hub-qe2d.onrender.com,https://chama-hub.onrender.com'
+).split(',')
+
 # Email Configuration (Console backend for development)
 EMAIL_BACKEND = config('EMAIL_BACKEND', default='django.core.mail.backends.console.EmailBackend')
 EMAIL_HOST = config('EMAIL_HOST', default='smtp.gmail.com')
@@ -277,22 +284,158 @@ DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL', default='noreply@chamahub.com'
 # Frontend URL for password reset links
 FRONTEND_URL = config('FRONTEND_URL', default='http://localhost:5173')
 
-# M-Pesa Daraja API Configuration
+# ============================================================================
+# 📱 M-PESA DARAJA API CONFIGURATION
+# ============================================================================
+
+# M-Pesa Environment (sandbox for development, production for live)
 MPESA_ENVIRONMENT = config('MPESA_ENVIRONMENT', default='sandbox')
+
+# M-Pesa Daraja API Credentials
 MPESA_CONSUMER_KEY = config('MPESA_CONSUMER_KEY', default='')
 MPESA_CONSUMER_SECRET = config('MPESA_CONSUMER_SECRET', default='')
 MPESA_BUSINESS_SHORTCODE = config('MPESA_BUSINESS_SHORTCODE', default='')
 MPESA_PASSKEY = config('MPESA_PASSKEY', default='')
+
+# M-Pesa Callback URLs
 MPESA_CALLBACK_URL = config('MPESA_CALLBACK_URL', default='')
+MPESA_SANDBOX_CALLBACK_URL = config('MPESA_SANDBOX_CALLBACK_URL', default=MPESA_CALLBACK_URL)
+MPESA_PRODUCTION_CALLBACK_URL = config('MPESA_PRODUCTION_CALLBACK_URL', default=MPESA_CALLBACK_URL)
+
+# Use appropriate callback URL based on environment
+if MPESA_ENVIRONMENT == 'production':
+    MPESA_CALLBACK_URL = MPESA_PRODUCTION_CALLBACK_URL
+else:
+    MPESA_CALLBACK_URL = MPESA_SANDBOX_CALLBACK_URL
+
+# M-Pesa Public Key (for signature validation)
 MPESA_PUBLIC_KEY = config('MPESA_PUBLIC_KEY', default='')
+if MPESA_PUBLIC_KEY:
+    # Replace escaped newlines with actual newlines
+    MPESA_PUBLIC_KEY = MPESA_PUBLIC_KEY.replace('\\n', '\n')
+
+# M-Pesa Transaction Limits (in KES)
 MPESA_TRANSACTION_LIMIT = config('MPESA_TRANSACTION_LIMIT', default=150000, cast=int)
 MPESA_DAILY_LIMIT = config('MPESA_DAILY_LIMIT', default=300000, cast=int)
 MPESA_STK_PUSH_TIMEOUT = config('MPESA_STK_PUSH_TIMEOUT', default=600, cast=int)
 
-# For the public key which is multi-line, you might need to handle it differently
-# If it's stored as a single string with \n characters in .env:
-if MPESA_PUBLIC_KEY:
-    MPESA_PUBLIC_KEY = MPESA_PUBLIC_KEY.replace('\\n', '\n')
+# ============================================================================
+# 🔄 CELERY & REDIS CONFIGURATION (Background Tasks)
+# ============================================================================
+
+CELERY_BROKER_URL = config('CELERY_BROKER_URL', default='redis://localhost:6379/0')
+CELERY_RESULT_BACKEND = config('CELERY_RESULT_BACKEND', default='redis://localhost:6379/0')
+CELERY_TIMEZONE = 'Africa/Nairobi'
+
+# ============================================================================
+# 📱 SMS & NOTIFICATIONS (Africa's Talking)
+# ============================================================================
+
+AFRICASTALKING_API_KEY = config('AFRICASTALKING_API_KEY', default='')
+AFRICASTALKING_USERNAME = config('AFRICASTALKING_USERNAME', default='')
+AFRICASTALKING_SENDER_ID = config('AFRICASTALKING_SENDER_ID', default='CHAMAHUB')
+
+# ============================================================================
+# 🔐 SUPERUSER ACCOUNT
+# ============================================================================
+
+ADMIN_EMAIL = config('ADMIN_EMAIL', default='')
+ADMIN_PASSWORD = config('ADMIN_PASSWORD', default='')
+ADMIN_PHONE = config('ADMIN_PHONE', default='')
+
+# ============================================================================
+# 🌍 THIRD-PARTY API INTEGRATIONS
+# ============================================================================
+
+# Google Maps API
+GOOGLE_MAPS_API_KEY = config('GOOGLE_MAPS_API_KEY', default='')
+
+# Exchange Rate API
+EXCHANGERATE_API_KEY = config('EXCHANGERATE_API_KEY', default='')
+
+# ============================================================================
+# 🚨 SECURITY & MONITORING
+# ============================================================================
+
+# Sentry Error Tracking (Optional)
+SENTRY_DSN = config('SENTRY_DSN', default='')
+
+# Logging Level
+LOG_LEVEL = config('LOG_LEVEL', default='INFO')
+
+# ============================================================================
+# 💰 FINANCIAL SETTINGS
+# ============================================================================
+
+DEFAULT_CURRENCY = config('DEFAULT_CURRENCY', default='KES')
+MINIMUM_CONTRIBUTION_AMOUNT = config('MINIMUM_CONTRIBUTION_AMOUNT', default=50.00, cast=float)
+CONTRIBUTION_REMINDER_DAYS = config('CONTRIBUTION_REMINDER_DAYS', default=3, cast=int)
+
+# ============================================================================
+# ⚙️ PERFORMANCE SETTINGS
+# ============================================================================
+
+DATABASE_CONN_MAX_AGE = config('DATABASE_CONN_MAX_AGE', default=60, cast=int)
+CACHE_TIMEOUT_MPESA_TOKEN = config('CACHE_TIMEOUT_MPESA_TOKEN', default=3000, cast=int)
+CACHE_TIMEOUT_USER_SESSIONS = config('CACHE_TIMEOUT_USER_SESSIONS', default=3600, cast=int)
+
+# ============================================================================
+# 🎯 APPLICATION CONSTANTS
+# ============================================================================
+
+# Group Types
+GROUP_TYPE_SAVINGS = config('GROUP_TYPE_SAVINGS', default='SAVINGS')
+GROUP_TYPE_INVESTMENT = config('GROUP_TYPE_INVESTMENT', default='INVESTMENT')
+GROUP_TYPE_WELFARE = config('GROUP_TYPE_WELFARE', default='WELFARE')
+GROUP_TYPE_MIXED = config('GROUP_TYPE_MIXED', default='MIXED')
+
+# Transaction Statuses
+TRANSACTION_STATUS_PENDING = config('TRANSACTION_STATUS_PENDING', default='PENDING')
+TRANSACTION_STATUS_SUCCESS = config('TRANSACTION_STATUS_SUCCESS', default='SUCCESS')
+TRANSACTION_STATUS_FAILED = config('TRANSACTION_STATUS_FAILED', default='FAILED')
+TRANSACTION_STATUS_RECONCILED = config('TRANSACTION_STATUS_RECONCILED', default='RECONCILED')
+
+# ============================================================================
+# 📊 ANALYTICS & MONITORING
+# ============================================================================
+
+# Enable/Disable Analytics Collection
+ENABLE_ANALYTICS = config('ENABLE_ANALYTICS', default=True, cast=bool)
+ENABLE_USER_ACTIVITY_LOGGING = config('ENABLE_USER_ACTIVITY_LOGGING', default=True, cast=bool)
+ENABLE_FINANCIAL_REPORTING = config('ENABLE_FINANCIAL_REPORTING', default=True, cast=bool)
+
+# ============================================================================
+# 🎮 GAMIFICATION SETTINGS
+# ============================================================================
+
+ENABLE_GAMIFICATION = config('ENABLE_GAMIFICATION', default=True, cast=bool)
+POINTS_PER_CONTRIBUTION = config('POINTS_PER_CONTRIBUTION', default=10, cast=int)
+POINTS_PER_INVESTMENT = config('POINTS_PER_INVESTMENT', default=50, cast=int)
+POINTS_PER_REFERRAL = config('POINTS_PER_REFERRAL', default=100, cast=int)
+
+# ============================================================================
+# 🚀 DEPLOYMENT SETTINGS
+# ============================================================================
+
+# Auto-migrate on deployment
+AUTO_MIGRATE = config('AUTO_MIGRATE', default=True, cast=bool)
+AUTO_COLLECTSTATIC = config('AUTO_COLLECTSTATIC', default=True, cast=bool)
+
+# Health Check Settings
+HEALTH_CHECK_ENABLED = config('HEALTH_CHECK_ENABLED', default=True, cast=bool)
+HEALTH_CHECK_TIMEOUT = config('HEALTH_CHECK_TIMEOUT', default=30, cast=int)
+
+# ============================================================================
+# 🛠️ DEVELOPMENT SETTINGS (Override in production)
+# ============================================================================
+
+# For development only - disable in production
+DJANGO_SUPERUSER_EMAIL = config('DJANGO_SUPERUSER_EMAIL', default='')
+DJANGO_SUPERUSER_PASSWORD = config('DJANGO_SUPERUSER_PASSWORD', default='')
+DJANGO_SUPERUSER_USERNAME = config('DJANGO_SUPERUSER_USERNAME', default='admin')
+
+# Database Debug
+DB_DEBUG = config('DB_DEBUG', default=False, cast=bool)
 
 # API Documentation with drf-spectacular
 SPECTACULAR_SETTINGS = {
@@ -300,8 +443,50 @@ SPECTACULAR_SETTINGS = {
     'DESCRIPTION': 'API for managing Chama (savings groups) operations including onboarding, finances, governance, and investments',
     'VERSION': '1.0.0',
     'SERVE_INCLUDE_SCHEMA': False,
+    'COMPONENT_SPLIT_REQUEST': True,
+    'SCHEMA_PATH_PREFIX': r'/api/v[0-9]',
 }
 
 # File Upload Settings
 FILE_UPLOAD_MAX_MEMORY_SIZE = 5242880  # 5MB
 DATA_UPLOAD_MAX_MEMORY_SIZE = 5242880  # 5MB
+
+# Logging Configuration
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '{levelname} {asctime} {module} {process:d} {thread:d} {message}',
+            'style': '{',
+        },
+        'simple': {
+            'format': '{levelname} {message}',
+            'style': '{',
+        },
+    },
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+            'formatter': 'simple',
+        },
+        'file': {
+            'level': 'DEBUG',
+            'class': 'logging.FileHandler',
+            'filename': BASE_DIR / 'debug.log',
+            'formatter': 'verbose',
+        },
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['console'],
+            'level': os.getenv('DJANGO_LOG_LEVEL', 'INFO'),
+            'propagate': True,
+        },
+        'mpesa_integration': {
+            'handlers': ['console', 'file'],
+            'level': 'DEBUG',
+            'propagate': True,
+        },
+    },
+}
