@@ -25,11 +25,11 @@ This directory contains comprehensive guides to fix common errors in the ChamaHu
 ## 🐛 Errors Covered
 
 ### ✅ 404 Error: `/groups/my-groups/`
-- **Quick Fix**: [QUICK_FIX.md - Section 1](./QUICK_FIX.md#1-fix-frontend-api-call---)
+- **Quick Fix**: [QUICK_FIX.md - Section 1](./QUICK_FIX.md#1-fix-frontend-api-call-)
 - **Detailed Guide**: [ERROR_SOLUTION_GUIDE.md - Section 1](./ERROR_SOLUTION_GUIDE.md#1-404-error-resource-not-found-groupsmy-groups)
 
 ### ✅ 500 Error: M-Pesa STK Push Failure
-- **Quick Fix**: [QUICK_FIX.md - Section 2](./QUICK_FIX.md#2-fix-m-pesa-passkey-in-env---)
+- **Quick Fix**: [QUICK_FIX.md - Section 2](./QUICK_FIX.md#2-fix-m-pesa-passkey-in-env-)
 - **Detailed Guide**: [ERROR_SOLUTION_GUIDE.md - Section 2](./ERROR_SOLUTION_GUIDE.md#2-500-error-m-pesa-stk-push-failure)
 
 ### ✅ Browser Extension Errors

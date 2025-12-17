@@ -333,7 +333,7 @@ Step 4: Send to Safaricom
 Step 1: Get Inputs
 ┌───────────────────────────────────────┐
 │ Business Shortcode: 7199660           │ ❌ Wrong for sandbox
-│ Passkey: RWloVyZPbhuyDg61sWXWF...    │ ❌ Invalid passkey
+│ Passkey: <INVALID_PASSKEY>           │ ❌ Invalid passkey
 │ Timestamp: 20251217084524             │
 └───────────────────────────────────────┘
          │

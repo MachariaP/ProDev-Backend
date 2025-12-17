@@ -30,10 +30,10 @@
 **Open your `.env` file and change:**
 
 ```bash
-# ❌ REMOVE THIS (incorrect passkey)
-MPESA_PASSKEY=RWloVyZPbhuyDg61sWXWFnrSfpV/vAaF546NWF258Y7H1+cjUBcOjZWHwMPs4JBl9au0D9TmzHntiIbk8bLRRo3Cd3GArgVNXlKX0PpfHl8eJiIPXv8vRqZKW32EpL3mpyuI4RqSM+VEtXrAccQ1/f/p9mfHUnveWTq6F9l8tXH6PAIB68d2claoGaK4cGMKr5JqzDroYXGXgsqgNGfDZEZA0zTMp3D76P35C9wkK/mmX9sY+svdrFEwHjZ/X2GCDgIj6I3APQN84XlVcrX8+jGVm1x0TxLsQj9ZrmB8cgWKa8DG7zIc3WkD9kolL/RxI97gPXbGOa7b40zR/awRUg==
+# ❌ REMOVE THIS (your current incorrectly formatted passkey line)
+# MPESA_PASSKEY=<your_invalid_passkey>
 
-# ✅ ADD THIS (correct sandbox passkey)
+# ✅ ADD THIS (correct sandbox passkey from Safaricom)
 MPESA_PASSKEY=bfb279f9aa9bdbcf158e97dd71a467cd2e0c893059b10f78e6b72ada1ed2c919
 MPESA_BUSINESS_SHORTCODE=174379
 ```
