@@ -900,7 +900,16 @@ By the end of this content, you will be able to:
 - Make confident decisions about your finances
 
 ## Main Content
-{'...' * 100}  # Placeholder for full content
+This section contains detailed information about {category.lower()}. Content includes practical examples, 
+case studies, and actionable steps you can take to improve your financial situation. The material is 
+designed to be accessible while providing valuable insights for learners at the {difficulty.lower()} level.
+
+### Key Topics Covered
+- Fundamental concepts and definitions
+- Best practices and strategies
+- Common pitfalls to avoid
+- Real-world applications and examples
+- Step-by-step guidance for implementation
 
 ## Summary
 You've learned important concepts about {category.lower()}. Apply these principles to improve your financial well-being.
@@ -970,7 +979,7 @@ You've learned important concepts about {category.lower()}. Apply these principl
                 path_contents = [c for c in contents if c.category == 'INVESTMENTS'][:6]
             elif path_type == 'DEBT_MANAGEMENT':
                 path_contents = [c for c in contents if c.category == 'LOANS' 
-                               or ('debt' in ' '.join(c.tags))][:4]
+                               or ('debt' in ' '.join(str(tag) for tag in c.tags) if c.tags else '')][:4]
             elif path_type == 'BUSINESS_FINANCE':
                 path_contents = [c for c in contents if c.category == 'ENTREPRENEURSHIP'][:5]
             elif path_type == 'RETIREMENT_PLANNING':
@@ -1334,7 +1343,7 @@ You've learned important concepts about {category.lower()}. Apply these principl
                     completed_at=timezone.now() if completed else None,
                     learning_progress=random.randint(0, 100),
                     daily_target=challenge.target_amount / Decimal(str(challenge.duration_days)),
-                    weekly_target=challenge.target_amount / Decimal(str(challenge.duration_days / 7))
+                    weekly_target=challenge.target_amount / Decimal(str(max(1, challenge.duration_days / 7)))
                 )
                 
                 # Link some completed lessons
