@@ -625,11 +625,11 @@ class SavingsChallenge(models.Model):
     ]
     
     title = models.CharField(_('title'), max_length=200)
-    slug = models.SlugField(_('slug'), unique=True)
+    slug = models.SlugField(_('slug'), unique=True, blank=True)
     description = models.TextField(_('description'))
-    short_description = models.CharField(_('short description'), max_length=300)
+    short_description = models.CharField(_('short description'), max_length=300, blank=True, default='')
     
-    challenge_type = models.CharField(_('challenge type'), max_length=30, choices=CHALLENGE_TYPE_CHOICES)
+    challenge_type = models.CharField(_('challenge type'), max_length=30, choices=CHALLENGE_TYPE_CHOICES, default='WEEKLY_SAVINGS')
     target_amount = models.DecimalField(_('target amount'), max_digits=12, decimal_places=2)
     duration_days = models.PositiveIntegerField(_('duration (days)'))
     
@@ -841,7 +841,7 @@ class Webinar(models.Model):
     ]
     
     title = models.CharField(_('title'), max_length=200)
-    slug = models.SlugField(_('slug'), unique=True)
+    slug = models.SlugField(_('slug'), unique=True, blank=True)
     description = models.TextField(_('description'))
     short_description = models.CharField(_('short description'), max_length=300, blank=True)
     
@@ -868,8 +868,8 @@ class Webinar(models.Model):
     
     # Webinar details
     status = models.CharField(_('status'), max_length=20, choices=STATUS_CHOICES, default='SCHEDULED')
-    category = models.CharField(_('category'), max_length=30, choices=EducationalContent.CATEGORY_CHOICES)
-    difficulty = models.CharField(_('difficulty'), max_length=20, choices=EducationalContent.DIFFICULTY_CHOICES)
+    category = models.CharField(_('category'), max_length=30, choices=EducationalContent.CATEGORY_CHOICES, default='SAVINGS')
+    difficulty = models.CharField(_('difficulty'), max_length=20, choices=EducationalContent.DIFFICULTY_CHOICES, default='BEGINNER')
     
     max_participants = models.PositiveIntegerField(_('max participants'), default=100)
     registered_count = models.PositiveIntegerField(_('registered count'), default=0)
