@@ -20,6 +20,8 @@ from django.conf import settings
 from django.utils.translation import gettext_lazy as _
 import uuid
 from django.core.validators import MinValueValidator, MaxValueValidator
+from django.utils import timezone
+from django.db.models import Q, Avg
 
 
 class EducationalContent(models.Model):
@@ -162,9 +164,112 @@ class EducationalContent(models.Model):
             **kwargs: Arbitrary keyword arguments
         """
         if self.is_published and not self.published_at:
-            from django.utils import timezone
             self.published_at = timezone.now()
         super().save(*args, **kwargs)
+    
+    def increment_views(self, user=None):
+        """
+        Increment views count for this content.
+        
+        Args:
+            user (User, optional): User who viewed the content
+            
+        Returns:
+            int: New views count
+        """
+        self.views_count = models.F('views_count') + 1
+        self.save(update_fields=['views_count'])
+        self.refresh_from_db()
+        
+        # Log view for analytics
+        if user and user.is_authenticated:
+            # Could create a ContentView model for detailed analytics
+            pass
+        
+        return self.views_count
+    
+    def get_related_content(self, limit=5):
+        """
+        Get related content based on category, tags, and difficulty.
+        
+        Args:
+            limit (int): Maximum number of related items to return
+            
+        Returns:
+            QuerySet: Related EducationalContent objects
+        """
+        # Build query for related content
+        query = Q()
+        
+        # Same category
+        query |= Q(category=self.category)
+        
+        # Same difficulty
+        query |= Q(difficulty=self.difficulty)
+        
+        # Shared tags
+        if self.tags:
+            for tag in self.tags:
+                query |= Q(tags__contains=[tag])
+        
+        # Exclude self and filter published
+        related = EducationalContent.objects.filter(
+            query,
+            is_published=True
+        ).exclude(
+            id=self.id
+        ).distinct()[:limit]
+        
+        return related
+    
+    def get_completion_stats(self):
+        """
+        Get completion statistics for this content.
+        
+        Returns:
+            dict: Statistics including total users, completions, average score
+        """
+        total_users = self.user_progress.count()
+        completed = self.user_progress.filter(status='COMPLETED').count()
+        in_progress = self.user_progress.filter(status='IN_PROGRESS').count()
+        
+        avg_score = self.user_progress.filter(
+            quiz_score__isnull=False
+        ).aggregate(avg=Avg('quiz_score'))['avg'] or 0
+        
+        return {
+            'total_users': total_users,
+            'completed': completed,
+            'in_progress': in_progress,
+            'completion_rate': (completed / total_users * 100) if total_users > 0 else 0,
+            'average_score': float(avg_score),
+        }
+    
+    def can_user_access(self, user):
+        """
+        Check if user can access this content.
+        
+        Args:
+            user (User): User to check access for
+            
+        Returns:
+            tuple: (bool can_access, str reason if cannot)
+        """
+        if not self.is_published:
+            return False, "Content is not published"
+        
+        if self.prerequisites.exists() and user.is_authenticated:
+            # Check if user has completed all prerequisites
+            completed_prerequisites = UserProgress.objects.filter(
+                user=user,
+                content__in=self.prerequisites.all(),
+                status='COMPLETED'
+            ).count()
+            
+            if completed_prerequisites < self.prerequisites.count():
+                return False, "Prerequisites not completed"
+        
+        return True, ""
 
 
 class LearningPath(models.Model):
@@ -263,6 +368,88 @@ class LearningPath(models.Model):
             content.points_reward for content in self.learning_path_contents.all()
         )
         self.save()
+    
+    def get_recommended_for_user(self, user, limit=3):
+        """
+        Get learning paths recommended for a specific user.
+        
+        Args:
+            user (User): User to get recommendations for
+            limit (int): Maximum number of recommendations
+            
+        Returns:
+            QuerySet: Recommended LearningPath objects
+        """
+        if not user.is_authenticated:
+            # Return popular paths for new users
+            return self.__class__.objects.filter(
+                is_published=True,
+                is_featured=True
+            ).order_by('-enrolled_count')[:limit]
+        
+        # Get user's completed content categories
+        completed_categories = UserProgress.objects.filter(
+            user=user,
+            status='COMPLETED'
+        ).values_list('content__category', flat=True).distinct()
+        
+        # Get paths in same categories but not enrolled
+        enrolled_path_ids = LearningPathEnrollment.objects.filter(
+            user=user
+        ).values_list('learning_path_id', flat=True)
+        
+        recommended = self.__class__.objects.filter(
+            is_published=True,
+            category__in=completed_categories
+        ).exclude(
+            id__in=enrolled_path_ids
+        ).order_by('-enrolled_count')[:limit]
+        
+        # If not enough recommendations, add popular paths
+        if recommended.count() < limit:
+            additional = limit - recommended.count()
+            popular_paths = self.__class__.objects.filter(
+                is_published=True,
+                is_featured=True
+            ).exclude(
+                id__in=enrolled_path_ids
+            ).exclude(
+                id__in=recommended.values_list('id', flat=True)
+            ).order_by('-enrolled_count')[:additional]
+            
+            # Combine querysets
+            from itertools import chain
+            combined = list(chain(recommended, popular_paths))
+            return combined[:limit]
+        
+        return recommended
+    
+    def calculate_completion_time(self, user):
+        """
+        Calculate estimated completion time for a specific user.
+        
+        Args:
+            user (User): User to calculate for
+            
+        Returns:
+            dict: Estimated time in different units
+        """
+        # Get user's average completion time per content
+        user_avg_time = UserProgress.objects.filter(
+            user=user,
+            status='COMPLETED',
+            time_spent_minutes__gt=0
+        ).aggregate(avg=Avg('time_spent_minutes'))['avg'] or 30  # Default 30 min
+        
+        # Calculate total estimated time
+        total_minutes = self.contents_count * user_avg_time
+        
+        return {
+            'minutes': total_minutes,
+            'hours': total_minutes / 60,
+            'days': total_minutes / 60 / 8,  # Assuming 8-hour learning days
+            'weeks': total_minutes / 60 / 8 / 5,  # Assuming 5-day learning weeks
+        }
 
 
 class LearningPathContent(models.Model):
@@ -381,7 +568,6 @@ class LearningPathEnrollment(models.Model):
         elif self.progress_percentage == 100:
             self.status = 'COMPLETED'
             if not self.completed_at:
-                from django.utils import timezone
                 self.completed_at = timezone.now()
         elif self.progress_percentage > 0:
             self.status = 'IN_PROGRESS'
@@ -492,8 +678,6 @@ class UserProgress(models.Model):
             quiz_score (Decimal, optional): Quiz score
             quiz_answers (JSON, optional): User quiz answers
         """
-        from django.utils import timezone
-        
         self.status = 'COMPLETED'
         self.progress_percentage = 100
         self.completed_at = timezone.now()
@@ -575,6 +759,71 @@ class Certificate(models.Model):
             import secrets
             self.verification_code = secrets.token_urlsafe(16)
         super().save(*args, **kwargs)
+    
+    def generate_pdf(self):
+        """
+        Generate PDF certificate (stub for actual implementation).
+        
+        In production, this would:
+        1. Generate PDF with certificate design
+        2. Add user and achievement details
+        3. Apply digital signature
+        4. Store in certificate_pdf field
+        5. Return download URL
+        
+        Returns:
+            str: URL to generated PDF certificate
+        """
+        # This is a stub for the actual implementation
+        # In practice, use a library like ReportLab, WeasyPrint, or a service
+        
+        # For now, return a placeholder
+        return f"/certificates/{self.certificate_id}/download/"
+    
+    def send_via_email(self):
+        """
+        Send certificate via email to user.
+        
+        Returns:
+            bool: Success status
+        """
+        # This would integrate with Django's email system
+        # For now, it's a stub
+        return True
+    
+    def verify(self, verification_code=None):
+        """
+        Verify certificate authenticity.
+        
+        Args:
+            verification_code (str, optional): Verification code to check
+            
+        Returns:
+            dict: Verification result with details
+        """
+        if verification_code and verification_code != self.verification_code:
+            return {
+                'valid': False,
+                'error': 'Invalid verification code',
+                'certificate': None,
+            }
+        
+        # Check if certificate is still valid
+        is_valid = True
+        errors = []
+        
+        if self.valid_until and self.valid_until < timezone.now().date():
+            is_valid = False
+            errors.append('Certificate has expired')
+        
+        return {
+            'valid': is_valid,
+            'errors': errors,
+            'certificate': self if is_valid else None,
+            'issued_to': self.user.get_full_name(),
+            'issued_at': self.issued_at,
+            'verification_code': self.verification_code,
+        }
 
 
 class SavingsChallenge(models.Model):
@@ -693,7 +942,6 @@ class SavingsChallenge(models.Model):
         This method automatically updates the challenge status based on
         the current date relative to start and end dates.
         """
-        from django.utils import timezone
         today = timezone.now().date()
         
         if self.end_date < today and self.status == 'ACTIVE':
@@ -716,6 +964,70 @@ class SavingsChallenge(models.Model):
         if total > 0:
             self.success_rate = (completed / total) * 100
             self.save()
+    
+    def get_daily_savings_target(self):
+        """
+        Calculate daily savings target based on duration and amount.
+        
+        Returns:
+            Decimal: Daily savings target
+        """
+        if self.duration_days > 0:
+            return self.target_amount / self.duration_days
+        return self.target_amount
+    
+    def get_progress_timeline(self):
+        """
+        Generate progress timeline for the challenge.
+        
+        Returns:
+            list: Timeline of target amounts by date
+        """
+        from datetime import timedelta
+        
+        timeline = []
+        daily_target = self.get_daily_savings_target()
+        current_date = self.start_date
+        cumulative = 0
+        
+        for day in range(self.duration_days):
+            cumulative += daily_target
+            timeline.append({
+                'day': day + 1,
+                'date': current_date,
+                'target': cumulative,
+                'daily_target': daily_target,
+            })
+            current_date += timedelta(days=1)
+        
+        return timeline
+    
+    def get_leaderboard(self, limit=10):
+        """
+        Get challenge leaderboard with participant rankings.
+        
+        Args:
+            limit (int): Maximum number of leaderboard entries
+            
+        Returns:
+            list: Leaderboard entries with rankings
+        """
+        participants = self.participants.select_related('user').order_by(
+            '-current_amount', 'joined_at'
+        )[:limit]
+        
+        leaderboard = []
+        for i, participant in enumerate(participants, 1):
+            leaderboard.append({
+                'rank': i,
+                'user': participant.user,
+                'current_amount': participant.current_amount,
+                'progress_percentage': participant.progress_percentage,
+                'streak_days': participant.streak_days,
+                'completed': participant.completed,
+            })
+        
+        return leaderboard
 
 
 class ChallengeParticipant(models.Model):
@@ -792,7 +1104,6 @@ class ChallengeParticipant(models.Model):
             if self.progress_percentage >= 100:
                 self.completed = True
                 if not self.completed_at:
-                    from django.utils import timezone
                     self.completed_at = timezone.now()
             self.save()
 
@@ -952,7 +1263,6 @@ class Webinar(models.Model):
         This method automatically updates the webinar status based on
         the current time relative to scheduled time and duration.
         """
-        from django.utils import timezone
         now = timezone.now()
         
         if self.status == 'CANCELLED':
@@ -969,6 +1279,71 @@ class Webinar(models.Model):
                 self.status = 'COMPLETED'
         
         self.save()
+    
+    def get_time_until_start(self):
+        """
+        Calculate time until webinar starts in human-readable format.
+        
+        Returns:
+            str: Formatted time until start
+        """
+        now = timezone.now()
+        if now >= self.scheduled_at:
+            return "Started"
+        
+        delta = self.scheduled_at - now
+        
+        if delta.days > 0:
+            return f"In {delta.days} day{'s' if delta.days != 1 else ''}"
+        elif delta.seconds // 3600 > 0:
+            hours = delta.seconds // 3600
+            return f"In {hours} hour{'s' if hours != 1 else ''}"
+        else:
+            minutes = (delta.seconds % 3600) // 60
+            return f"In {minutes} minute{'s' if minutes != 1 else ''}"
+    
+    def get_attendance_summary(self):
+        """
+        Get detailed attendance summary.
+        
+        Returns:
+            dict: Attendance statistics
+        """
+        registrations = self.registrations.all()
+        attended = registrations.filter(status='ATTENDED')
+        absent = registrations.filter(status='ABSENT')
+        
+        total_registered = registrations.count()
+        total_attended = attended.count()
+        
+        return {
+            'total_registered': total_registered,
+            'total_attended': total_attended,
+            'attendance_rate': (total_attended / total_registered * 100) if total_registered > 0 else 0,
+            'average_rating': self.average_rating or 0,
+            'feedback_count': registrations.exclude(feedback='').count(),
+            'average_duration': attended.aggregate(avg=Avg('attendance_duration'))['avg'] or 0,
+        }
+    
+    def generate_checkin_codes(self, count=1):
+        """
+        Generate check-in codes for webinar registration.
+        
+        Args:
+            count (int): Number of codes to generate
+            
+        Returns:
+            list: Generated check-in codes
+        """
+        import random
+        import string
+        
+        codes = []
+        for _ in range(count):
+            code = ''.join(random.choices(string.digits, k=6))
+            codes.append(code)
+        
+        return codes
 
 
 class WebinarRegistration(models.Model):
@@ -1059,8 +1434,6 @@ class WebinarRegistration(models.Model):
         This method updates the registration status to attended and
         sets the check-in timestamp.
         """
-        from django.utils import timezone
-        
         self.status = 'ATTENDED'
         self.checked_in = True
         self.checkin_at = timezone.now()
@@ -1237,6 +1610,78 @@ class Achievement(models.Model):
     def __str__(self):
         """String representation of Achievement."""
         return self.title
+    
+    def check_user_progress(self, user):
+        """
+        Check user's progress towards this achievement.
+        
+        Args:
+            user (User): User to check progress for
+            
+        Returns:
+            dict: Progress information including percentage and remaining
+        """
+        try:
+            user_achievement = UserAchievement.objects.get(
+                user=user,
+                achievement=self
+            )
+            return {
+                'progress': user_achievement.progress,
+                'is_unlocked': user_achievement.is_unlocked,
+                'unlocked_at': user_achievement.earned_at if user_achievement.is_unlocked else None,
+                'remaining': 100 - user_achievement.progress,
+            }
+        except UserAchievement.DoesNotExist:
+            # User hasn't started working on this achievement
+            return {
+                'progress': 0,
+                'is_unlocked': False,
+                'unlocked_at': None,
+                'remaining': 100,
+            }
+    
+    def unlock_for_user(self, user, context=None):
+        """
+        Unlock achievement for a user.
+        
+        Args:
+            user (User): User to unlock achievement for
+            context (dict, optional): Context information (content, challenge, etc.)
+            
+        Returns:
+            UserAchievement: Created or updated UserAchievement object
+        """
+        user_achievement, created = UserAchievement.objects.get_or_create(
+            user=user,
+            achievement=self,
+            defaults={
+                'is_unlocked': True,
+                'progress': 100,
+            }
+        )
+        
+        if not user_achievement.is_unlocked:
+            user_achievement.is_unlocked = True
+            user_achievement.progress = 100
+            
+            # Set context if provided
+            if context:
+                if 'content' in context:
+                    user_achievement.context_content = context['content']
+                if 'challenge' in context:
+                    user_achievement.context_challenge = context['challenge']
+                if 'webinar' in context:
+                    user_achievement.context_webinar = context['webinar']
+            
+            user_achievement.save()
+        
+        # Award points to user
+        if self.points_value > 0:
+            # This would typically update a user points model
+            pass
+        
+        return user_achievement
 
 
 class UserAchievement(models.Model):
