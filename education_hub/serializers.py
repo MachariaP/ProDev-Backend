@@ -1,3 +1,18 @@
+"""
+Serializers for Education Hub.
+
+This module defines Django REST Framework serializers for all education hub models.
+It includes serializers for data validation, transformation, and representation
+in API responses, with support for nested relationships and custom field methods.
+
+Key Serializers:
+- EducationalContentSerializer: For educational content with progress tracking
+- LearningPathSerializer: For learning paths with enrollment status
+- WebinarSerializer: For webinars with registration status
+- CertificateSerializer: For certificates with verification
+- Dashboard serializers: For analytics and statistics
+"""
+
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
 from .models import (
@@ -12,6 +27,8 @@ User = get_user_model()
 
 
 class UserSimpleSerializer(serializers.ModelSerializer):
+    """Simplified serializer for User model with basic information."""
+    
     class Meta:
         model = User
         fields = ['id', 'email', 'first_name', 'last_name', 'profile_picture']
@@ -19,6 +36,8 @@ class UserSimpleSerializer(serializers.ModelSerializer):
 
 # Educational Content
 class EducationalContentSerializer(serializers.ModelSerializer):
+    """Serializer for EducationalContent model with related data."""
+    
     author = UserSimpleSerializer(read_only=True)
     prerequisites = serializers.SerializerMethodField()
     is_completed = serializers.SerializerMethodField()
@@ -30,15 +49,18 @@ class EducationalContentSerializer(serializers.ModelSerializer):
         read_only_fields = ['id', 'created_at', 'updated_at', 'published_at', 'author']
     
     def get_prerequisites(self, obj):
+        """Get prerequisites as simplified objects."""
         return [{'id': p.id, 'title': p.title, 'slug': p.slug} for p in obj.prerequisites.all()]
     
     def get_is_completed(self, obj):
+        """Check if current user has completed this content."""
         request = self.context.get('request')
         if request and request.user.is_authenticated:
             return obj.user_progress.filter(user=request.user, status='COMPLETED').exists()
         return False
     
     def get_user_progress(self, obj):
+        """Get current user's progress for this content."""
         request = self.context.get('request')
         if request and request.user.is_authenticated:
             progress = obj.user_progress.filter(user=request.user).first()
@@ -48,6 +70,8 @@ class EducationalContentSerializer(serializers.ModelSerializer):
 
 
 class EducationalContentCreateSerializer(serializers.ModelSerializer):
+    """Serializer for creating/updating EducationalContent (write-only fields)."""
+    
     class Meta:
         model = EducationalContent
         fields = '__all__'
@@ -56,6 +80,8 @@ class EducationalContentCreateSerializer(serializers.ModelSerializer):
 
 # User Progress
 class UserProgressSerializer(serializers.ModelSerializer):
+    """Serializer for UserProgress model."""
+    
     content = EducationalContentSerializer(read_only=True)
     user = UserSimpleSerializer(read_only=True)
     
@@ -66,6 +92,8 @@ class UserProgressSerializer(serializers.ModelSerializer):
 
 
 class UserProgressCreateSerializer(serializers.ModelSerializer):
+    """Serializer for creating/updating UserProgress."""
+    
     class Meta:
         model = UserProgress
         fields = ['content', 'progress_percentage', 'quiz_score', 'quiz_answers', 'bookmarked', 'last_position']
@@ -73,6 +101,8 @@ class UserProgressCreateSerializer(serializers.ModelSerializer):
 
 # Learning Paths
 class LearningPathContentSerializer(serializers.ModelSerializer):
+    """Serializer for LearningPathContent model."""
+    
     content = EducationalContentSerializer(read_only=True)
     
     class Meta:
@@ -81,6 +111,8 @@ class LearningPathContentSerializer(serializers.ModelSerializer):
 
 
 class LearningPathSerializer(serializers.ModelSerializer):
+    """Serializer for LearningPath model with related data."""
+    
     contents = serializers.SerializerMethodField()
     path_contents = LearningPathContentSerializer(many=True, read_only=True)
     is_enrolled = serializers.SerializerMethodField()
@@ -91,6 +123,7 @@ class LearningPathSerializer(serializers.ModelSerializer):
         fields = '__all__'
     
     def get_contents(self, obj):
+        """Get ordered contents for the learning path."""
         return LearningPathContentSerializer(
             obj.path_contents.order_by('order'), 
             many=True, 
@@ -98,12 +131,14 @@ class LearningPathSerializer(serializers.ModelSerializer):
         ).data
     
     def get_is_enrolled(self, obj):
+        """Check if current user is enrolled in this learning path."""
         request = self.context.get('request')
         if request and request.user.is_authenticated:
             return obj.enrollments.filter(user=request.user).exists()
         return False
     
     def get_user_enrollment(self, obj):
+        """Get current user's enrollment for this learning path."""
         request = self.context.get('request')
         if request and request.user.is_authenticated:
             enrollment = obj.enrollments.filter(user=request.user).first()
@@ -113,6 +148,8 @@ class LearningPathSerializer(serializers.ModelSerializer):
 
 
 class LearningPathCreateSerializer(serializers.ModelSerializer):
+    """Serializer for creating/updating LearningPath."""
+    
     class Meta:
         model = LearningPath
         fields = '__all__'
@@ -121,6 +158,8 @@ class LearningPathCreateSerializer(serializers.ModelSerializer):
 
 # Learning Path Enrollment
 class ContentCompletionSerializer(serializers.ModelSerializer):
+    """Serializer for ContentCompletion model."""
+    
     content = EducationalContentSerializer(read_only=True)
     
     class Meta:
@@ -130,6 +169,8 @@ class ContentCompletionSerializer(serializers.ModelSerializer):
 
 
 class LearningPathEnrollmentSerializer(serializers.ModelSerializer):
+    """Serializer for LearningPathEnrollment model."""
+    
     learning_path = LearningPathSerializer(read_only=True)
     user = UserSimpleSerializer(read_only=True)
     current_content = EducationalContentSerializer(read_only=True)
@@ -143,6 +184,8 @@ class LearningPathEnrollmentSerializer(serializers.ModelSerializer):
 
 
 class LearningPathEnrollmentCreateSerializer(serializers.ModelSerializer):
+    """Serializer for creating LearningPathEnrollment."""
+    
     class Meta:
         model = LearningPathEnrollment
         fields = ['learning_path', 'notes']
@@ -150,6 +193,8 @@ class LearningPathEnrollmentCreateSerializer(serializers.ModelSerializer):
 
 # Certificates
 class CertificateSerializer(serializers.ModelSerializer):
+    """Serializer for Certificate model."""
+    
     user = UserSimpleSerializer(read_only=True)
     learning_path = LearningPathSerializer(read_only=True)
     content = EducationalContentSerializer(read_only=True)
@@ -162,6 +207,8 @@ class CertificateSerializer(serializers.ModelSerializer):
 
 # Savings Challenges
 class SavingsChallengeSerializer(serializers.ModelSerializer):
+    """Serializer for SavingsChallenge model with participation status."""
+    
     created_by = UserSimpleSerializer(read_only=True)
     learning_path = LearningPathSerializer(read_only=True)
     educational_content = EducationalContentSerializer(many=True, read_only=True)
@@ -174,12 +221,14 @@ class SavingsChallengeSerializer(serializers.ModelSerializer):
         read_only_fields = ['id', 'created_by', 'created_at', 'total_amount_saved', 'success_rate']
     
     def get_is_participating(self, obj):
+        """Check if current user is participating in this challenge."""
         request = self.context.get('request')
         if request and request.user.is_authenticated:
             return obj.participants.filter(user=request.user).exists()
         return False
     
     def get_user_participation(self, obj):
+        """Get current user's participation in this challenge."""
         request = self.context.get('request')
         if request and request.user.is_authenticated:
             participation = obj.participants.filter(user=request.user).first()
@@ -189,6 +238,8 @@ class SavingsChallengeSerializer(serializers.ModelSerializer):
 
 
 class SavingsChallengeCreateSerializer(serializers.ModelSerializer):
+    """Serializer for creating/updating SavingsChallenge."""
+    
     class Meta:
         model = SavingsChallenge
         fields = '__all__'
@@ -197,6 +248,8 @@ class SavingsChallengeCreateSerializer(serializers.ModelSerializer):
 
 # Challenge Participants
 class ChallengeParticipantSerializer(serializers.ModelSerializer):
+    """Serializer for ChallengeParticipant model."""
+    
     challenge = SavingsChallengeSerializer(read_only=True)
     user = UserSimpleSerializer(read_only=True)
     completed_lessons = EducationalContentSerializer(many=True, read_only=True)
@@ -208,6 +261,8 @@ class ChallengeParticipantSerializer(serializers.ModelSerializer):
 
 
 class ChallengeParticipantCreateSerializer(serializers.ModelSerializer):
+    """Serializer for creating ChallengeParticipant."""
+    
     class Meta:
         model = ChallengeParticipant
         fields = ['challenge', 'daily_target', 'weekly_target', 'notes']
@@ -215,6 +270,8 @@ class ChallengeParticipantCreateSerializer(serializers.ModelSerializer):
 
 # Webinars
 class WebinarSerializer(serializers.ModelSerializer):
+    """Serializer for Webinar model with registration status."""
+    
     presenter = UserSimpleSerializer(read_only=True)
     co_presenters = UserSimpleSerializer(many=True, read_only=True)
     learning_path = LearningPathSerializer(read_only=True)
@@ -231,12 +288,14 @@ class WebinarSerializer(serializers.ModelSerializer):
         read_only_fields = ['id', 'created_at', 'updated_at', 'views_count', 'average_rating']
     
     def get_is_registered(self, obj):
+        """Check if current user is registered for this webinar."""
         request = self.context.get('request')
         if request and request.user.is_authenticated:
             return obj.registrations.filter(user=request.user, status__in=['REGISTERED', 'ATTENDED']).exists()
         return False
     
     def get_user_registration(self, obj):
+        """Get current user's registration for this webinar."""
         request = self.context.get('request')
         if request and request.user.is_authenticated:
             registration = obj.registrations.filter(user=request.user).first()
@@ -245,6 +304,7 @@ class WebinarSerializer(serializers.ModelSerializer):
         return None
     
     def get_can_register(self, obj):
+        """Check if current user can register for this webinar."""
         request = self.context.get('request')
         if request and request.user.is_authenticated:
             # Check if user is already registered
@@ -259,6 +319,7 @@ class WebinarSerializer(serializers.ModelSerializer):
         return False
     
     def get_time_until_start(self, obj):
+        """Calculate time until webinar starts."""
         from django.utils import timezone
         if obj.scheduled_at > timezone.now():
             delta = obj.scheduled_at - timezone.now()
@@ -270,6 +331,8 @@ class WebinarSerializer(serializers.ModelSerializer):
 
 
 class WebinarCreateSerializer(serializers.ModelSerializer):
+    """Serializer for creating/updating Webinar."""
+    
     class Meta:
         model = Webinar
         fields = '__all__'
@@ -278,6 +341,8 @@ class WebinarCreateSerializer(serializers.ModelSerializer):
 
 # Webinar Registrations
 class WebinarRegistrationSerializer(serializers.ModelSerializer):
+    """Serializer for WebinarRegistration model."""
+    
     webinar = WebinarSerializer(read_only=True)
     user = UserSimpleSerializer(read_only=True)
     
@@ -289,6 +354,8 @@ class WebinarRegistrationSerializer(serializers.ModelSerializer):
 
 
 class WebinarRegistrationCreateSerializer(serializers.ModelSerializer):
+    """Serializer for creating WebinarRegistration."""
+    
     class Meta:
         model = WebinarRegistration
         fields = ['webinar', 'timezone', 'notes']
@@ -296,6 +363,8 @@ class WebinarRegistrationCreateSerializer(serializers.ModelSerializer):
 
 # Webinar Q&A
 class WebinarQnASerializer(serializers.ModelSerializer):
+    """Serializer for WebinarQnA model."""
+    
     user = UserSimpleSerializer(read_only=True)
     answered_by = UserSimpleSerializer(read_only=True)
     
@@ -307,6 +376,8 @@ class WebinarQnASerializer(serializers.ModelSerializer):
 
 # Webinar Polls
 class WebinarPollSerializer(serializers.ModelSerializer):
+    """Serializer for WebinarPoll model."""
+    
     created_by = UserSimpleSerializer(read_only=True)
     has_responded = serializers.SerializerMethodField()
     response_count = serializers.SerializerMethodField()
@@ -317,16 +388,20 @@ class WebinarPollSerializer(serializers.ModelSerializer):
         read_only_fields = ['id', 'created_at']
     
     def get_has_responded(self, obj):
+        """Check if current user has responded to this poll."""
         request = self.context.get('request')
         if request and request.user.is_authenticated:
             return obj.responses.filter(user=request.user).exists()
         return False
     
     def get_response_count(self, obj):
+        """Get total number of responses to this poll."""
         return obj.responses.count()
 
 
 class WebinarPollResponseSerializer(serializers.ModelSerializer):
+    """Serializer for WebinarPollResponse model."""
+    
     poll = WebinarPollSerializer(read_only=True)
     user = UserSimpleSerializer(read_only=True)
     
@@ -338,6 +413,8 @@ class WebinarPollResponseSerializer(serializers.ModelSerializer):
 
 # Achievements
 class AchievementSerializer(serializers.ModelSerializer):
+    """Serializer for Achievement model with user progress."""
+    
     is_unlocked = serializers.SerializerMethodField()
     user_progress = serializers.SerializerMethodField()
     
@@ -347,12 +424,14 @@ class AchievementSerializer(serializers.ModelSerializer):
         read_only_fields = ['id', 'created_at']
     
     def get_is_unlocked(self, obj):
+        """Check if current user has unlocked this achievement."""
         request = self.context.get('request')
         if request and request.user.is_authenticated:
             return obj.user_achievements.filter(user=request.user, is_unlocked=True).exists()
         return False
     
     def get_user_progress(self, obj):
+        """Get current user's progress for this achievement."""
         request = self.context.get('request')
         if request and request.user.is_authenticated:
             user_achievement = obj.user_achievements.filter(user=request.user).first()
@@ -362,6 +441,8 @@ class AchievementSerializer(serializers.ModelSerializer):
 
 
 class UserAchievementSerializer(serializers.ModelSerializer):
+    """Serializer for UserAchievement model."""
+    
     achievement = AchievementSerializer(read_only=True)
     user = UserSimpleSerializer(read_only=True)
     
@@ -373,6 +454,8 @@ class UserAchievementSerializer(serializers.ModelSerializer):
 
 # Dashboard and Analytics Serializers
 class LearningStatsSerializer(serializers.Serializer):
+    """Serializer for learning statistics."""
+    
     total_contents_completed = serializers.IntegerField()
     total_points_earned = serializers.IntegerField()
     total_time_spent_minutes = serializers.IntegerField()
@@ -392,6 +475,8 @@ class LearningStatsSerializer(serializers.Serializer):
 
 
 class WebinarStatsSerializer(serializers.Serializer):
+    """Serializer for webinar statistics."""
+    
     total_webinars_attended = serializers.IntegerField()
     total_webinars_registered = serializers.IntegerField()
     average_attendance_rate = serializers.FloatField()
@@ -400,6 +485,8 @@ class WebinarStatsSerializer(serializers.Serializer):
 
 
 class ChallengeStatsSerializer(serializers.Serializer):
+    """Serializer for challenge statistics."""
+    
     total_challenges_participated = serializers.IntegerField()
     total_amount_saved = serializers.DecimalField(max_digits=12, decimal_places=2)
     challenges_completed = serializers.IntegerField()
@@ -409,11 +496,25 @@ class ChallengeStatsSerializer(serializers.Serializer):
 
 # Quiz Submission Serializer
 class QuizSubmissionSerializer(serializers.Serializer):
+    """Serializer for quiz submission."""
+    
     content_id = serializers.IntegerField()
     answers = serializers.JSONField()
     time_spent_minutes = serializers.IntegerField(default=0)
     
     def validate(self, data):
+        """
+        Validate quiz submission data.
+        
+        Args:
+            data: Submission data
+            
+        Returns:
+            dict: Validated data
+            
+        Raises:
+            serializers.ValidationError: If validation fails
+        """
         content_id = data.get('content_id')
         answers = data.get('answers')
         

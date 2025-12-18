@@ -1,3 +1,11 @@
+"""
+Admin Configuration for Education Hub.
+
+This module registers all education hub models with the Django admin interface.
+It provides custom admin classes with optimized list displays, filters,
+search fields, and form configurations for better administrative management.
+"""
+
 from django.contrib import admin
 from django.utils.html import format_html
 from .models import (
@@ -10,6 +18,8 @@ from .models import (
 
 @admin.register(EducationalContent)
 class EducationalContentAdmin(admin.ModelAdmin):
+    """Admin interface for EducationalContent model."""
+    
     list_display = ['title', 'content_type', 'category', 'difficulty', 
                    'is_published', 'is_featured', 'views_count', 'points_reward']
     list_filter = ['content_type', 'category', 'difficulty', 'is_published', 'is_featured']
@@ -51,6 +61,8 @@ class EducationalContentAdmin(admin.ModelAdmin):
 
 @admin.register(LearningPath)
 class LearningPathAdmin(admin.ModelAdmin):
+    """Admin interface for LearningPath model."""
+    
     list_display = ['title', 'path_type', 'difficulty', 'is_published', 
                    'is_featured', 'enrolled_count', 'completed_count']
     list_filter = ['path_type', 'difficulty', 'is_published', 'is_featured']
@@ -62,6 +74,8 @@ class LearningPathAdmin(admin.ModelAdmin):
 
 @admin.register(LearningPathEnrollment)
 class LearningPathEnrollmentAdmin(admin.ModelAdmin):
+    """Admin interface for LearningPathEnrollment model."""
+    
     list_display = ['user', 'learning_path', 'status', 'progress_percentage', 
                    'enrolled_at', 'last_accessed_at']
     list_filter = ['status', 'learning_path']
@@ -73,6 +87,8 @@ class LearningPathEnrollmentAdmin(admin.ModelAdmin):
 
 @admin.register(Certificate)
 class CertificateAdmin(admin.ModelAdmin):
+    """Admin interface for Certificate model."""
+    
     list_display = ['certificate_id', 'user', 'title', 'issued_at', 'is_public']
     list_filter = ['is_public', 'grade']
     search_fields = ['certificate_id', 'user__email', 'title', 'verification_code']
@@ -81,6 +97,8 @@ class CertificateAdmin(admin.ModelAdmin):
 
 @admin.register(SavingsChallenge)
 class SavingsChallengeAdmin(admin.ModelAdmin):
+    """Admin interface for SavingsChallenge model."""
+    
     list_display = ['title', 'challenge_type', 'status', 'start_date', 
                    'end_date', 'participants_count', 'success_rate']
     list_filter = ['challenge_type', 'status']
@@ -93,6 +111,8 @@ class SavingsChallengeAdmin(admin.ModelAdmin):
 
 @admin.register(Webinar)
 class WebinarAdmin(admin.ModelAdmin):
+    """Admin interface for Webinar model."""
+    
     list_display = ['title', 'presenter', 'scheduled_at', 'status', 
                    'platform', 'registered_count', 'attended_count']
     list_filter = ['status', 'platform', 'category', 'difficulty']
@@ -105,6 +125,8 @@ class WebinarAdmin(admin.ModelAdmin):
 
 @admin.register(WebinarRegistration)
 class WebinarRegistrationAdmin(admin.ModelAdmin):
+    """Admin interface for WebinarRegistration model."""
+    
     list_display = ['user', 'webinar', 'status', 'registered_at', 'checked_in']
     list_filter = ['status', 'checked_in', 'source']
     search_fields = ['user__email', 'webinar__title', 'registration_id']
@@ -112,6 +134,8 @@ class WebinarRegistrationAdmin(admin.ModelAdmin):
 
 @admin.register(Achievement)
 class AchievementAdmin(admin.ModelAdmin):
+    """Admin interface for Achievement model."""
+    
     list_display = ['title', 'achievement_type', 'rarity', 'points_value', 'is_active']
     list_filter = ['achievement_type', 'rarity', 'is_active']
     search_fields = ['title', 'description']

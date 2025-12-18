@@ -1,3 +1,20 @@
+"""
+Education Hub Views Module.
+
+This module provides comprehensive API views for the education hub feature.
+It includes viewsets for educational content, learning paths, progress tracking,
+webinars, savings challenges, certificates, and dashboard analytics.
+
+Key Viewsets:
+- EducationalContentViewSet: Manages educational content with progress tracking
+- LearningPathViewSet: Handles learning paths and enrollments
+- WebinarViewSet: Manages webinars with registration and attendance
+- SavingsChallengeViewSet: Handles savings challenges with leaderboards
+- EducationDashboardViewSet: Provides analytics and user insights
+
+All viewsets include custom actions for specific functionality beyond basic CRUD.
+"""
+
 from rest_framework import viewsets, status, filters, permissions
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -43,6 +60,28 @@ from .permissions import (
 
 # Educational Content Views
 class EducationalContentViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet for managing educational content.
+    
+    Provides CRUD operations for educational content with additional
+    actions for progress tracking, quiz submission, and bookmarking.
+    
+    Endpoints:
+        GET /api/v1/education/educational-contents/ - List all content
+        POST /api/v1/education/educational-contents/ - Create new content
+        GET /api/v1/education/educational-contents/{id}/ - Retrieve content
+        PUT/PATCH /api/v1/education/educational-contents/{id}/ - Update content
+        DELETE /api/v1/education/educational-contents/{id}/ - Delete content
+        
+    Custom Actions:
+        POST /api/v1/education/educational-contents/{id}/start_progress/ - Start progress
+        POST /api/v1/education/educational-contents/{id}/update_progress/ - Update progress
+        POST /api/v1/education/educational-contents/{id}/submit_quiz/ - Submit quiz
+        POST /api/v1/education/educational-contents/{id}/bookmark/ - Bookmark content
+        GET /api/v1/education/educational-contents/bookmarked/ - Get bookmarked content
+        GET /api/v1/education/educational-contents/recommended/ - Get recommended content
+    """
+    
     queryset = EducationalContent.objects.all()
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_class = EducationalContentFilter
@@ -51,11 +90,23 @@ class EducationalContentViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
     
     def get_serializer_class(self):
+        """
+        Return appropriate serializer class based on action.
+        
+        Returns:
+            Serializer: Appropriate serializer class
+        """
         if self.action in ['create', 'update', 'partial_update']:
             return EducationalContentCreateSerializer
         return EducationalContentSerializer
     
     def get_queryset(self):
+        """
+        Filter queryset based on query parameters and user permissions.
+        
+        Returns:
+            QuerySet: Filtered educational content queryset
+        """
         queryset = super().get_queryset()
         
         # Filter by user progress if requested
@@ -95,6 +146,12 @@ class EducationalContentViewSet(viewsets.ModelViewSet):
         return queryset
     
     def perform_create(self, serializer):
+        """
+        Set the author when creating educational content.
+        
+        Args:
+            serializer: Serializer instance
+        """
         serializer.save(author=self.request.user)
     
     @action(detail=True, methods=['post'])
@@ -293,6 +350,27 @@ class EducationalContentViewSet(viewsets.ModelViewSet):
 
 # Learning Path Views
 class LearningPathViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet for managing learning paths.
+    
+    Provides CRUD operations for learning paths with additional
+    actions for enrollment, progress tracking, and content completion.
+    
+    Endpoints:
+        GET /api/v1/education/learning-paths/ - List all learning paths
+        POST /api/v1/education/learning-paths/ - Create new learning path
+        GET /api/v1/education/learning-paths/{id}/ - Retrieve learning path
+        PUT/PATCH /api/v1/education/learning-paths/{id}/ - Update learning path
+        DELETE /api/v1/education/learning-paths/{id}/ - Delete learning path
+        
+    Custom Actions:
+        POST /api/v1/education/learning-paths/{id}/enroll/ - Enroll in learning path
+        POST /api/v1/education/learning-paths/{id}/start/ - Start learning path
+        POST /api/v1/education/learning-paths/{id}/complete_content/ - Complete content
+        GET /api/v1/education/learning-paths/{id}/progress/ - Get progress
+        GET /api/v1/education/learning-paths/my_paths/ - Get user's learning paths
+    """
+    
     queryset = LearningPath.objects.all()
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_class = LearningPathFilter
@@ -301,11 +379,23 @@ class LearningPathViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
     
     def get_serializer_class(self):
+        """
+        Return appropriate serializer class based on action.
+        
+        Returns:
+            Serializer: Appropriate serializer class
+        """
         if self.action in ['create', 'update', 'partial_update']:
             return LearningPathCreateSerializer
         return LearningPathSerializer
     
     def get_queryset(self):
+        """
+        Filter queryset based on query parameters and user enrollment.
+        
+        Returns:
+            QuerySet: Filtered learning paths queryset
+        """
         queryset = super().get_queryset()
         
         # Filter by user enrollment
@@ -553,15 +643,44 @@ class LearningPathViewSet(viewsets.ModelViewSet):
 
 # User Progress Views
 class UserProgressViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet for managing user progress on educational content.
+    
+    Provides CRUD operations for user progress tracking with
+    additional actions for statistics and analytics.
+    
+    Endpoints:
+        GET /api/v1/education/user-progress/ - List user's progress
+        POST /api/v1/education/user-progress/ - Create progress record
+        GET /api/v1/education/user-progress/{id}/ - Retrieve progress
+        PUT/PATCH /api/v1/education/user-progress/{id}/ - Update progress
+        DELETE /api/v1/education/user-progress/{id}/ - Delete progress
+        
+    Custom Actions:
+        GET /api/v1/education/user-progress/stats/ - Get learning statistics
+    """
+    
     serializer_class = UserProgressSerializer
     permission_classes = [IsAuthenticated]
     filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
     ordering_fields = ['started_at', 'completed_at', 'progress_percentage']
     
     def get_queryset(self):
+        """
+        Return only the current user's progress records.
+        
+        Returns:
+            QuerySet: User's progress queryset
+        """
         return UserProgress.objects.filter(user=self.request.user)
     
     def perform_create(self, serializer):
+        """
+        Set the user when creating progress records.
+        
+        Args:
+            serializer: Serializer instance
+        """
         serializer.save(user=self.request.user)
     
     @action(detail=False, methods=['get'])
@@ -648,6 +767,26 @@ class UserProgressViewSet(viewsets.ModelViewSet):
 
 # Savings Challenge Views
 class SavingsChallengeViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet for managing savings challenges.
+    
+    Provides CRUD operations for savings challenges with additional
+    actions for joining, updating savings, leaderboards, and lesson completion.
+    
+    Endpoints:
+        GET /api/v1/education/savings-challenges/ - List all challenges
+        POST /api/v1/education/savings-challenges/ - Create new challenge
+        GET /api/v1/education/savings-challenges/{id}/ - Retrieve challenge
+        PUT/PATCH /api/v1/education/savings-challenges/{id}/ - Update challenge
+        DELETE /api/v1/education/savings-challenges/{id}/ - Delete challenge
+        
+    Custom Actions:
+        POST /api/v1/education/savings-challenges/{id}/join/ - Join challenge
+        POST /api/v1/education/savings-challenges/{id}/update_savings/ - Update savings
+        GET /api/v1/education/savings-challenges/{id}/leaderboard/ - Get leaderboard
+        POST /api/v1/education/savings-challenges/{id}/complete_lesson/ - Complete lesson
+    """
+    
     queryset = SavingsChallenge.objects.all()
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_class = SavingsChallengeFilter
@@ -656,11 +795,23 @@ class SavingsChallengeViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
     
     def get_serializer_class(self):
+        """
+        Return appropriate serializer class based on action.
+        
+        Returns:
+            Serializer: Appropriate serializer class
+        """
         if self.action in ['create', 'update', 'partial_update']:
             return SavingsChallengeCreateSerializer
         return SavingsChallengeSerializer
     
     def perform_create(self, serializer):
+        """
+        Set the creator when creating savings challenges.
+        
+        Args:
+            serializer: Serializer instance
+        """
         serializer.save(created_by=self.request.user)
     
     @action(detail=True, methods=['post'])
@@ -845,6 +996,30 @@ class SavingsChallengeViewSet(viewsets.ModelViewSet):
 
 # Webinar Views
 class WebinarViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet for managing webinars.
+    
+    Provides CRUD operations for webinars with additional
+    actions for registration, check-in, live streaming, and Q&A.
+    
+    Endpoints:
+        GET /api/v1/education/webinars/ - List all webinars
+        POST /api/v1/education/webinars/ - Create new webinar
+        GET /api/v1/education/webinars/{id}/ - Retrieve webinar
+        PUT/PATCH /api/v1/education/webinars/{id}/ - Update webinar
+        DELETE /api/v1/education/webinars/{id}/ - Delete webinar
+        
+    Custom Actions:
+        POST /api/v1/education/webinars/{id}/register/ - Register for webinar
+        POST /api/v1/education/webinars/{id}/checkin/ - Check-in for attendance
+        POST /api/v1/education/webinars/{id}/start_live/ - Start webinar (presenter)
+        POST /api/v1/education/webinars/{id}/end_live/ - End webinar (presenter)
+        GET /api/v1/education/webinars/{id}/attendees/ - Get attendees
+        POST /api/v1/education/webinars/{id}/submit_feedback/ - Submit feedback
+        GET /api/v1/education/webinars/{id}/questions/ - Get Q&A
+        POST /api/v1/education/webinars/{id}/ask_question/ - Ask question
+    """
+    
     queryset = Webinar.objects.all()
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_class = WebinarFilter
@@ -853,11 +1028,23 @@ class WebinarViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
     
     def get_serializer_class(self):
+        """
+        Return appropriate serializer class based on action.
+        
+        Returns:
+            Serializer: Appropriate serializer class
+        """
         if self.action in ['create', 'update', 'partial_update']:
             return WebinarCreateSerializer
         return WebinarSerializer
     
     def get_queryset(self):
+        """
+        Filter queryset based on query parameters.
+        
+        Returns:
+            QuerySet: Filtered webinars queryset
+        """
         queryset = super().get_queryset()
         
         # Filter by status
@@ -884,6 +1071,12 @@ class WebinarViewSet(viewsets.ModelViewSet):
         return queryset
     
     def perform_create(self, serializer):
+        """
+        Set the presenter when creating webinars.
+        
+        Args:
+            serializer: Serializer instance
+        """
         serializer.save(presenter=self.request.user)
     
     @action(detail=True, methods=['post'])
@@ -1168,6 +1361,16 @@ class WebinarViewSet(viewsets.ModelViewSet):
 
 # Dashboard Views
 class EducationDashboardViewSet(viewsets.ViewSet):
+    """
+    ViewSet for education dashboard and analytics.
+    
+    Provides endpoints for dashboard overview and learning analytics.
+    
+    Endpoints:
+        GET /api/v1/education/dashboard/overview/ - Get dashboard overview
+        GET /api/v1/education/dashboard/learning_analytics/ - Get learning analytics
+    """
+    
     permission_classes = [IsAuthenticated]
     
     @action(detail=False, methods=['get'])
@@ -1356,10 +1559,31 @@ class EducationDashboardViewSet(viewsets.ViewSet):
 
 # Certificate Views
 class CertificateViewSet(viewsets.ReadOnlyModelViewSet):
+    """
+    ViewSet for managing certificates.
+    
+    Provides read-only operations for certificates with
+    additional actions for verification.
+    
+    Endpoints:
+        GET /api/v1/education/certificates/ - List user's certificates
+        GET /api/v1/education/certificates/{id}/ - Retrieve certificate
+        
+    Custom Actions:
+        GET /api/v1/education/certificates/{id}/verify/ - Verify certificate
+        GET /api/v1/education/certificates/public_verify/ - Public verification
+    """
+    
     serializer_class = CertificateSerializer
     permission_classes = [IsAuthenticated]
     
     def get_queryset(self):
+        """
+        Return only the current user's certificates.
+        
+        Returns:
+            QuerySet: User's certificates queryset
+        """
         return Certificate.objects.filter(user=self.request.user)
     
     @action(detail=True, methods=['get'])
@@ -1409,6 +1633,18 @@ class CertificateViewSet(viewsets.ReadOnlyModelViewSet):
 
 # Integration with Zoom/Teams (simplified example)
 class ZoomIntegrationViewSet(viewsets.ViewSet):
+    """
+    ViewSet for Zoom/Teams integration (simplified example).
+    
+    Provides endpoints for webinar platform integration.
+    Note: This is a simplified example - actual implementation
+    would require OAuth2 setup and platform-specific API calls.
+    
+    Endpoints:
+        POST /api/v1/education/zoom-integration/create_meeting/ - Create meeting
+        POST /api/v1/education/zoom-integration/sync_attendance/ - Sync attendance
+    """
+    
     permission_classes = [IsAuthenticated]
     
     @action(detail=False, methods=['post'])
@@ -1446,157 +1682,3 @@ class ZoomIntegrationViewSet(viewsets.ViewSet):
             'message': 'Attendance synced (simulated)',
             'participants_synced': 25
         })
-
-
-# Frontend API Service Extension
-# Add to your existing apiService.ts:
-
-"""
-// Add to chamahub-frontend/src/services/apiService.ts
-
-// Education Services
-export const educationService = {
-  // Educational Content
-  async getEducationalContents(params?: {
-    category?: string;
-    difficulty?: string;
-    content_type?: string;
-    search?: string;
-    progress_status?: string;
-    page?: number;
-    page_size?: number;
-  }): Promise<PaginatedResponse<EducationalContent>> {
-    const response = await api.get('/education/educational-contents/', { params });
-    return response.data;
-  },
-
-  async getContent(id: number): Promise<EducationalContent> {
-    const response = await api.get(`/education/educational-contents/${id}/`);
-    return response.data;
-  },
-
-  async startProgress(contentId: number): Promise<UserProgress> {
-    const response = await api.post(`/education/educational-contents/${contentId}/start_progress/`);
-    return response.data;
-  },
-
-  async updateProgress(contentId: number, data: {
-    progress_percentage: number;
-    last_position?: number;
-    bookmarked?: boolean;
-  }): Promise<UserProgress> {
-    const response = await api.post(`/education/educational-contents/${contentId}/update_progress/`, data);
-    return response.data;
-  },
-
-  async submitQuiz(contentId: number, data: {
-    answers: Record<string, any>;
-    time_spent_minutes?: number;
-  }): Promise<{
-    score: number;
-    passed: boolean;
-    correct_answers: number;
-    total_questions: number;
-  }> {
-    const response = await api.post(`/education/educational-contents/${contentId}/submit_quiz/`, data);
-    return response.data;
-  },
-
-  // Learning Paths
-  async getLearningPaths(params?: {
-    difficulty?: string;
-    path_type?: string;
-    enrollment_status?: string;
-    search?: string;
-    page?: number;
-    page_size?: number;
-  }): Promise<PaginatedResponse<LearningPath>> {
-    const response = await api.get('/education/learning-paths/', { params });
-    return response.data;
-  },
-
-  async enrollInPath(pathId: number): Promise<LearningPathEnrollment> {
-    const response = await api.post(`/education/learning-paths/${pathId}/enroll/`);
-    return response.data;
-  },
-
-  async getPathProgress(pathId: number): Promise<{
-    enrollment: LearningPathEnrollment;
-    completions: ContentCompletion[];
-    path_details: any;
-  }> {
-    const response = await api.get(`/education/learning-paths/${pathId}/progress/`);
-    return response.data;
-  },
-
-  // Webinars
-  async getWebinars(params?: {
-    status?: string;
-    category?: string;
-    platform?: string;
-    upcoming?: boolean;
-    search?: string;
-    page?: number;
-    page_size?: number;
-  }): Promise<PaginatedResponse<Webinar>> {
-    const response = await api.get('/education/webinars/', { params });
-    return response.data;
-  },
-
-  async registerForWebinar(webinarId: number, data?: {
-    timezone?: string;
-    source?: string;
-  }): Promise<WebinarRegistration> {
-    const response = await api.post(`/education/webinars/${webinarId}/register/`, data);
-    return response.data;
-  },
-
-  async checkInToWebinar(webinarId: number, checkinCode: string): Promise<WebinarRegistration> {
-    const response = await api.post(`/education/webinars/${webinarId}/checkin/`, {
-      checkin_code: checkinCode
-    });
-    return response.data;
-  },
-
-  // Dashboard
-  async getEducationDashboard(): Promise<{
-    stats: any;
-    recent_activity: any[];
-    upcoming_webinars: Webinar[];
-    recommended_content: EducationalContent[];
-  }> {
-    const response = await api.get('/education/dashboard/overview/');
-    return response.data;
-  },
-
-  async getLearningAnalytics(): Promise<{
-    daily_activity: any[];
-    category_distribution: any[];
-    hour_distribution: any[];
-    streak: number;
-    total_days_active: number;
-  }> {
-    const response = await api.get('/education/dashboard/learning_analytics/');
-    return response.data;
-  },
-
-  // Certificates
-  async getMyCertificates(): Promise<PaginatedResponse<Certificate>> {
-    const response = await api.get('/education/certificates/');
-    return response.data;
-  },
-
-  async verifyCertificate(code: string): Promise<any> {
-    const response = await api.get('/education/certificates/public_verify/', {
-      params: { code }
-    });
-    return response.data;
-  },
-};
-
-// Add to the default export
-export default {
-  ...existingExports,
-  education: educationService,
-};
-"""
