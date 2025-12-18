@@ -34,7 +34,7 @@ from education_hub.models import (
     EducationalContent, UserProgress, SavingsChallenge, ChallengeParticipant, 
     Webinar, LearningPath, LearningPathContent, LearningPathEnrollment, 
     ContentCompletion, Certificate, Achievement, UserAchievement, 
-    WebinarRegistration, WebinarQnA, WebinarPoll
+    WebinarRegistration, WebinarQnA
 )
 from governance.models import GroupConstitution, Fine, Vote, VoteBallot, Document, ComplianceRecord
 from audit_trail.models import AuditLog, ComplianceReport, SuspiciousActivityAlert
@@ -978,8 +978,9 @@ You've learned important concepts about {category.lower()}. Apply these principl
             elif path_type == 'INVESTMENT_MASTERY':
                 path_contents = [c for c in contents if c.category == 'INVESTMENTS'][:6]
             elif path_type == 'DEBT_MANAGEMENT':
+                # Safely check for 'debt' in tags
                 path_contents = [c for c in contents if c.category == 'LOANS' 
-                               or ('debt' in ' '.join(str(tag) for tag in c.tags) if c.tags else '')][:4]
+                               or (c.tags and any('debt' in str(tag).lower() for tag in c.tags))][:4]
             elif path_type == 'BUSINESS_FINANCE':
                 path_contents = [c for c in contents if c.category == 'ENTREPRENEURSHIP'][:5]
             elif path_type == 'RETIREMENT_PLANNING':
@@ -1543,27 +1544,30 @@ You've learned important concepts about {category.lower()}. Apply these principl
         notification_count = 0
         
         notification_templates = [
-            ('CONTRIBUTION', 'HIGH', 'Contribution Due', 'Your monthly contribution of {amount} is due tomorrow.'),
-            ('LOAN', 'URGENT', 'Loan Repayment Due', 'Your loan repayment of {amount} is overdue.'),
-            ('MEETING', 'MEDIUM', 'Upcoming Meeting', 'Group meeting scheduled for {date}.'),
-            ('INVESTMENT', 'LOW', 'Investment Matured', 'Your investment has matured. Amount: {amount}'),
-            ('FINANCE', 'HIGH', 'Low Balance Alert', 'Your group balance is below the minimum threshold.'),
-            ('SYSTEM', 'MEDIUM', 'Profile Update', 'Please complete your KYC verification.'),
-            ('GENERAL', 'LOW', 'New Feature', 'Check out our new education hub!'),
+            ('CONTRIBUTION', 'HIGH', 'Contribution Due', 'Your monthly contribution of {amount} is due tomorrow.', True, True),
+            ('LOAN', 'URGENT', 'Loan Repayment Due', 'Your loan repayment of {amount} is overdue.', True, False),
+            ('MEETING', 'MEDIUM', 'Upcoming Meeting', 'Group meeting scheduled for {date}.', False, True),
+            ('INVESTMENT', 'LOW', 'Investment Matured', 'Your investment has matured. Amount: {amount}', True, False),
+            ('FINANCE', 'HIGH', 'Low Balance Alert', 'Your group balance is below the minimum threshold.', False, False),
+            ('SYSTEM', 'MEDIUM', 'Profile Update', 'Please complete your KYC verification.', False, False),
+            ('GENERAL', 'LOW', 'New Feature', 'Check out our new education hub!', False, False),
         ]
         
         for user in random.sample(self.users, 30):
             num_notifications = random.randint(5, 15)
             
             for _ in range(num_notifications):
-                notif_type, priority, title_template, message_template = random.choice(notification_templates)
+                notif_type, priority, title_template, message_template, has_amount, has_date = random.choice(notification_templates)
                 
                 # Format message with random data
                 title = title_template
-                message = message_template.format(
-                    amount=f'KES {random.randint(1000, 10000):,}',
-                    date=(timezone.now() + timedelta(days=random.randint(1, 7))).strftime('%Y-%m-%d')
-                )
+                format_args = {}
+                if has_amount:
+                    format_args['amount'] = f'KES {random.randint(1000, 10000):,}'
+                if has_date:
+                    format_args['date'] = (timezone.now() + timedelta(days=random.randint(1, 7))).strftime('%Y-%m-%d')
+                
+                message = message_template.format(**format_args) if format_args else message_template
                 
                 # Some notifications are group-related
                 group = random.choice(self.groups) if notif_type in ['CONTRIBUTION', 'LOAN', 'MEETING', 'FINANCE'] else None
