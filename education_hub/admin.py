@@ -69,7 +69,6 @@ class LearningPathAdmin(admin.ModelAdmin):
     search_fields = ['title', 'description', 'short_description']
     prepopulated_fields = {'slug': ['title']}
     readonly_fields = ['enrolled_count', 'completed_count', 'created_at', 'updated_at']
-    filter_horizontal = ['learning_path_contents']
 
 
 @admin.register(LearningPathEnrollment)

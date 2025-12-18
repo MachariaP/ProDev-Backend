@@ -1219,7 +1219,7 @@ class UserAchievement(models.Model):
         notes (str): Additional notes
     """
     
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='achievements')
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='education_achievements')
     achievement = models.ForeignKey(Achievement, on_delete=models.CASCADE, related_name='user_achievements')
     
     earned_at = models.DateTimeField(_('earned at'), auto_now_add=True)
