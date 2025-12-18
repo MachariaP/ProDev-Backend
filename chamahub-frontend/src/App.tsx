@@ -60,6 +60,13 @@ import { AdminKYCPage } from './pages/admin/AdminKYCPage';
 import { AdminAuditLogsPage } from './pages/admin/AdminAuditLogsPage';
 import { AdminAnalyticsPage } from './pages/admin/AdminAnalyticsPage';
 import { AdminSettingsPage } from './pages/admin/AdminSettingsPage';
+// Education Hub pages
+import { EducationHubPage } from './pages/education/EducationHubPage';
+import { LearningPathsPage } from './pages/education/LearningPathsPage';
+import { LearningPathDetailPage } from './pages/education/LearningPathDetailPage';
+import { WebinarsPage } from './pages/education/WebinarsPage';
+import { SavingsChallengesPage } from './pages/education/SavingsChallengesPage';
+import { MyCertificatesPage } from './pages/education/MyCertificatesPage';
 
 // Helper component to wrap authenticated routes with layout
 function AuthenticatedRoute({ children }: { children: React.ReactNode }) {
@@ -237,6 +244,32 @@ function App() {
         <Route
           path="/documents"
           element={<AuthenticatedRoute><DocumentSharingPage /></AuthenticatedRoute>}
+        />
+        
+        {/* Education Hub routes */}
+        <Route
+          path="/education"
+          element={<AuthenticatedRoute><EducationHubPage /></AuthenticatedRoute>}
+        />
+        <Route
+          path="/education/learning-paths"
+          element={<AuthenticatedRoute><LearningPathsPage /></AuthenticatedRoute>}
+        />
+        <Route
+          path="/education/learning-paths/:id"
+          element={<AuthenticatedRoute><LearningPathDetailPage /></AuthenticatedRoute>}
+        />
+        <Route
+          path="/education/webinars"
+          element={<AuthenticatedRoute><WebinarsPage /></AuthenticatedRoute>}
+        />
+        <Route
+          path="/education/challenges"
+          element={<AuthenticatedRoute><SavingsChallengesPage /></AuthenticatedRoute>}
+        />
+        <Route
+          path="/education/certificates"
+          element={<AuthenticatedRoute><MyCertificatesPage /></AuthenticatedRoute>}
         />
         
         {/* Admin routes */}

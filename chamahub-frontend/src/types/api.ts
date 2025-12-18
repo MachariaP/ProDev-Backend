@@ -418,3 +418,219 @@ export interface ExpenseFormData {
   receipt?: File;
   notes: string;
 }
+
+// Education Hub Types
+export interface EducationalContent {
+  id: number;
+  title: string;
+  slug: string;
+  content_type: 'ARTICLE' | 'VIDEO' | 'TUTORIAL' | 'QUIZ' | 'WEBINAR' | 'COURSE' | 'EBOOK';
+  category: 'SAVINGS' | 'INVESTMENTS' | 'LOANS' | 'BUDGETING' | 'FINANCIAL_PLANNING' | 'CREDIT_SCORE' | 'TAXES' | 'RETIREMENT' | 'INSURANCE' | 'ENTREPRENEURSHIP';
+  difficulty: 'BEGINNER' | 'INTERMEDIATE' | 'ADVANCED' | 'EXPERT';
+  description: string;
+  content: string;
+  video_url?: string;
+  thumbnail_url?: string;
+  learning_objectives: string[];
+  tags: string[];
+  duration_minutes: number;
+  points_reward: number;
+  certificate_available: boolean;
+  quiz_questions?: any[];
+  passing_score: number;
+  is_published: boolean;
+  is_featured: boolean;
+  author?: number;
+  views_count: number;
+  likes_count: number;
+  share_count: number;
+  created_at: string;
+  updated_at: string;
+  published_at?: string;
+}
+
+export interface LearningPath {
+  id: number;
+  title: string;
+  slug: string;
+  description: string;
+  short_description: string;
+  path_type: 'BEGINNER_FINANCIAL_LITERACY' | 'INVESTMENT_MASTERY' | 'DEBT_MANAGEMENT' | 'BUSINESS_FINANCE' | 'RETIREMENT_PLANNING' | 'WEALTH_BUILDING';
+  icon_name: string;
+  color_code: string;
+  total_duration_hours: number;
+  total_points: number;
+  contents_count: number;
+  is_published: boolean;
+  is_featured: boolean;
+  difficulty: 'BEGINNER' | 'INTERMEDIATE' | 'ADVANCED' | 'EXPERT';
+  completion_badge: string;
+  completion_certificate: boolean;
+  enrolled_count: number;
+  completed_count: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface LearningPathEnrollment {
+  id: number;
+  user: number;
+  learning_path: number;
+  learning_path_details?: LearningPath;
+  enrollment_id: string;
+  status: 'ENROLLED' | 'IN_PROGRESS' | 'COMPLETED' | 'DROPPED' | 'PAUSED';
+  current_content?: number;
+  progress_percentage: number;
+  enrolled_at: string;
+  started_at?: string;
+  completed_at?: string;
+  last_accessed_at: string;
+  total_time_spent_minutes: number;
+  earned_points: number;
+  notes: string;
+}
+
+export interface UserProgress {
+  id: number;
+  user: number;
+  content: number;
+  content_details?: EducationalContent;
+  status: 'NOT_STARTED' | 'IN_PROGRESS' | 'COMPLETED' | 'REVIEWING';
+  progress_percentage: number;
+  started_at?: string;
+  completed_at?: string;
+  time_spent_minutes: number;
+  quiz_score?: number;
+  quiz_answers?: any;
+  bookmarked: boolean;
+  last_position: number;
+}
+
+export interface Certificate {
+  id: number;
+  certificate_id: string;
+  user: number;
+  learning_path?: number;
+  content?: number;
+  title: string;
+  description: string;
+  issued_at: string;
+  valid_until?: string;
+  grade: 'PASS' | 'MERIT' | 'DISTINCTION';
+  score?: number;
+  certificate_url: string;
+  certificate_pdf?: string;
+  verification_code: string;
+  is_public: boolean;
+}
+
+export interface SavingsChallenge {
+  id: number;
+  title: string;
+  slug: string;
+  description: string;
+  short_description: string;
+  challenge_type: 'WEEKLY_SAVINGS' | 'MONTHLY_SAVINGS' | 'SPECIAL_EVENT' | 'EMERGENCY_FUND' | 'INVESTMENT_CHALLENGE';
+  target_amount: number;
+  duration_days: number;
+  start_date: string;
+  end_date: string;
+  status: 'UPCOMING' | 'ACTIVE' | 'COMPLETED' | 'CANCELLED' | 'ARCHIVED';
+  min_participants: number;
+  max_participants: number;
+  participants_count: number;
+  reward_points: number;
+  reward_badge: string;
+  learning_path?: number;
+  created_by: number;
+  created_at: string;
+  total_amount_saved: number;
+  success_rate: number;
+}
+
+export interface ChallengeParticipant {
+  id: number;
+  challenge: number;
+  challenge_details?: SavingsChallenge;
+  user: number;
+  current_amount: number;
+  target_amount?: number;
+  progress_percentage: number;
+  completed: boolean;
+  streak_days: number;
+  joined_at: string;
+  started_at?: string;
+  completed_at?: string;
+  last_activity_at: string;
+  learning_progress: number;
+  daily_target?: number;
+  weekly_target?: number;
+  notes: string;
+}
+
+export interface Webinar {
+  id: number;
+  title: string;
+  slug: string;
+  description: string;
+  short_description: string;
+  presenter?: number;
+  scheduled_at: string;
+  duration_minutes: number;
+  timezone: string;
+  platform: 'ZOOM' | 'TEAMS' | 'GOOGLE_MEET' | 'JITSI' | 'CUSTOM';
+  meeting_id: string;
+  meeting_url: string;
+  join_url: string;
+  password?: string;
+  recording_url?: string;
+  recording_available_at?: string;
+  status: 'SCHEDULED' | 'LIVE' | 'COMPLETED' | 'CANCELLED' | 'RECORDING_AVAILABLE';
+  category: string;
+  difficulty: 'BEGINNER' | 'INTERMEDIATE' | 'ADVANCED' | 'EXPERT';
+  max_participants: number;
+  registered_count: number;
+  attended_count: number;
+  learning_path?: number;
+  slides_url?: string;
+  resources_url?: string;
+  qna_enabled: boolean;
+  poll_enabled: boolean;
+  points_reward: number;
+  certificate_available: boolean;
+  views_count: number;
+  average_rating: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface WebinarRegistration {
+  id: number;
+  webinar: number;
+  webinar_details?: Webinar;
+  user: number;
+  registration_id: string;
+  status: 'REGISTERED' | 'ATTENDED' | 'ABSENT' | 'CANCELLED' | 'WAITLISTED';
+  registered_at: string;
+  joined_at?: string;
+  left_at?: string;
+  attendance_duration: number;
+  checked_in: boolean;
+  rating?: number;
+  feedback: string;
+  reminder_sent: boolean;
+  followup_sent: boolean;
+}
+
+export interface EducationDashboardStats {
+  total_content?: number;
+  total_paths?: number;
+  upcoming_webinars?: number;
+  active_challenges?: number;
+  my_progress?: {
+    enrolled_paths: number;
+    completed_paths: number;
+    certificates_earned: number;
+    total_points: number;
+  };
+}
