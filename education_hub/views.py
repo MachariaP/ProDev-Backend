@@ -797,6 +797,322 @@ class LearningPathViewSet(viewsets.ModelViewSet):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
+class UserProgressViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet for User Progress Management.
+    
+    Provides CRUD operations for tracking user progress on educational content.
+    """
+    
+    queryset = UserProgress.objects.select_related('user', 'content')
+    serializer_class = UserProgressSerializer
+    permission_classes = [IsAuthenticated]
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    search_fields = ['content__title']
+    ordering_fields = ['created_at', 'updated_at', 'progress_percentage']
+    ordering = ['-created_at']
+    
+    def get_queryset(self):
+        """Filter to show only current user's progress."""
+        return self.queryset.filter(user=self.request.user)
+    
+    @action(detail=False, methods=['get'])
+    def my_progress(self, request):
+        """Get all progress for the current user."""
+        queryset = self.get_queryset()
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
+
+
+class LearningPathEnrollmentViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet for Learning Path Enrollment Management.
+    
+    Provides CRUD operations for managing learning path enrollments.
+    """
+    
+    queryset = LearningPathEnrollment.objects.select_related('user', 'learning_path')
+    serializer_class = LearningPathEnrollmentSerializer
+    permission_classes = [IsAuthenticated]
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    search_fields = ['learning_path__title']
+    ordering_fields = ['created_at', 'started_at', 'progress_percentage']
+    ordering = ['-created_at']
+    
+    def get_queryset(self):
+        """Filter to show only current user's enrollments."""
+        return self.queryset.filter(user=self.request.user)
+    
+    @action(detail=False, methods=['get'])
+    def my_enrollments(self, request):
+        """Get all enrollments for the current user."""
+        queryset = self.get_queryset()
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
+
+
+class SavingsChallengeViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet for Savings Challenge Management.
+    
+    Provides CRUD operations for managing savings challenges.
+    """
+    
+    queryset = SavingsChallenge.objects.select_related('created_by')
+    serializer_class = SavingsChallengeSerializer
+    permission_classes = [IsAuthenticated]
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    filterset_class = SavingsChallengeFilter
+    search_fields = ['title', 'description']
+    ordering_fields = ['created_at', 'start_date', 'end_date', 'participants_count']
+    ordering = ['-created_at']
+    
+    def get_serializer_class(self):
+        if self.action == 'create':
+            return SavingsChallengeCreateSerializer
+        return SavingsChallengeSerializer
+    
+    @action(detail=False, methods=['get'])
+    def active(self, request):
+        """Get all active savings challenges."""
+        active_challenges = self.queryset.filter(
+            status='ACTIVE',
+            is_published=True
+        ).order_by('-created_at')
+        page = self.paginate_queryset(active_challenges)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+        serializer = self.get_serializer(active_challenges, many=True)
+        return Response(serializer.data)
+
+
+class ChallengeParticipantViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet for Challenge Participant Management.
+    
+    Provides CRUD operations for managing challenge participants.
+    """
+    
+    queryset = ChallengeParticipant.objects.select_related('user', 'challenge')
+    serializer_class = ChallengeParticipantSerializer
+    permission_classes = [IsAuthenticated]
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    search_fields = ['challenge__title']
+    ordering_fields = ['created_at', 'current_amount', 'progress_percentage']
+    ordering = ['-created_at']
+    
+    def get_queryset(self):
+        """Filter to show only current user's participations."""
+        return self.queryset.filter(user=self.request.user)
+    
+    @action(detail=False, methods=['get'])
+    def my_challenges(self, request):
+        """Get all challenge participations for the current user."""
+        queryset = self.get_queryset()
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
+
+
+class WebinarViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet for Webinar Management.
+    
+    Provides CRUD operations for managing webinars.
+    """
+    
+    queryset = Webinar.objects.select_related('presenter')
+    serializer_class = WebinarSerializer
+    permission_classes = [IsAuthenticated]
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    filterset_class = WebinarFilter
+    search_fields = ['title', 'description']
+    ordering_fields = ['created_at', 'scheduled_at', 'registered_count']
+    ordering = ['scheduled_at']
+    
+    def get_serializer_class(self):
+        if self.action == 'create':
+            return WebinarCreateSerializer
+        return WebinarSerializer
+    
+    @action(detail=False, methods=['get'])
+    def upcoming(self, request):
+        """Get all upcoming webinars."""
+        upcoming_webinars = self.queryset.filter(
+            status='SCHEDULED',
+            scheduled_at__gte=timezone.now()
+        ).order_by('scheduled_at')
+        page = self.paginate_queryset(upcoming_webinars)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+        serializer = self.get_serializer(upcoming_webinars, many=True)
+        return Response(serializer.data)
+    
+    @action(detail=False, methods=['post'])
+    def zoom_webhook(self, request):
+        """Handle Zoom webhook events."""
+        # Placeholder for Zoom webhook integration
+        return Response({'status': 'received'}, status=status.HTTP_200_OK)
+
+
+class WebinarRegistrationViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet for Webinar Registration Management.
+    
+    Provides CRUD operations for managing webinar registrations.
+    """
+    
+    queryset = WebinarRegistration.objects.select_related('user', 'webinar')
+    serializer_class = WebinarRegistrationSerializer
+    permission_classes = [IsAuthenticated]
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    search_fields = ['webinar__title']
+    ordering_fields = ['created_at', 'registered_at']
+    ordering = ['-created_at']
+    
+    def get_queryset(self):
+        """Filter to show only current user's registrations."""
+        return self.queryset.filter(user=self.request.user)
+
+
+class CertificateViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet for Certificate Management.
+    
+    Provides CRUD operations for managing certificates.
+    """
+    
+    queryset = Certificate.objects.select_related('user', 'learning_path')
+    serializer_class = CertificateSerializer
+    permission_classes = [IsAuthenticated]
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    search_fields = ['learning_path__title', 'certificate_id']
+    ordering_fields = ['created_at', 'issued_at']
+    ordering = ['-created_at']
+    
+    def get_queryset(self):
+        """Filter to show only current user's certificates."""
+        return self.queryset.filter(user=self.request.user)
+    
+    @action(detail=False, methods=['get'])
+    def my_certificates(self, request):
+        """Get all certificates for the current user."""
+        queryset = self.get_queryset()
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
+    
+    @action(detail=False, methods=['post'])
+    def certificate_webhook(self, request):
+        """Handle certificate webhook events."""
+        # Placeholder for certificate webhook integration
+        return Response({'status': 'received'}, status=status.HTTP_200_OK)
+
+
+class AchievementViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet for Achievement Management.
+    
+    Provides CRUD operations for managing achievements.
+    """
+    
+    queryset = Achievement.objects.all()
+    serializer_class = AchievementSerializer
+    permission_classes = [IsAuthenticated]
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    search_fields = ['name', 'description']
+    ordering_fields = ['created_at', 'points_reward']
+    ordering = ['created_at']
+
+
+class UserAchievementViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet for User Achievement Management.
+    
+    Provides CRUD operations for managing user achievements.
+    """
+    
+    queryset = UserAchievement.objects.select_related('user', 'achievement')
+    serializer_class = UserAchievementSerializer
+    permission_classes = [IsAuthenticated]
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    search_fields = ['achievement__name']
+    ordering_fields = ['created_at', 'earned_at']
+    ordering = ['-created_at']
+    
+    def get_queryset(self):
+        """Filter to show only current user's achievements."""
+        return self.queryset.filter(user=self.request.user)
+
+
+class ContentCompletionViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet for Content Completion Management.
+    
+    Provides CRUD operations for tracking content completions.
+    """
+    
+    queryset = ContentCompletion.objects.select_related('user', 'content')
+    serializer_class = ContentCompletionSerializer
+    permission_classes = [IsAuthenticated]
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    search_fields = ['content__title']
+    ordering_fields = ['created_at', 'completed_at']
+    ordering = ['-created_at']
+    
+    def get_queryset(self):
+        """Filter to show only current user's completions."""
+        return self.queryset.filter(user=self.request.user)
+
+
+class WebinarQnAViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet for Webinar Q&A Management.
+    
+    Provides CRUD operations for managing webinar questions and answers.
+    """
+    
+    queryset = WebinarQnA.objects.select_related('user', 'webinar')
+    serializer_class = WebinarQnASerializer
+    permission_classes = [IsAuthenticated]
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    search_fields = ['question', 'answer']
+    ordering_fields = ['created_at', 'answered_at']
+    ordering = ['created_at']
+
+
+class WebinarPollViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet for Webinar Poll Management.
+    
+    Provides CRUD operations for managing webinar polls.
+    """
+    
+    queryset = WebinarPoll.objects.select_related('webinar')
+    serializer_class = WebinarPollSerializer
+    permission_classes = [IsAuthenticated]
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    search_fields = ['question']
+    ordering_fields = ['created_at']
+    ordering = ['created_at']
+
+
 class EducationDashboardViewSet(viewsets.ViewSet):
     """
     Comprehensive Education Dashboard ViewSet.
