@@ -28,6 +28,11 @@ import {
   Coins,
   Smartphone,
   LineChart,
+  GraduationCap,
+  BookOpen,
+  Video,
+  Target,
+  Award,
 } from 'lucide-react';
 import type { User } from '../types';
 
@@ -86,6 +91,16 @@ const navigationSections: NavSection[] = [
       { name: 'Approvals', path: '/approvals', icon: CheckSquare },
       { name: 'Reports', path: '/reports', icon: FileBarChart },
       { name: 'M-Pesa Integration', path: '/mpesa-integration', icon: Smartphone },
+    ],
+  },
+  {
+    title: 'Education Hub',
+    items: [
+      { name: 'Education Hub', path: '/education', icon: GraduationCap },
+      { name: 'Learning Paths', path: '/education/learning-paths', icon: Target },
+      { name: 'Webinars', path: '/education/webinars', icon: Video },
+      { name: 'Challenges', path: '/education/challenges', icon: TrendingUp },
+      { name: 'My Certificates', path: '/education/certificates', icon: Award },
     ],
   },
   {
