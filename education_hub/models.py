@@ -667,6 +667,25 @@ class SavingsChallenge(models.Model):
         """String representation of SavingsChallenge."""
         return self.title
     
+    def save(self, *args, **kwargs):
+        """
+        Override save method to auto-generate slug if not provided.
+        
+        Args:
+            *args: Variable length argument list
+            **kwargs: Arbitrary keyword arguments
+        """
+        if not self.slug:
+            from django.utils.text import slugify
+            base_slug = slugify(self.title)
+            slug = base_slug
+            counter = 1
+            while SavingsChallenge.objects.filter(slug=slug).exists():
+                slug = f"{base_slug}-{counter}"
+                counter += 1
+            self.slug = slug
+        super().save(*args, **kwargs)
+    
     def update_challenge_status(self):
         """
         Update challenge status based on dates.
@@ -906,6 +925,25 @@ class Webinar(models.Model):
     def __str__(self):
         """String representation of Webinar."""
         return f"{self.title} - {self.scheduled_at}"
+    
+    def save(self, *args, **kwargs):
+        """
+        Override save method to auto-generate slug if not provided.
+        
+        Args:
+            *args: Variable length argument list
+            **kwargs: Arbitrary keyword arguments
+        """
+        if not self.slug:
+            from django.utils.text import slugify
+            base_slug = slugify(self.title)
+            slug = base_slug
+            counter = 1
+            while Webinar.objects.filter(slug=slug).exists():
+                slug = f"{base_slug}-{counter}"
+                counter += 1
+            self.slug = slug
+        super().save(*args, **kwargs)
     
     def update_status(self):
         """
