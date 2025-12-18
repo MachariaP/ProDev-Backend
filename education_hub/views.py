@@ -961,11 +961,25 @@ class WebinarViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(upcoming_webinars, many=True)
         return Response(serializer.data)
     
-    @action(detail=False, methods=['post'])
+    @action(detail=False, methods=['post'], permission_classes=[AllowAny])
     def zoom_webhook(self, request):
-        """Handle Zoom webhook events."""
-        # Placeholder for Zoom webhook integration
-        return Response({'status': 'received'}, status=status.HTTP_200_OK)
+        """
+        Handle Zoom webhook events.
+        
+        Note: This is a placeholder. In production, implement proper webhook
+        signature validation as per Zoom's webhook security guidelines:
+        https://developers.zoom.us/docs/api/rest/webhook-reference/
+        """
+        # TODO: Implement Zoom webhook signature validation
+        # Verify webhook signature using Zoom's secret token
+        # signature = request.headers.get('x-zm-signature')
+        # if not self._verify_zoom_signature(signature, request.body):
+        #     return Response({'error': 'Invalid signature'}, status=status.HTTP_401_UNAUTHORIZED)
+        
+        return Response(
+            {'status': 'received', 'message': 'Webhook endpoint not yet implemented'},
+            status=status.HTTP_501_NOT_IMPLEMENTED
+        )
 
 
 class WebinarRegistrationViewSet(viewsets.ModelViewSet):
@@ -1018,11 +1032,26 @@ class CertificateViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data)
     
-    @action(detail=False, methods=['post'])
+    @action(detail=False, methods=['post'], permission_classes=[AllowAny])
     def certificate_webhook(self, request):
-        """Handle certificate webhook events."""
-        # Placeholder for certificate webhook integration
-        return Response({'status': 'received'}, status=status.HTTP_200_OK)
+        """
+        Handle certificate webhook events.
+        
+        Note: This is a placeholder. In production, implement proper webhook
+        authentication and validation. Consider using:
+        - API key authentication
+        - HMAC signature verification
+        - IP allowlisting
+        """
+        # TODO: Implement webhook authentication and validation
+        # api_key = request.headers.get('X-API-Key')
+        # if not self._verify_api_key(api_key):
+        #     return Response({'error': 'Invalid API key'}, status=status.HTTP_401_UNAUTHORIZED)
+        
+        return Response(
+            {'status': 'received', 'message': 'Webhook endpoint not yet implemented'},
+            status=status.HTTP_501_NOT_IMPLEMENTED
+        )
 
 
 class AchievementViewSet(viewsets.ModelViewSet):
@@ -1030,6 +1059,8 @@ class AchievementViewSet(viewsets.ModelViewSet):
     ViewSet for Achievement Management.
     
     Provides CRUD operations for managing achievements.
+    All authenticated users can view available achievements to encourage engagement.
+    Only staff users can create, update, or delete achievements.
     """
     
     queryset = Achievement.objects.all()
@@ -1039,6 +1070,15 @@ class AchievementViewSet(viewsets.ModelViewSet):
     search_fields = ['name', 'description']
     ordering_fields = ['created_at', 'points_reward']
     ordering = ['created_at']
+    
+    def get_queryset(self):
+        """
+        Return all active achievements for viewing.
+        Users should be able to see all available achievements.
+        """
+        if self.request.user.is_staff:
+            return self.queryset
+        return self.queryset.filter(is_active=True)
 
 
 class UserAchievementViewSet(viewsets.ModelViewSet):
