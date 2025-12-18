@@ -39,11 +39,34 @@
   - M-Pesa transaction records
   - Payment reconciliations
 
-- **Education Hub**
-  - Educational content (Articles, Videos, Tutorials, Quizzes)
-  - User progress tracking
-  - Savings challenges
-  - Challenge participants
+- **Education Hub** (ENHANCED)
+  - Educational content (24+ items: Articles, Videos, Tutorials, Quizzes, Courses, Webinars)
+  - Learning paths (6 comprehensive paths with ordered content)
+  - Learning path enrollments with progress tracking
+  - User progress tracking with quiz scores
+  - Savings challenges (5 challenges with participants)
+  - Challenge participants with learning progress
+  - Webinars (6 webinars with registrations and Q&A)
+  - Webinar registrations with attendance tracking
+  - Certificates for completed learning paths
+  - Achievements system (10 achievements with user progress)
+  - User achievements tracking
+
+- **AI Assistant** (NEW)
+  - Chat conversations with users
+  - Chat messages (user and assistant)
+  - Financial advice with action items
+
+- **Notifications** (NEW)
+  - System notifications
+  - Financial alerts
+  - Meeting reminders
+  - Investment updates
+  - General announcements
+
+- **Wealth Engine** (NEW)
+  - Investment recommendations for groups
+  - Portfolio rebalancing suggestions
 
 - **Governance**
   - Group constitutions
@@ -146,15 +169,54 @@ After successful seeding:
 ================================================================================
 DATABASE SEEDING SUMMARY
 ================================================================================
+
+--- Core Data ---
 Users: 50
 Groups: 15
 Memberships: ~150
+
+--- Financial Data ---
 Contributions: ~1500
 Loans: ~75
+Expenses: ~80
 Investments: ~45
+Portfolios: 15
 M-Pesa Transactions: ~100
-Educational Content: 6
-Achievements: ~50
+
+--- Education Hub ---
+Educational Content: 24+
+Learning Paths: 6
+Learning Path Enrollments: ~50
+User Progress: ~200
+Savings Challenges: 5
+Challenge Participants: ~50
+Webinars: 6
+Webinar Registrations: ~50
+Certificates: ~20
+Achievements: 10
+User Achievements: ~80
+
+--- Gamification ---
+Member Achievements: ~50
+Contribution Streaks: ~75
+Reward Points: ~500
+
+--- Governance ---
+Group Constitutions: 10
+Fines: ~30
+Votes: 8
+
+--- AI & Notifications ---
+Chat Conversations: ~40
+Chat Messages: ~200
+Financial Advice: ~30
+Notifications: ~350
+
+--- Wealth Engine ---
+Investment Recommendations: ~25
+Portfolio Rebalances: ~5
+
+--- Audit ---
 Audit Logs: ~50
 ================================================================================
 ```
@@ -205,7 +267,19 @@ The `validate_seed_script.py` checks:
 - MPesaTransaction, MPesaBulkPayment, PaymentReconciliation
 
 ### Education Models
-- EducationalContent, UserProgress, SavingsChallenge, ChallengeParticipant, Webinar
+- EducationalContent, UserProgress, SavingsChallenge, ChallengeParticipant
+- Webinar, WebinarRegistration, WebinarQnA, WebinarPoll
+- LearningPath, LearningPathContent, LearningPathEnrollment, ContentCompletion
+- Certificate, Achievement, UserAchievement
+
+### AI Assistant Models (NEW)
+- ChatConversation, ChatMessage, FinancialAdvice
+
+### Notification Models (NEW)
+- Notification
+
+### Wealth Engine Models (NEW)
+- InvestmentRecommendation, PortfolioRebalance
 
 ### Governance Models
 - GroupConstitution, Fine, Vote, VoteBallot, Document, ComplianceRecord

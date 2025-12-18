@@ -30,9 +30,17 @@ from finance.models import Contribution, Loan, LoanRepayment, Expense, Disbursem
 from investments.models import Investment, InvestmentTransaction, StockHolding, Portfolio
 from gamification.models import MemberAchievement, ContributionStreak, Leaderboard, RewardPoints
 from mpesa_integration.models import MPesaTransaction, MPesaBulkPayment, PaymentReconciliation
-from education_hub.models import EducationalContent, UserProgress, SavingsChallenge, ChallengeParticipant, Webinar
+from education_hub.models import (
+    EducationalContent, UserProgress, SavingsChallenge, ChallengeParticipant, 
+    Webinar, LearningPath, LearningPathContent, LearningPathEnrollment, 
+    ContentCompletion, Certificate, Achievement, UserAchievement, 
+    WebinarRegistration, WebinarQnA
+)
 from governance.models import GroupConstitution, Fine, Vote, VoteBallot, Document, ComplianceRecord
 from audit_trail.models import AuditLog, ComplianceReport, SuspiciousActivityAlert
+from ai_assistant.models import ChatConversation, ChatMessage, FinancialAdvice
+from notifications.models import Notification
+from wealth_engine.models import InvestmentRecommendation, PortfolioRebalance
 
 User = get_user_model()
 
@@ -59,36 +67,45 @@ class DataSeeder:
         self.clear_data()
         
         # Core data
-        print("\n[1/10] Seeding Users and Wallets...")
+        print("\n[1/13] Seeding Users and Wallets...")
         self.seed_users()
         
-        print("[2/10] Seeding Groups and Memberships...")
+        print("[2/13] Seeding Groups and Memberships...")
         self.seed_groups()
         
         # Financial data
-        print("[3/10] Seeding Contributions, Loans, and Expenses...")
+        print("[3/13] Seeding Contributions, Loans, and Expenses...")
         self.seed_finance()
         
-        print("[4/10] Seeding Investments and Portfolios...")
+        print("[4/13] Seeding Investments and Portfolios...")
         self.seed_investments()
         
         # Engagement data
-        print("[5/10] Seeding Gamification Data...")
+        print("[5/13] Seeding Gamification Data...")
         self.seed_gamification()
         
-        print("[6/10] Seeding M-Pesa Transactions...")
+        print("[6/13] Seeding M-Pesa Transactions...")
         self.seed_mpesa()
         
-        print("[7/10] Seeding Education Hub Content...")
+        print("[7/13] Seeding Education Hub Content (Enhanced)...")
         self.seed_education()
         
-        print("[8/10] Seeding Governance Data...")
+        print("[8/13] Seeding Governance Data...")
         self.seed_governance()
         
-        print("[9/10] Seeding Audit Trail...")
+        print("[9/13] Seeding Audit Trail...")
         self.seed_audit_trail()
         
-        print("[10/10] Creating Summary Statistics...")
+        print("[10/13] Seeding AI Assistant Data...")
+        self.seed_ai_assistant()
+        
+        print("[11/13] Seeding Notifications...")
+        self.seed_notifications()
+        
+        print("[12/13] Seeding Wealth Engine Data...")
+        self.seed_wealth_engine()
+        
+        print("[13/13] Creating Summary Statistics...")
         self.print_summary()
         
         print("\n" + "=" * 80)
@@ -713,81 +730,967 @@ class DataSeeder:
         print(f"  ✓ Created {transaction_count} M-Pesa transactions")
     
     # ========================================================================
-    # EDUCATION HUB
+    # EDUCATION HUB (ENHANCED)
     # ========================================================================
     
     def seed_education(self):
-        """Seed educational content."""
-        content_count = 0
-        progress_count = 0
-        challenge_count = 0
+        """Seed comprehensive educational content with all related models."""
+        print("  ✓ Seeding Educational Content...")
+        contents = self._create_educational_content()
         
-        # Educational Content
+        print("  ✓ Seeding Learning Paths...")
+        learning_paths = self._create_learning_paths(contents)
+        
+        print("  ✓ Seeding User Progress...")
+        self._create_user_progress(contents)
+        
+        print("  ✓ Seeding Learning Path Enrollments...")
+        self._create_learning_path_enrollments(learning_paths)
+        
+        print("  ✓ Seeding Webinars...")
+        webinars = self._create_webinars()
+        
+        print("  ✓ Seeding Webinar Registrations...")
+        self._create_webinar_registrations(webinars)
+        
+        print("  ✓ Seeding Savings Challenges...")
+        challenges = self._create_savings_challenges(contents, learning_paths)
+        
+        print("  ✓ Seeding Challenge Participants...")
+        self._create_challenge_participants(challenges)
+        
+        print("  ✓ Seeding Achievements...")
+        achievements = self._create_achievements()
+        
+        print("  ✓ Seeding User Achievements...")
+        self._create_user_achievements(achievements)
+        
+        print("  ✓ Seeding Certificates...")
+        self._create_certificates(learning_paths)
+    
+    def _create_educational_content(self):
+        """Create diverse educational content."""
         content_data = [
-            ('Introduction to Savings', 'ARTICLE', 'SAVINGS', 'BEGINNER', 15),
-            ('Investment Basics', 'VIDEO', 'INVESTMENTS', 'BEGINNER', 30),
-            ('Understanding Loans', 'TUTORIAL', 'LOANS', 'INTERMEDIATE', 45),
-            ('Budgeting for Success', 'ARTICLE', 'BUDGETING', 'BEGINNER', 20),
-            ('Advanced Investment Strategies', 'WEBINAR', 'INVESTMENTS', 'ADVANCED', 60),
-            ('Financial Planning 101', 'TUTORIAL', 'FINANCIAL_PLANNING', 'INTERMEDIATE', 40),
+            # Savings Category
+            ('Introduction to Savings', 'ARTICLE', 'SAVINGS', 'BEGINNER', 15, 
+             'Master the basics of savings and build a strong financial foundation.', 
+             ['emergency fund', 'savings account', 'financial goals'], True),
+            ('Smart Savings Strategies', 'VIDEO', 'SAVINGS', 'INTERMEDIATE', 25, 
+             'Advanced savings techniques to maximize your wealth.', 
+             ['compound interest', 'high-yield savings', 'savings automation'], True),
+            ('Building Your Emergency Fund', 'TUTORIAL', 'SAVINGS', 'BEGINNER', 30, 
+             'Step-by-step guide to creating a solid emergency fund.', 
+             ['emergency fund', 'financial security', '3-6 months expenses'], True),
+            
+            # Investment Category
+            ('Investment Basics', 'VIDEO', 'INVESTMENTS', 'BEGINNER', 30, 
+             'Learn fundamental investment concepts and get started.', 
+             ['stocks', 'bonds', 'diversification'], True),
+            ('Understanding Stock Markets', 'ARTICLE', 'INVESTMENTS', 'INTERMEDIATE', 20, 
+             'Deep dive into how stock markets work.', 
+             ['stock trading', 'market analysis', 'equities'], True),
+            ('Advanced Investment Strategies', 'WEBINAR', 'INVESTMENTS', 'ADVANCED', 60, 
+             'Master complex investment strategies for wealth growth.', 
+             ['portfolio management', 'asset allocation', 'risk management'], True),
+            ('Real Estate Investment Guide', 'COURSE', 'INVESTMENTS', 'INTERMEDIATE', 45, 
+             'Comprehensive guide to real estate investing.', 
+             ['real estate', 'property investment', 'rental income'], True),
+            
+            # Loans Category
+            ('Understanding Loans', 'TUTORIAL', 'LOANS', 'BEGINNER', 20, 
+             'Learn about different loan types and how they work.', 
+             ['personal loans', 'interest rates', 'loan terms'], True),
+            ('Loan Management Best Practices', 'ARTICLE', 'LOANS', 'INTERMEDIATE', 25, 
+             'Effective strategies for managing your loans.', 
+             ['debt management', 'repayment strategies', 'credit score'], True),
+            ('How to Qualify for a Loan', 'VIDEO', 'LOANS', 'BEGINNER', 18, 
+             'Steps to improve your loan eligibility.', 
+             ['loan requirements', 'creditworthiness', 'documentation'], True),
+            
+            # Budgeting Category
+            ('Budgeting for Success', 'ARTICLE', 'BUDGETING', 'BEGINNER', 20, 
+             'Create and stick to a budget that works.', 
+             ['budgeting', '50/30/20 rule', 'expense tracking'], True),
+            ('Advanced Budgeting Techniques', 'TUTORIAL', 'BUDGETING', 'ADVANCED', 35, 
+             'Master advanced budgeting strategies.', 
+             ['zero-based budgeting', 'envelope system', 'financial planning'], True),
+            ('Expense Tracking Made Easy', 'VIDEO', 'BUDGETING', 'BEGINNER', 15, 
+             'Learn to track your expenses effectively.', 
+             ['expense tracking', 'money management', 'financial awareness'], True),
+            
+            # Financial Planning Category
+            ('Financial Planning 101', 'TUTORIAL', 'FINANCIAL_PLANNING', 'INTERMEDIATE', 40, 
+             'Comprehensive guide to financial planning.', 
+             ['financial goals', 'retirement planning', 'wealth building'], True),
+            ('Long-term Financial Planning', 'COURSE', 'FINANCIAL_PLANNING', 'ADVANCED', 50, 
+             'Plan for your financial future effectively.', 
+             ['long-term goals', 'investment planning', 'estate planning'], True),
+            ('Setting Financial Goals', 'ARTICLE', 'FINANCIAL_PLANNING', 'BEGINNER', 12, 
+             'How to set and achieve your financial goals.', 
+             ['SMART goals', 'financial targets', 'goal tracking'], True),
+            
+            # Credit Score Category
+            ('Understanding Credit Scores', 'VIDEO', 'CREDIT_SCORE', 'BEGINNER', 22, 
+             'Learn what impacts your credit score.', 
+             ['credit score', 'credit report', 'credit history'], True),
+            ('Improving Your Credit Score', 'TUTORIAL', 'CREDIT_SCORE', 'INTERMEDIATE', 30, 
+             'Actionable steps to boost your credit score.', 
+             ['credit building', 'debt management', 'credit utilization'], True),
+            
+            # Retirement Category
+            ('Retirement Planning Basics', 'ARTICLE', 'RETIREMENT', 'INTERMEDIATE', 28, 
+             'Start planning for a comfortable retirement.', 
+             ['retirement savings', 'pension plans', 'retirement age'], True),
+            ('Investment for Retirement', 'VIDEO', 'RETIREMENT', 'ADVANCED', 35, 
+             'Strategic retirement investment approaches.', 
+             ['retirement portfolio', '401k', 'IRA'], True),
+            
+            # Entrepreneurship Category
+            ('Starting Your Business', 'COURSE', 'ENTREPRENEURSHIP', 'INTERMEDIATE', 55, 
+             'Complete guide to launching a successful business.', 
+             ['business planning', 'startup funding', 'business registration'], True),
+            ('Business Finance Management', 'TUTORIAL', 'ENTREPRENEURSHIP', 'ADVANCED', 40, 
+             'Manage your business finances effectively.', 
+             ['cash flow', 'business accounting', 'financial statements'], True),
+            
+            # Quiz Content
+            ('Savings Knowledge Test', 'QUIZ', 'SAVINGS', 'BEGINNER', 10, 
+             'Test your understanding of savings concepts.', 
+             ['quiz', 'assessment', 'savings'], True),
+            ('Investment Quiz', 'QUIZ', 'INVESTMENTS', 'INTERMEDIATE', 15, 
+             'Evaluate your investment knowledge.', 
+             ['quiz', 'assessment', 'investments'], True),
         ]
         
         contents = []
-        for i, (title, ctype, category, difficulty, duration) in enumerate(content_data):
+        for i, (title, ctype, category, difficulty, duration, description, tags, is_published) in enumerate(content_data):
+            slug = title.lower().replace(' ', '-')
+            
+            # Create quiz questions for quiz content
+            quiz_questions = None
+            passing_score = 70
+            if ctype == 'QUIZ':
+                quiz_questions = [
+                    {
+                        'question': f'What is the best approach to {category.lower()}?',
+                        'options': ['Option A', 'Option B', 'Option C', 'Option D'],
+                        'correct_answer': 0
+                    },
+                    {
+                        'question': f'How often should you review your {category.lower()} strategy?',
+                        'options': ['Monthly', 'Quarterly', 'Annually', 'Never'],
+                        'correct_answer': 1
+                    }
+                ]
+            
+            # Create detailed content
+            content_text = f"""
+# {title}
+
+## Introduction
+{description}
+
+## Key Concepts
+This comprehensive guide covers essential topics in {category.lower()} that will help you make informed financial decisions.
+
+## Learning Objectives
+By the end of this content, you will be able to:
+- Understand the fundamentals of {category.lower()}
+- Apply best practices in your financial life
+- Make confident decisions about your finances
+
+## Main Content
+This section contains detailed information about {category.lower()}. Content includes practical examples, 
+case studies, and actionable steps you can take to improve your financial situation. The material is 
+designed to be accessible while providing valuable insights for learners at the {difficulty.lower()} level.
+
+### Key Topics Covered
+- Fundamental concepts and definitions
+- Best practices and strategies
+- Common pitfalls to avoid
+- Real-world applications and examples
+- Step-by-step guidance for implementation
+
+## Summary
+You've learned important concepts about {category.lower()}. Apply these principles to improve your financial well-being.
+            """.strip()
+            
+            learning_objectives = [
+                f"Understand key {category.lower()} concepts",
+                f"Apply {category.lower()} strategies in real life",
+                f"Make informed {category.lower()} decisions"
+            ]
+            
             content = EducationalContent.objects.create(
                 title=title,
-                slug=title.lower().replace(' ', '-'),
+                slug=f'{slug}-{i}' if EducationalContent.objects.filter(slug=slug).exists() else slug,
                 content_type=ctype,
                 category=category,
                 difficulty=difficulty,
-                description=f'Learn about {title.lower()} in this comprehensive guide.',
-                content=f'This is the detailed content about {title.lower()}...',
+                description=description,
+                content=content_text,
+                video_url=f'https://example.com/videos/{slug}' if ctype == 'VIDEO' else '',
+                thumbnail_url=f'https://example.com/thumbnails/{slug}.jpg',
+                learning_objectives=learning_objectives,
+                tags=tags,
                 duration_minutes=duration,
                 points_reward=random.randint(10, 50),
-                is_published=True,
+                certificate_available=ctype in ['COURSE', 'WEBINAR'],
+                quiz_questions=quiz_questions,
+                passing_score=passing_score,
+                is_published=is_published,
+                is_featured=random.choice([True, False, False, False]),
                 author=random.choice(self.users),
-                views_count=random.randint(10, 500)
+                views_count=random.randint(10, 1000),
+                likes_count=random.randint(5, 200),
+                share_count=random.randint(0, 50)
             )
             contents.append(content)
-            content_count += 1
         
-        print(f"  ✓ Created {content_count} educational content items")
+        print(f"    - Created {len(contents)} educational content items")
+        return contents
+    
+    def _create_learning_paths(self, contents):
+        """Create learning paths with ordered content."""
+        path_data = [
+            ('Financial Literacy for Beginners', 'BEGINNER_FINANCIAL_LITERACY', 'BEGINNER',
+             'Start your financial journey with fundamental concepts.', 'wallet', '#3B82F6'),
+            ('Investment Mastery Program', 'INVESTMENT_MASTERY', 'ADVANCED',
+             'Become an investment expert with comprehensive training.', 'trending-up', '#10B981'),
+            ('Debt Management Excellence', 'DEBT_MANAGEMENT', 'INTERMEDIATE',
+             'Learn to manage and eliminate debt effectively.', 'credit-card', '#F59E0B'),
+            ('Business Finance Course', 'BUSINESS_FINANCE', 'INTERMEDIATE',
+             'Master business financial management.', 'briefcase', '#8B5CF6'),
+            ('Retirement Planning Journey', 'RETIREMENT_PLANNING', 'ADVANCED',
+             'Plan for a secure and comfortable retirement.', 'sun', '#EC4899'),
+            ('Wealth Building Strategy', 'WEALTH_BUILDING', 'INTERMEDIATE',
+             'Build sustainable wealth through strategic planning.', 'dollar-sign', '#14B8A6'),
+        ]
         
-        # User Progress
-        for user in random.sample(self.users, 20):
-            for content in random.sample(contents, random.randint(1, 3)):
-                status = random.choice(['IN_PROGRESS', 'IN_PROGRESS', 'COMPLETED'])
+        learning_paths = []
+        for title, path_type, difficulty, description, icon, color in path_data:
+            slug = title.lower().replace(' ', '-')
+            
+            # Filter appropriate contents for this path
+            if path_type == 'BEGINNER_FINANCIAL_LITERACY':
+                path_contents = [c for c in contents if c.difficulty == 'BEGINNER' 
+                               and c.category in ['SAVINGS', 'BUDGETING', 'FINANCIAL_PLANNING']][:5]
+            elif path_type == 'INVESTMENT_MASTERY':
+                path_contents = [c for c in contents if c.category == 'INVESTMENTS'][:6]
+            elif path_type == 'DEBT_MANAGEMENT':
+                # Safely check for 'debt' in tags
+                path_contents = [c for c in contents if c.category == 'LOANS' 
+                               or (c.tags and any('debt' in str(tag).lower() for tag in c.tags))][:4]
+            elif path_type == 'BUSINESS_FINANCE':
+                path_contents = [c for c in contents if c.category == 'ENTREPRENEURSHIP'][:5]
+            elif path_type == 'RETIREMENT_PLANNING':
+                path_contents = [c for c in contents if c.category in ['RETIREMENT', 'INVESTMENTS']][:5]
+            else:  # WEALTH_BUILDING
+                path_contents = [c for c in contents if c.category in ['INVESTMENTS', 'FINANCIAL_PLANNING']][:6]
+            
+            if not path_contents:
+                continue
+                
+            learning_path = LearningPath.objects.create(
+                title=title,
+                slug=slug,
+                description=description,
+                short_description=description[:100],
+                path_type=path_type,
+                icon_name=icon,
+                color_code=color,
+                difficulty=difficulty,
+                is_published=True,
+                is_featured=random.choice([True, False, False]),
+                completion_badge=f'{title} Champion',
+                completion_certificate=True,
+                enrolled_count=random.randint(10, 100),
+                completed_count=random.randint(5, 50)
+            )
+            
+            # Add contents to learning path
+            for order, content in enumerate(path_contents, 1):
+                LearningPathContent.objects.create(
+                    learning_path=learning_path,
+                    content=content,
+                    order=order,
+                    is_required=True
+                )
+            
+            # Update path counts
+            learning_path.update_counts()
+            learning_paths.append(learning_path)
+        
+        print(f"    - Created {len(learning_paths)} learning paths")
+        return learning_paths
+    
+    def _create_user_progress(self, contents):
+        """Create user progress records."""
+        progress_count = 0
+        
+        for user in random.sample(self.users, min(30, len(self.users))):
+            num_contents = random.randint(3, 10)
+            user_contents = random.sample(contents, min(num_contents, len(contents)))
+            
+            for content in user_contents:
+                status = random.choice(['IN_PROGRESS', 'IN_PROGRESS', 'COMPLETED', 'COMPLETED'])
+                progress_pct = 100 if status == 'COMPLETED' else random.randint(20, 90)
+                
+                started_at = timezone.now() - timedelta(days=random.randint(1, 60))
+                completed_at = timezone.now() - timedelta(days=random.randint(0, 30)) if status == 'COMPLETED' else None
+                
+                # Quiz answers if it's a quiz
+                quiz_answers = None
+                quiz_score = None
+                if content.content_type == 'QUIZ' and status == 'COMPLETED':
+                    quiz_answers = {'0': 0, '1': 1}  # Simplified answers
+                    quiz_score = Decimal(str(random.randint(60, 100)))
+                
                 UserProgress.objects.create(
                     user=user,
                     content=content,
                     status=status,
-                    progress_percentage=random.randint(30, 100) if status == 'IN_PROGRESS' else 100,
-                    started_at=timezone.now() - timedelta(days=random.randint(1, 30)),
-                    completed_at=timezone.now() if status == 'COMPLETED' else None,
-                    time_spent_minutes=random.randint(10, content.duration_minutes)
+                    progress_percentage=progress_pct,
+                    started_at=started_at,
+                    completed_at=completed_at,
+                    time_spent_minutes=random.randint(5, content.duration_minutes + 10),
+                    quiz_score=quiz_score,
+                    quiz_answers=quiz_answers,
+                    bookmarked=random.choice([True, False, False, False]),
+                    last_position=random.randint(0, 100)
                 )
                 progress_count += 1
         
-        print(f"  ✓ Created {progress_count} user progress records")
+        print(f"    - Created {progress_count} user progress records")
+    
+    def _create_learning_path_enrollments(self, learning_paths):
+        """Create learning path enrollments with completions."""
+        enrollment_count = 0
+        completion_count = 0
         
-        # Savings Challenges
-        for i in range(5):
-            start_date = timezone.now().date() + timedelta(days=random.randint(-30, 30))
-            SavingsChallenge.objects.create(
-                title=f'Save {random.choice([10000, 25000, 50000])} in {random.choice([30, 60, 90])} Days',
-                description='Challenge yourself to save consistently',
-                target_amount=Decimal(str(random.choice([10000, 25000, 50000]))),
-                duration_days=random.choice([30, 60, 90]),
-                start_date=start_date,
-                end_date=start_date + timedelta(days=random.choice([30, 60, 90])),
-                status=random.choice(['ACTIVE', 'UPCOMING', 'COMPLETED']),
-                reward_points=random.randint(50, 200),
-                participants_count=random.randint(5, 20),
-                created_by=random.choice(self.users)
+        for user in random.sample(self.users, min(25, len(self.users))):
+            num_enrollments = random.randint(1, 3)
+            user_paths = random.sample(learning_paths, min(num_enrollments, len(learning_paths)))
+            
+            for path in user_paths:
+                status = random.choice(['ENROLLED', 'IN_PROGRESS', 'IN_PROGRESS', 'COMPLETED'])
+                
+                enrolled_at = timezone.now() - timedelta(days=random.randint(1, 90))
+                started_at = enrolled_at + timedelta(days=random.randint(0, 5)) if status != 'ENROLLED' else None
+                completed_at = timezone.now() - timedelta(days=random.randint(0, 30)) if status == 'COMPLETED' else None
+                
+                # Get path contents
+                path_contents = list(path.path_contents.order_by('order'))
+                if not path_contents:
+                    continue
+                
+                # Set current content
+                if status == 'COMPLETED':
+                    current_content = None
+                    progress_pct = 100
+                    num_completed = len(path_contents)
+                elif status == 'IN_PROGRESS':
+                    num_completed = random.randint(1, max(1, len(path_contents) - 1))
+                    current_content = path_contents[num_completed].content if num_completed < len(path_contents) else None
+                    progress_pct = int((num_completed / len(path_contents)) * 100)
+                else:  # ENROLLED
+                    current_content = path_contents[0].content
+                    num_completed = 0
+                    progress_pct = 0
+                
+                enrollment = LearningPathEnrollment.objects.create(
+                    user=user,
+                    learning_path=path,
+                    status=status,
+                    current_content=current_content,
+                    progress_percentage=progress_pct,
+                    enrolled_at=enrolled_at,
+                    started_at=started_at,
+                    completed_at=completed_at,
+                    total_time_spent_minutes=random.randint(30, max(60, path.total_duration_hours * 60)),
+                    earned_points=random.randint(0, max(10, path.total_points))
+                )
+                enrollment_count += 1
+                
+                # Create completion records for completed contents
+                for path_content in path_contents[:num_completed]:
+                    ContentCompletion.objects.create(
+                        enrollment=enrollment,
+                        content=path_content.content,
+                        time_spent_minutes=random.randint(10, path_content.content.duration_minutes + 10),
+                        quiz_score=Decimal(str(random.randint(70, 100))) if path_content.content.content_type == 'QUIZ' else None,
+                        passed=True
+                    )
+                    enrollment.completed_contents.add(path_content.content)
+                    completion_count += 1
+        
+        print(f"    - Created {enrollment_count} learning path enrollments")
+        print(f"    - Created {completion_count} content completions")
+    
+    def _create_webinars(self):
+        """Create webinars."""
+        webinar_data = [
+            ('Mastering Personal Finance', 'SAVINGS', 'BEGINNER', 60,
+             'Learn essential personal finance skills in this live webinar.'),
+            ('Investment Opportunities in 2024', 'INVESTMENTS', 'INTERMEDIATE', 90,
+             'Explore the best investment opportunities for the year.'),
+            ('Debt-Free Living Strategies', 'LOANS', 'INTERMEDIATE', 75,
+             'Practical strategies to achieve debt-free living.'),
+            ('Building Passive Income Streams', 'INVESTMENTS', 'ADVANCED', 120,
+             'Create multiple streams of passive income.'),
+            ('Retirement Planning Workshop', 'RETIREMENT', 'ADVANCED', 90,
+             'Comprehensive retirement planning strategies.'),
+            ('Small Business Financial Management', 'ENTREPRENEURSHIP', 'INTERMEDIATE', 75,
+             'Manage your small business finances effectively.'),
+        ]
+        
+        webinars = []
+        for i, (title, category, difficulty, duration, description) in enumerate(webinar_data):
+            # Mix of scheduled, completed, and upcoming webinars
+            if i < 2:
+                # Upcoming webinars
+                scheduled_at = timezone.now() + timedelta(days=random.randint(5, 30))
+                status = 'SCHEDULED'
+            elif i < 4:
+                # Recent completed webinars
+                scheduled_at = timezone.now() - timedelta(days=random.randint(1, 30))
+                status = 'COMPLETED'
+            else:
+                # Mix
+                scheduled_at = timezone.now() + timedelta(days=random.randint(-10, 20))
+                status = random.choice(['SCHEDULED', 'COMPLETED'])
+            
+            slug = f"{title.lower().replace(' ', '-')}-{i}"
+            
+            webinar = Webinar.objects.create(
+                title=title,
+                slug=slug,
+                description=description,
+                short_description=description[:100],
+                presenter=random.choice(self.users),
+                scheduled_at=scheduled_at,
+                duration_minutes=duration,
+                timezone='Africa/Nairobi',
+                platform='ZOOM',
+                meeting_id=f'webinar{random.randint(100000, 999999)}',
+                meeting_url=f'https://zoom.us/j/webinar{random.randint(100000, 999999)}',
+                join_url=f'https://zoom.us/j/webinar{random.randint(100000, 999999)}',
+                status=status,
+                category=category,
+                difficulty=difficulty,
+                max_participants=random.choice([50, 100, 200]),
+                registered_count=random.randint(10, 80),
+                attended_count=random.randint(5, 60) if status == 'COMPLETED' else 0,
+                points_reward=random.randint(20, 50),
+                certificate_available=True,
+                qna_enabled=True,
+                poll_enabled=random.choice([True, False]),
+                views_count=random.randint(50, 500) if status == 'COMPLETED' else 0,
+                average_rating=Decimal(str(random.uniform(4.0, 5.0))) if status == 'COMPLETED' else Decimal('0')
             )
-            challenge_count += 1
+            webinars.append(webinar)
         
-        print(f"  ✓ Created {challenge_count} savings challenges")
+        print(f"    - Created {len(webinars)} webinars")
+        return webinars
+    
+    def _create_webinar_registrations(self, webinars):
+        """Create webinar registrations."""
+        registration_count = 0
+        qna_count = 0
+        
+        for webinar in webinars:
+            num_registrations = min(webinar.registered_count, 20)
+            registered_users = random.sample(self.users, min(num_registrations, len(self.users)))
+            
+            for user in registered_users:
+                # Determine if attended
+                attended = webinar.status == 'COMPLETED' and random.choice([True, True, False])
+                status = 'ATTENDED' if attended else 'REGISTERED'
+                
+                registration = WebinarRegistration.objects.create(
+                    webinar=webinar,
+                    user=user,
+                    status=status,
+                    registered_at=webinar.scheduled_at - timedelta(days=random.randint(1, 14)),
+                    joined_at=webinar.scheduled_at + timedelta(minutes=random.randint(-5, 10)) if attended else None,
+                    attendance_duration=random.randint(30, webinar.duration_minutes) if attended else 0,
+                    checkin_code=f'{random.randint(100000, 999999)}',
+                    checked_in=attended,
+                    checkin_at=webinar.scheduled_at if attended else None,
+                    rating=random.randint(4, 5) if attended else None,
+                    feedback='Great webinar! Very informative.' if attended and random.choice([True, False]) else '',
+                    timezone='Africa/Nairobi',
+                    source='WEB'
+                )
+                registration_count += 1
+                
+                # Add some Q&A for completed webinars
+                if webinar.status == 'COMPLETED' and attended and random.choice([True, False, False]):
+                    question_text = random.choice([
+                        'How can I start implementing these strategies?',
+                        'What resources do you recommend for beginners?',
+                        'Can you provide more examples?',
+                        'How long does it typically take to see results?',
+                        'What are the common mistakes to avoid?'
+                    ])
+                    
+                    WebinarQnA.objects.create(
+                        webinar=webinar,
+                        user=user,
+                        question=question_text,
+                        answer='Thank you for your question. ' + random.choice([
+                            'Start small and build gradually.',
+                            'Check out the resources in the description.',
+                            'I recommend starting with the basics.',
+                            'Results vary, but consistency is key.',
+                            'Avoid rushing and focus on fundamentals.'
+                        ]),
+                        answered_by=webinar.presenter,
+                        is_anonymous=False,
+                        upvotes=random.randint(0, 15),
+                        answered_at=webinar.scheduled_at + timedelta(minutes=random.randint(10, webinar.duration_minutes))
+                    )
+                    qna_count += 1
+        
+        print(f"    - Created {registration_count} webinar registrations")
+        print(f"    - Created {qna_count} Q&A entries")
+    
+    def _create_savings_challenges(self, contents, learning_paths):
+        """Create savings challenges with educational content."""
+        challenge_data = [
+            ('Save 10K in 30 Days', 'MONTHLY_SAVINGS', 10000, 30, 'ACTIVE'),
+            ('Build Your Emergency Fund', 'EMERGENCY_FUND', 50000, 90, 'ACTIVE'),
+            ('Investment Challenge', 'INVESTMENT_CHALLENGE', 25000, 60, 'UPCOMING'),
+            ('New Year Savings Boost', 'SPECIAL_EVENT', 15000, 45, 'COMPLETED'),
+            ('Weekly Savings Habit', 'WEEKLY_SAVINGS', 5000, 30, 'ACTIVE'),
+        ]
+        
+        challenges = []
+        for title, challenge_type, target, duration, status in challenge_data:
+            start_date = timezone.now().date()
+            if status == 'UPCOMING':
+                start_date += timedelta(days=10)
+            elif status == 'COMPLETED':
+                start_date -= timedelta(days=duration + 10)
+            elif status == 'ACTIVE':
+                start_date -= timedelta(days=random.randint(1, duration // 2))
+            
+            end_date = start_date + timedelta(days=duration)
+            
+            # Link relevant educational content
+            if challenge_type in ['MONTHLY_SAVINGS', 'WEEKLY_SAVINGS', 'EMERGENCY_FUND']:
+                category_filter = 'SAVINGS'
+            elif challenge_type == 'INVESTMENT_CHALLENGE':
+                category_filter = 'INVESTMENTS'
+            else:
+                category_filter = 'BUDGETING'
+            
+            relevant_contents = [c for c in contents if c.category == category_filter][:3]
+            relevant_path = next((lp for lp in learning_paths if category_filter.lower() in lp.title.lower()), None)
+            
+            challenge = SavingsChallenge.objects.create(
+                title=title,
+                description=f'Join the {title} challenge and {challenge_type.replace("_", " ").lower()}.',
+                short_description=f'Save KES {target:,} in {duration} days',
+                challenge_type=challenge_type,
+                target_amount=Decimal(str(target)),
+                duration_days=duration,
+                start_date=start_date,
+                end_date=end_date,
+                status=status,
+                min_participants=1,
+                max_participants=100,
+                participants_count=random.randint(10, 50),
+                reward_points=random.randint(100, 300),
+                reward_badge=f'{title} Champion',
+                learning_path=relevant_path,
+                created_by=random.choice(self.users),
+                total_amount_saved=Decimal(str(random.randint(50000, 500000))),
+                success_rate=Decimal(str(random.uniform(60, 90)))
+            )
+            
+            # Link educational content
+            for content in relevant_contents:
+                challenge.educational_content.add(content)
+            
+            challenges.append(challenge)
+        
+        print(f"    - Created {len(challenges)} savings challenges")
+        return challenges
+    
+    def _create_challenge_participants(self, challenges):
+        """Create challenge participants."""
+        participant_count = 0
+        
+        for challenge in challenges:
+            num_participants = min(challenge.participants_count, 15)
+            participants = random.sample(self.users, min(num_participants, len(self.users)))
+            
+            for user in participants:
+                current_amount = Decimal(str(random.uniform(0, float(challenge.target_amount))))
+                progress_pct = int((current_amount / challenge.target_amount) * 100)
+                completed = progress_pct >= 100
+                
+                participant = ChallengeParticipant.objects.create(
+                    challenge=challenge,
+                    user=user,
+                    current_amount=current_amount,
+                    target_amount=challenge.target_amount,
+                    progress_percentage=min(progress_pct, 100),
+                    completed=completed,
+                    streak_days=random.randint(0, challenge.duration_days),
+                    joined_at=challenge.start_date,
+                    started_at=challenge.start_date,
+                    completed_at=timezone.now() if completed else None,
+                    learning_progress=random.randint(0, 100),
+                    daily_target=challenge.target_amount / Decimal(str(challenge.duration_days)),
+                    weekly_target=challenge.target_amount / Decimal(str(max(1, challenge.duration_days / 7)))
+                )
+                
+                # Link some completed lessons
+                for content in random.sample(list(challenge.educational_content.all()), 
+                                            min(2, challenge.educational_content.count())):
+                    participant.completed_lessons.add(content)
+                
+                participant_count += 1
+        
+        print(f"    - Created {participant_count} challenge participants")
+    
+    def _create_achievements(self):
+        """Create achievements."""
+        achievement_data = [
+            ('First Steps', 'LEARNING', 'Complete your first educational content', 'book', '#3B82F6', 'COMMON', 10, 'content_completed', {'count': 1}),
+            ('Knowledge Seeker', 'LEARNING', 'Complete 10 educational contents', 'book-open', '#10B981', 'RARE', 50, 'content_completed', {'count': 10}),
+            ('Learning Master', 'LEARNING', 'Complete 50 educational contents', 'graduation-cap', '#F59E0B', 'EPIC', 200, 'content_completed', {'count': 50}),
+            ('Path Explorer', 'LEARNING', 'Enroll in your first learning path', 'map', '#8B5CF6', 'COMMON', 20, 'path_enrolled', {'count': 1}),
+            ('Path Completer', 'LEARNING', 'Complete your first learning path', 'award', '#EC4899', 'RARE', 100, 'path_completed', {'count': 1}),
+            ('Savings Champion', 'SAVINGS', 'Complete your first savings challenge', 'piggy-bank', '#14B8A6', 'RARE', 75, 'challenge_completed', {'count': 1}),
+            ('Consistent Saver', 'SAVINGS', 'Maintain a 30-day savings streak', 'trending-up', '#F59E0B', 'EPIC', 150, 'streak_days', {'count': 30}),
+            ('Webinar Attendee', 'COMMUNITY', 'Attend your first webinar', 'video', '#3B82F6', 'COMMON', 25, 'webinar_attended', {'count': 1}),
+            ('Active Learner', 'EXPERIENCE', 'Earn 500 learning points', 'star', '#FFD700', 'LEGENDARY', 500, 'points_earned', {'count': 500}),
+            ('Community Helper', 'COMMUNITY', 'Ask 5 questions in webinars', 'message-circle', '#10B981', 'RARE', 50, 'questions_asked', {'count': 5}),
+        ]
+        
+        achievements = []
+        for title, ach_type, description, icon, color, rarity, points, criteria_type, criteria_value in achievement_data:
+            achievement = Achievement.objects.create(
+                title=title,
+                description=description,
+                icon_name=icon,
+                icon_color=color,
+                achievement_type=ach_type,
+                rarity=rarity,
+                points_value=points,
+                criteria_type=criteria_type,
+                criteria_value=criteria_value,
+                is_active=True
+            )
+            achievements.append(achievement)
+        
+        print(f"    - Created {len(achievements)} achievements")
+        return achievements
+    
+    def _create_user_achievements(self, achievements):
+        """Create user achievements."""
+        user_achievement_count = 0
+        
+        for user in random.sample(self.users, min(20, len(self.users))):
+            num_achievements = random.randint(1, 5)
+            user_achievements = random.sample(achievements, min(num_achievements, len(achievements)))
+            
+            for achievement in user_achievements:
+                is_unlocked = random.choice([True, True, False])
+                progress = 100 if is_unlocked else random.randint(20, 80)
+                
+                UserAchievement.objects.create(
+                    user=user,
+                    achievement=achievement,
+                    progress=progress,
+                    is_unlocked=is_unlocked
+                )
+                user_achievement_count += 1
+        
+        print(f"    - Created {user_achievement_count} user achievements")
+    
+    def _create_certificates(self, learning_paths):
+        """Create certificates for completed paths."""
+        certificate_count = 0
+        
+        # Get completed enrollments
+        completed_enrollments = LearningPathEnrollment.objects.filter(status='COMPLETED')
+        
+        for enrollment in completed_enrollments[:20]:  # Limit to 20 certificates
+            grade = random.choice(['PASS', 'MERIT', 'DISTINCTION'])
+            score = Decimal(str(random.randint(70, 100)))
+            
+            Certificate.objects.create(
+                user=enrollment.user,
+                learning_path=enrollment.learning_path,
+                title=f'Certificate of Completion: {enrollment.learning_path.title}',
+                description=f'Awarded for successfully completing the {enrollment.learning_path.title} learning path.',
+                grade=grade,
+                score=score,
+                is_public=random.choice([True, False])
+            )
+            certificate_count += 1
+        
+        print(f"    - Created {certificate_count} certificates")
+    
+    # ========================================================================
+    # AI ASSISTANT
+    # ========================================================================
+    
+    def seed_ai_assistant(self):
+        """Seed AI assistant data."""
+        conversation_count = 0
+        message_count = 0
+        advice_count = 0
+        
+        # Create chat conversations
+        for user in random.sample(self.users, 20):
+            num_conversations = random.randint(1, 3)
+            
+            for i in range(num_conversations):
+                # Some conversations are group-related
+                group = random.choice(self.groups) if random.choice([True, False]) else None
+                
+                conversation = ChatConversation.objects.create(
+                    user=user,
+                    group=group,
+                    title=random.choice([
+                        'Savings Advice',
+                        'Investment Questions',
+                        'Loan Inquiry',
+                        'Financial Planning Help',
+                        'Budget Planning',
+                        ''
+                    ]),
+                    is_active=random.choice([True, True, False])
+                )
+                conversation_count += 1
+                
+                # Create messages for the conversation
+                num_messages = random.randint(3, 10)
+                conversation_topics = [
+                    ('How can I start saving money?', 'Start by setting aside 10% of your income each month...'),
+                    ('What investment options are available?', 'Consider treasury bills, stocks, or mutual funds...'),
+                    ('How do I qualify for a loan?', 'You need a good credit score and stable income...'),
+                    ('Help me create a budget', 'Let\'s start by listing your monthly income and expenses...'),
+                    ('What are the best savings strategies?', 'Try the 50/30/20 rule for budgeting...'),
+                ]
+                
+                for j in range(num_messages):
+                    if j % 2 == 0:  # User message
+                        question, _ = random.choice(conversation_topics)
+                        ChatMessage.objects.create(
+                            conversation=conversation,
+                            role='USER',
+                            content=question,
+                            intent=random.choice(['SAVINGS_INQUIRY', 'INVESTMENT_INQUIRY', 'LOAN_INQUIRY', 'GENERAL']),
+                            confidence=Decimal(str(random.uniform(0.7, 0.99)))
+                        )
+                    else:  # Assistant response
+                        _, answer = random.choice(conversation_topics)
+                        ChatMessage.objects.create(
+                            conversation=conversation,
+                            role='ASSISTANT',
+                            content=answer,
+                            metadata={'response_time_ms': random.randint(500, 2000)}
+                        )
+                    message_count += 1
+        
+        print(f"  ✓ Created {conversation_count} chat conversations with {message_count} messages")
+        
+        # Create financial advice
+        for user in random.sample(self.users, 15):
+            num_advice = random.randint(1, 3)
+            
+            for _ in range(num_advice):
+                advice_type = random.choice(['SAVINGS', 'INVESTMENT', 'LOAN', 'BUDGETING'])
+                
+                advice_templates = {
+                    'SAVINGS': 'Based on your spending patterns, I recommend saving at least 20% of your income...',
+                    'INVESTMENT': 'Consider diversifying your portfolio with a mix of stocks and bonds...',
+                    'LOAN': 'Your debt-to-income ratio suggests you can afford a loan of up to...',
+                    'BUDGETING': 'Your spending analysis shows opportunities to reduce expenses in...'
+                }
+                
+                action_items_templates = {
+                    'SAVINGS': ['Open a high-yield savings account', 'Automate monthly savings', 'Track spending'],
+                    'INVESTMENT': ['Research investment options', 'Consult with financial advisor', 'Start with small amounts'],
+                    'LOAN': ['Check credit score', 'Gather required documents', 'Compare loan offers'],
+                    'BUDGETING': ['Create expense categories', 'Use budgeting app', 'Review monthly spending']
+                }
+                
+                FinancialAdvice.objects.create(
+                    user=user,
+                    group=random.choice(self.groups) if random.choice([True, False, False]) else None,
+                    advice_type=advice_type,
+                    advice_content=advice_templates[advice_type],
+                    action_items=action_items_templates[advice_type],
+                    relevance_score=Decimal(str(random.uniform(0.7, 0.95))),
+                    user_feedback=random.choice(['HELPFUL', 'NOT_HELPFUL', ''])
+                )
+                advice_count += 1
+        
+        print(f"  ✓ Created {advice_count} financial advice records")
+    
+    # ========================================================================
+    # NOTIFICATIONS
+    # ========================================================================
+    
+    def seed_notifications(self):
+        """Seed notifications."""
+        notification_count = 0
+        
+        notification_templates = [
+            ('CONTRIBUTION', 'HIGH', 'Contribution Due', 'Your monthly contribution of {amount} is due tomorrow.', True, True),
+            ('LOAN', 'URGENT', 'Loan Repayment Due', 'Your loan repayment of {amount} is overdue.', True, False),
+            ('MEETING', 'MEDIUM', 'Upcoming Meeting', 'Group meeting scheduled for {date}.', False, True),
+            ('INVESTMENT', 'LOW', 'Investment Matured', 'Your investment has matured. Amount: {amount}', True, False),
+            ('FINANCE', 'HIGH', 'Low Balance Alert', 'Your group balance is below the minimum threshold.', False, False),
+            ('SYSTEM', 'MEDIUM', 'Profile Update', 'Please complete your KYC verification.', False, False),
+            ('GENERAL', 'LOW', 'New Feature', 'Check out our new education hub!', False, False),
+        ]
+        
+        for user in random.sample(self.users, 30):
+            num_notifications = random.randint(5, 15)
+            
+            for _ in range(num_notifications):
+                notif_type, priority, title_template, message_template, has_amount, has_date = random.choice(notification_templates)
+                
+                # Format message with random data
+                title = title_template
+                format_args = {}
+                if has_amount:
+                    format_args['amount'] = f'KES {random.randint(1000, 10000):,}'
+                if has_date:
+                    format_args['date'] = (timezone.now() + timedelta(days=random.randint(1, 7))).strftime('%Y-%m-%d')
+                
+                message = message_template.format(**format_args) if format_args else message_template
+                
+                # Some notifications are group-related
+                group = random.choice(self.groups) if notif_type in ['CONTRIBUTION', 'LOAN', 'MEETING', 'FINANCE'] else None
+                
+                # Random read status
+                is_read = random.choice([True, True, False])
+                read_at = timezone.now() - timedelta(hours=random.randint(1, 48)) if is_read else None
+                
+                # Create notification
+                Notification.objects.create(
+                    user=user,
+                    title=title,
+                    message=message,
+                    notification_type=notif_type,
+                    priority=priority,
+                    is_read=is_read,
+                    is_archived=random.choice([True, False, False, False]),
+                    group=group,
+                    read_at=read_at,
+                    expires_at=timezone.now() + timedelta(days=random.randint(7, 30))
+                )
+                notification_count += 1
+        
+        print(f"  ✓ Created {notification_count} notifications")
+    
+    # ========================================================================
+    # WEALTH ENGINE
+    # ========================================================================
+    
+    def seed_wealth_engine(self):
+        """Seed wealth engine data."""
+        recommendation_count = 0
+        rebalance_count = 0
+        
+        # Create investment recommendations
+        for group in random.sample(self.groups, 10):
+            num_recommendations = random.randint(1, 3)
+            
+            for _ in range(num_recommendations):
+                investment_type = random.choice(['TREASURY_BILL', 'BOND', 'STOCK', 'MUTUAL_FUND', 'FIXED_DEPOSIT'])
+                risk_level = random.choice(['LOW', 'MEDIUM', 'HIGH'])
+                
+                recommended_amount = Decimal(str(random.choice([50000, 100000, 200000, 500000])))
+                expected_return = recommended_amount * Decimal(str(random.uniform(0.05, 0.15)))
+                
+                analysis_summaries = {
+                    'TREASURY_BILL': 'Treasury bills offer low risk with moderate returns. Suitable for conservative investors.',
+                    'BOND': 'Government bonds provide stable returns with low to medium risk.',
+                    'STOCK': 'Stock investments offer high growth potential but come with higher risk.',
+                    'MUTUAL_FUND': 'Mutual funds provide diversification and professional management.',
+                    'FIXED_DEPOSIT': 'Fixed deposits offer guaranteed returns with minimal risk.'
+                }
+                
+                status = random.choice(['PENDING', 'ACCEPTED', 'REJECTED', 'EXECUTED'])
+                
+                # Get a reviewer if status is not PENDING
+                reviewer = None
+                if status != 'PENDING':
+                    admin_memberships = GroupMembership.objects.filter(
+                        group=group, role__in=['ADMIN', 'TREASURER']
+                    )
+                    if admin_memberships.exists():
+                        reviewer = random.choice(admin_memberships).user
+                
+                InvestmentRecommendation.objects.create(
+                    group=group,
+                    investment_type=investment_type,
+                    recommended_amount=recommended_amount,
+                    expected_return=expected_return,
+                    risk_level=risk_level,
+                    duration_days=random.choice([91, 182, 365, 730]),
+                    confidence_score=Decimal(str(random.uniform(0.75, 0.95))),
+                    analysis_summary=analysis_summaries[investment_type],
+                    status=status,
+                    reviewed_by=reviewer,
+                    reviewed_at=timezone.now() - timedelta(days=random.randint(1, 30)) if status != 'PENDING' else None
+                )
+                recommendation_count += 1
+        
+        print(f"  ✓ Created {recommendation_count} investment recommendations")
+        
+        # Create portfolio rebalance recommendations
+        for group in random.sample(self.groups, 5):
+            current_allocation = {
+                'stocks': random.randint(20, 40),
+                'bonds': random.randint(20, 30),
+                'real_estate': random.randint(10, 25),
+                'cash': random.randint(10, 20),
+                'other': 10
+            }
+            
+            recommended_allocation = {
+                'stocks': random.randint(25, 45),
+                'bonds': random.randint(20, 35),
+                'real_estate': random.randint(10, 20),
+                'cash': random.randint(5, 15),
+                'other': 10
+            }
+            
+            status = random.choice(['PENDING', 'IN_PROGRESS', 'COMPLETED'])
+            
+            # Get executor if completed
+            executor = None
+            if status == 'COMPLETED':
+                admin_memberships = GroupMembership.objects.filter(
+                    group=group, role__in=['ADMIN', 'TREASURER']
+                )
+                if admin_memberships.exists():
+                    executor = random.choice(admin_memberships).user
+            
+            PortfolioRebalance.objects.create(
+                group=group,
+                current_allocation=current_allocation,
+                recommended_allocation=recommended_allocation,
+                rebalance_summary='Rebalancing recommended to optimize risk-return profile and align with group goals.',
+                expected_improvement=Decimal(str(random.uniform(2, 8))),
+                status=status,
+                executed_at=timezone.now() - timedelta(days=random.randint(1, 15)) if status == 'COMPLETED' else None,
+                executed_by=executor
+            )
+            rebalance_count += 1
+        
+        print(f"  ✓ Created {rebalance_count} portfolio rebalance recommendations")
     
     # ========================================================================
     # GOVERNANCE
@@ -901,15 +1804,53 @@ class DataSeeder:
         print("\n" + "=" * 80)
         print("DATABASE SEEDING SUMMARY")
         print("=" * 80)
+        print("\n--- Core Data ---")
         print(f"Users: {User.objects.count()}")
         print(f"Groups: {ChamaGroup.objects.count()}")
         print(f"Memberships: {GroupMembership.objects.count()}")
+        
+        print("\n--- Financial Data ---")
         print(f"Contributions: {Contribution.objects.count()}")
         print(f"Loans: {Loan.objects.count()}")
+        print(f"Expenses: {Expense.objects.count()}")
         print(f"Investments: {Investment.objects.count()}")
+        print(f"Portfolios: {Portfolio.objects.count()}")
         print(f"M-Pesa Transactions: {MPesaTransaction.objects.count()}")
+        
+        print("\n--- Education Hub ---")
         print(f"Educational Content: {EducationalContent.objects.count()}")
-        print(f"Achievements: {MemberAchievement.objects.count()}")
+        print(f"Learning Paths: {LearningPath.objects.count()}")
+        print(f"Learning Path Enrollments: {LearningPathEnrollment.objects.count()}")
+        print(f"User Progress: {UserProgress.objects.count()}")
+        print(f"Savings Challenges: {SavingsChallenge.objects.count()}")
+        print(f"Challenge Participants: {ChallengeParticipant.objects.count()}")
+        print(f"Webinars: {Webinar.objects.count()}")
+        print(f"Webinar Registrations: {WebinarRegistration.objects.count()}")
+        print(f"Certificates: {Certificate.objects.count()}")
+        print(f"Achievements: {Achievement.objects.count()}")
+        print(f"User Achievements: {UserAchievement.objects.count()}")
+        
+        print("\n--- Gamification ---")
+        print(f"Member Achievements: {MemberAchievement.objects.count()}")
+        print(f"Contribution Streaks: {ContributionStreak.objects.count()}")
+        print(f"Reward Points: {RewardPoints.objects.count()}")
+        
+        print("\n--- Governance ---")
+        print(f"Group Constitutions: {GroupConstitution.objects.count()}")
+        print(f"Fines: {Fine.objects.count()}")
+        print(f"Votes: {Vote.objects.count()}")
+        
+        print("\n--- AI & Notifications ---")
+        print(f"Chat Conversations: {ChatConversation.objects.count()}")
+        print(f"Chat Messages: {ChatMessage.objects.count()}")
+        print(f"Financial Advice: {FinancialAdvice.objects.count()}")
+        print(f"Notifications: {Notification.objects.count()}")
+        
+        print("\n--- Wealth Engine ---")
+        print(f"Investment Recommendations: {InvestmentRecommendation.objects.count()}")
+        print(f"Portfolio Rebalances: {PortfolioRebalance.objects.count()}")
+        
+        print("\n--- Audit ---")
         print(f"Audit Logs: {AuditLog.objects.count()}")
         print("=" * 80)
 
