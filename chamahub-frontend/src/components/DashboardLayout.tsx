@@ -29,7 +29,6 @@ import {
   Smartphone,
   LineChart,
   GraduationCap,
-  BookOpen,
   Video,
   Target,
   Award,

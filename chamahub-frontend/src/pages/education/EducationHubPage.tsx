@@ -9,7 +9,6 @@ import {
   Award,
   Calendar,
   ArrowRight,
-  Sparkles,
   Target,
   Users,
   Clock,
