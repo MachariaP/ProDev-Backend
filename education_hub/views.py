@@ -1426,13 +1426,15 @@ class LearningPathEnrollmentViewSet(viewsets.ReadOnlyModelViewSet):
             enrollment=enrollment
         ).select_related('content')
         
+        completed_count = completions.count()
+        
         response_data = {
             'enrollment': LearningPathEnrollmentSerializer(enrollment).data,
             'completions': ContentCompletionSerializer(completions, many=True).data,
             'path_details': {
                 'total_contents': enrollment.learning_path.contents_count,
-                'completed_contents': completions.count(),
-                'remaining_contents': enrollment.learning_path.contents_count - completions.count()
+                'completed_contents': completed_count,
+                'remaining_contents': enrollment.learning_path.contents_count - completed_count
             }
         }
         
@@ -1492,7 +1494,7 @@ class WebinarRegistrationViewSet(viewsets.ReadOnlyModelViewSet):
             )
         
         # Check if webinar hasn't started
-        if registration.webinar.status == 'LIVE' or registration.webinar.status == 'COMPLETED':
+        if registration.webinar.status in ['LIVE', 'COMPLETED']:
             return Response(
                 {'error': 'Cannot cancel registration for a webinar that has started or completed'},
                 status=status.HTTP_400_BAD_REQUEST
