@@ -1484,6 +1484,13 @@ class WebinarRegistrationViewSet(viewsets.ReadOnlyModelViewSet):
         """Cancel webinar registration."""
         registration = self.get_object()
         
+        # Check if already cancelled
+        if registration.status == 'CANCELLED':
+            return Response(
+                {'error': 'Registration is already cancelled'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
         # Check if webinar hasn't started
         if registration.webinar.status == 'LIVE' or registration.webinar.status == 'COMPLETED':
             return Response(
@@ -1493,10 +1500,6 @@ class WebinarRegistrationViewSet(viewsets.ReadOnlyModelViewSet):
         
         registration.status = 'CANCELLED'
         registration.save()
-        
-        # Update webinar count
-        registration.webinar.registered_count = F('registered_count') - 1
-        registration.webinar.save()
         
         return Response({
             'message': 'Registration cancelled successfully',
