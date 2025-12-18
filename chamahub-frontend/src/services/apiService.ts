@@ -25,6 +25,15 @@ import type {
   DashboardStats,
   RecentActivity,
   Notification,
+  EducationalContent,
+  LearningPath,
+  LearningPathEnrollment,
+  UserProgress,
+  Certificate,
+  SavingsChallenge,
+  ChallengeParticipant,
+  Webinar,
+  WebinarRegistration,
 } from '../types/api';
 
 // Authentication Services
@@ -658,6 +667,197 @@ export const dashboardService = {
   }
 };
 
+// Education Hub Services
+export const educationService = {
+  // Educational Content
+  async getEducationalContents(params?: {
+    page?: number;
+    category?: string;
+    difficulty?: string;
+    content_type?: string;
+    is_featured?: boolean;
+    search?: string;
+  }): Promise<PaginatedResponse<EducationalContent>> {
+    const response = await api.get('/education/educational-contents/', { params });
+    return response.data;
+  },
+
+  async getEducationalContent(id: number): Promise<EducationalContent> {
+    const response = await api.get(`/education/educational-contents/${id}/`);
+    return response.data;
+  },
+
+  async getEducationalContentBySlug(slug: string): Promise<EducationalContent> {
+    const response = await api.get(`/education/educational-contents/by_slug/`, { params: { slug } });
+    return response.data;
+  },
+
+  async getFeaturedContent(): Promise<EducationalContent[]> {
+    const response = await api.get('/education/educational-contents/featured/');
+    return response.data;
+  },
+
+  async likeContent(id: number): Promise<{ message: string }> {
+    const response = await api.post(`/education/educational-contents/${id}/like/`);
+    return response.data;
+  },
+
+  async shareContent(id: number): Promise<{ message: string }> {
+    const response = await api.post(`/education/educational-contents/${id}/share/`);
+    return response.data;
+  },
+
+  // Learning Paths
+  async getLearningPaths(params?: {
+    page?: number;
+    difficulty?: string;
+    is_featured?: boolean;
+  }): Promise<PaginatedResponse<LearningPath>> {
+    const response = await api.get('/education/learning-paths/', { params });
+    return response.data;
+  },
+
+  async getLearningPath(id: number): Promise<LearningPath> {
+    const response = await api.get(`/education/learning-paths/${id}/`);
+    return response.data;
+  },
+
+  async enrollInLearningPath(id: number): Promise<LearningPathEnrollment> {
+    const response = await api.post(`/education/learning-paths/${id}/enroll/`);
+    return response.data;
+  },
+
+  async getMyEnrollments(params?: { status?: string }): Promise<PaginatedResponse<LearningPathEnrollment>> {
+    const response = await api.get('/education/learning-paths/my_enrollments/', { params });
+    return response.data;
+  },
+
+  async getLearningPathProgress(enrollmentId: number): Promise<LearningPathEnrollment> {
+    const response = await api.get(`/education/learning-paths/${enrollmentId}/progress/`);
+    return response.data;
+  },
+
+  // User Progress
+  async getMyProgress(params?: {
+    content?: number;
+    status?: string;
+  }): Promise<PaginatedResponse<UserProgress>> {
+    const response = await api.get('/education/user-progress/', { params });
+    return response.data;
+  },
+
+  async updateProgress(contentId: number, data: {
+    progress_percentage?: number;
+    time_spent_minutes?: number;
+    quiz_score?: number;
+    quiz_answers?: any;
+    status?: string;
+  }): Promise<UserProgress> {
+    const response = await api.post(`/education/user-progress/${contentId}/update_progress/`, data);
+    return response.data;
+  },
+
+  async bookmarkContent(contentId: number): Promise<{ message: string }> {
+    const response = await api.post(`/education/user-progress/${contentId}/bookmark/`);
+    return response.data;
+  },
+
+  // Certificates
+  async getMyCertificates(): Promise<PaginatedResponse<Certificate>> {
+    const response = await api.get('/education/certificates/my_certificates/');
+    return response.data;
+  },
+
+  async getCertificate(id: number): Promise<Certificate> {
+    const response = await api.get(`/education/certificates/${id}/`);
+    return response.data;
+  },
+
+  async verifyCertificate(verificationCode: string): Promise<Certificate> {
+    const response = await api.get('/education/certificates/verify/', { 
+      params: { code: verificationCode } 
+    });
+    return response.data;
+  },
+
+  // Savings Challenges
+  async getSavingsChallenges(params?: {
+    page?: number;
+    status?: string;
+    challenge_type?: string;
+  }): Promise<PaginatedResponse<SavingsChallenge>> {
+    const response = await api.get('/education/savings-challenges/', { params });
+    return response.data;
+  },
+
+  async getSavingsChallenge(id: number): Promise<SavingsChallenge> {
+    const response = await api.get(`/education/savings-challenges/${id}/`);
+    return response.data;
+  },
+
+  async joinChallenge(id: number, data?: {
+    target_amount?: number;
+    daily_target?: number;
+    weekly_target?: number;
+  }): Promise<ChallengeParticipant> {
+    const response = await api.post(`/education/savings-challenges/${id}/join/`, data);
+    return response.data;
+  },
+
+  async getMyChallenges(): Promise<PaginatedResponse<ChallengeParticipant>> {
+    const response = await api.get('/education/challenge-participants/my_challenges/');
+    return response.data;
+  },
+
+  async updateChallengeProgress(participantId: number, data: {
+    current_amount?: number;
+    notes?: string;
+  }): Promise<ChallengeParticipant> {
+    const response = await api.patch(`/education/challenge-participants/${participantId}/`, data);
+    return response.data;
+  },
+
+  // Webinars
+  async getWebinars(params?: {
+    page?: number;
+    status?: string;
+    category?: string;
+    difficulty?: string;
+  }): Promise<PaginatedResponse<Webinar>> {
+    const response = await api.get('/education/webinars/', { params });
+    return response.data;
+  },
+
+  async getWebinar(id: number): Promise<Webinar> {
+    const response = await api.get(`/education/webinars/${id}/`);
+    return response.data;
+  },
+
+  async registerForWebinar(id: number): Promise<WebinarRegistration> {
+    const response = await api.post(`/education/webinars/${id}/register/`);
+    return response.data;
+  },
+
+  async getMyWebinarRegistrations(): Promise<PaginatedResponse<WebinarRegistration>> {
+    const response = await api.get('/education/webinars/my_registrations/');
+    return response.data;
+  },
+
+  async rateWebinar(registrationId: number, data: {
+    rating: number;
+    feedback?: string;
+  }): Promise<WebinarRegistration> {
+    const response = await api.post(`/education/webinars/${registrationId}/rate/`, data);
+    return response.data;
+  },
+
+  // Dashboard
+  async getEducationDashboard(): Promise<any> {
+    const response = await api.get('/education/dashboard/stats/');
+    return response.data;
+  },
+};
+
 // Utility function to check API connectivity
 export const checkApiConnectivity = async () => {
   try {
@@ -685,5 +885,6 @@ export default {
   dashboard: dashboardService,
   notifications: notificationsService,
   mpesa: mpesaService,
+  education: educationService,
   checkApiConnectivity,
 };
