@@ -4,7 +4,6 @@ import { useNavigate, useParams } from 'react-router-dom';
 import {
   ArrowLeft,
   BookOpen,
-  Video,
   Clock,
   Award,
   Eye,
@@ -13,8 +12,6 @@ import {
   Bookmark,
   Check,
   Play,
-  Pause,
-  FileText,
   ChevronRight,
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/card';

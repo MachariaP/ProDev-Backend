@@ -133,10 +133,6 @@ export function WebinarDetailPage() {
     }
   };
 
-  const getPlatformIcon = (platform: string) => {
-    return Video;
-  };
-
   if (loading || !webinar) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-50 via-background to-blue-50">
