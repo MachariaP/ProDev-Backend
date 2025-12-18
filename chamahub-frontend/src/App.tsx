@@ -64,8 +64,12 @@ import { AdminSettingsPage } from './pages/admin/AdminSettingsPage';
 import { EducationHubPage } from './pages/education/EducationHubPage';
 import { LearningPathsPage } from './pages/education/LearningPathsPage';
 import { LearningPathDetailPage } from './pages/education/LearningPathDetailPage';
+import { ContentBrowsePage } from './pages/education/ContentBrowsePage';
+import { ContentDetailPage } from './pages/education/ContentDetailPage';
 import { WebinarsPage } from './pages/education/WebinarsPage';
+import { WebinarDetailPage } from './pages/education/WebinarDetailPage';
 import { SavingsChallengesPage } from './pages/education/SavingsChallengesPage';
+import { ChallengeDetailPage } from './pages/education/ChallengeDetailPage';
 import { MyCertificatesPage } from './pages/education/MyCertificatesPage';
 
 // Helper component to wrap authenticated routes with layout
@@ -252,6 +256,14 @@ function App() {
           element={<AuthenticatedRoute><EducationHubPage /></AuthenticatedRoute>}
         />
         <Route
+          path="/education/content"
+          element={<AuthenticatedRoute><ContentBrowsePage /></AuthenticatedRoute>}
+        />
+        <Route
+          path="/education/content/:id"
+          element={<AuthenticatedRoute><ContentDetailPage /></AuthenticatedRoute>}
+        />
+        <Route
           path="/education/learning-paths"
           element={<AuthenticatedRoute><LearningPathsPage /></AuthenticatedRoute>}
         />
@@ -264,8 +276,16 @@ function App() {
           element={<AuthenticatedRoute><WebinarsPage /></AuthenticatedRoute>}
         />
         <Route
+          path="/education/webinars/:id"
+          element={<AuthenticatedRoute><WebinarDetailPage /></AuthenticatedRoute>}
+        />
+        <Route
           path="/education/challenges"
           element={<AuthenticatedRoute><SavingsChallengesPage /></AuthenticatedRoute>}
+        />
+        <Route
+          path="/education/challenges/:id"
+          element={<AuthenticatedRoute><ChallengeDetailPage /></AuthenticatedRoute>}
         />
         <Route
           path="/education/certificates"
