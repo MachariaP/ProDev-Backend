@@ -66,9 +66,11 @@ export function LearningPathDetailPage() {
       setEnrolling(true);
       const newEnrollment = await educationService.enrollInLearningPath(path.id);
       setEnrollment(newEnrollment);
+      // Note: Using browser alert temporarily - should be replaced with toast notifications (e.g., sonner)
       alert('Successfully enrolled in learning path!');
     } catch (err) {
       console.error('Failed to enroll:', err);
+      // Note: Using browser alert temporarily - should be replaced with toast notifications (e.g., sonner)
       alert('Failed to enroll in learning path');
     } finally {
       setEnrolling(false);

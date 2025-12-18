@@ -621,3 +621,16 @@ export interface WebinarRegistration {
   reminder_sent: boolean;
   followup_sent: boolean;
 }
+
+export interface EducationDashboardStats {
+  total_content?: number;
+  total_paths?: number;
+  upcoming_webinars?: number;
+  active_challenges?: number;
+  my_progress?: {
+    enrolled_paths: number;
+    completed_paths: number;
+    certificates_earned: number;
+    total_points: number;
+  };
+}

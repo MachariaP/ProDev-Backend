@@ -34,6 +34,7 @@ import type {
   ChallengeParticipant,
   Webinar,
   WebinarRegistration,
+  EducationDashboardStats,
 } from '../types/api';
 
 // Authentication Services
@@ -852,7 +853,7 @@ export const educationService = {
   },
 
   // Dashboard
-  async getEducationDashboard(): Promise<any> {
+  async getEducationDashboard(): Promise<EducationDashboardStats> {
     const response = await api.get('/education/dashboard/stats/');
     return response.data;
   },

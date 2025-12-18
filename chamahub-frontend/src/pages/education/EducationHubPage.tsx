@@ -20,7 +20,7 @@ import {
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/card';
 import { Badge } from '../../components/ui/badge';
 import { educationService } from '../../services/apiService';
-import type { EducationalContent, LearningPath, Webinar, SavingsChallenge } from '../../types/api';
+import type { EducationalContent, LearningPath, Webinar, SavingsChallenge, EducationDashboardStats } from '../../types/api';
 import { formatCurrency } from '../../utils/formatting';
 
 export function EducationHubPage() {
@@ -28,7 +28,7 @@ export function EducationHubPage() {
   const [learningPaths, setLearningPaths] = useState<LearningPath[]>([]);
   const [upcomingWebinars, setUpcomingWebinars] = useState<Webinar[]>([]);
   const [activeChallenges, setActiveChallenges] = useState<SavingsChallenge[]>([]);
-  const [stats, setStats] = useState<any>(null);
+  const [stats, setStats] = useState<EducationDashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
