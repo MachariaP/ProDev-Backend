@@ -3,7 +3,6 @@ import { motion } from 'framer-motion';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
   ArrowLeft,
-  TrendingUp,
   Trophy,
   Users,
   Calendar,
@@ -152,7 +151,6 @@ export function ChallengeDetailPage() {
 
   const isActive = challenge.status === 'ACTIVE';
   const isUpcoming = challenge.status === 'UPCOMING';
-  const isCompleted = challenge.status === 'COMPLETED';
   const daysRemaining = Math.max(0, Math.ceil((new Date(challenge.end_date).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)));
   const progressPercentage = (challenge.total_amount_saved / (challenge.target_amount * challenge.participants_count)) * 100;
 

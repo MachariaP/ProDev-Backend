@@ -8,7 +8,6 @@ import {
   FileText,
   Award,
   Search,
-  Filter,
   Clock,
   Play,
   Eye,
