@@ -1631,6 +1631,108 @@ class CertificateViewSet(viewsets.ReadOnlyModelViewSet):
         })
 
 
+# Learning Path Enrollment Views
+class LearningPathEnrollmentViewSet(viewsets.ReadOnlyModelViewSet):
+    serializer_class = LearningPathEnrollmentSerializer
+    permission_classes = [IsAuthenticated]
+    filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
+    ordering_fields = ['enrolled_at', 'progress_percentage', 'last_accessed_at']
+    
+    def get_queryset(self):
+        return LearningPathEnrollment.objects.filter(user=self.request.user).select_related('learning_path')
+    
+    @action(detail=True, methods=['get'])
+    def progress_details(self, request, pk=None):
+        """Get detailed progress for enrollment."""
+        enrollment = self.get_object()
+        
+        completions = ContentCompletion.objects.filter(
+            enrollment=enrollment
+        ).select_related('content')
+        
+        completed_count = completions.count()
+        
+        response_data = {
+            'enrollment': LearningPathEnrollmentSerializer(enrollment).data,
+            'completions': ContentCompletionSerializer(completions, many=True).data,
+            'path_details': {
+                'total_contents': enrollment.learning_path.contents_count,
+                'completed_contents': completed_count,
+                'remaining_contents': enrollment.learning_path.contents_count - completed_count
+            }
+        }
+        
+        return Response(response_data)
+
+
+# Challenge Participant Views
+class ChallengeParticipantViewSet(viewsets.ReadOnlyModelViewSet):
+    serializer_class = ChallengeParticipantSerializer
+    permission_classes = [IsAuthenticated]
+    filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
+    ordering_fields = ['joined_at', 'current_amount', 'progress_percentage']
+    
+    def get_queryset(self):
+        return ChallengeParticipant.objects.filter(user=self.request.user).select_related('challenge')
+    
+    @action(detail=True, methods=['get'])
+    def stats(self, request, pk=None):
+        """Get participant statistics."""
+        participant = self.get_object()
+        
+        return Response({
+            'participant': ChallengeParticipantSerializer(participant).data,
+            'stats': {
+                'progress_percentage': participant.progress_percentage,
+                'current_amount': participant.current_amount,
+                'target_amount': participant.target_amount,
+                'remaining_amount': participant.target_amount - participant.current_amount if participant.target_amount else 0,
+                'completed': participant.completed,
+                'streak_days': participant.streak_days,
+                'learning_progress': participant.learning_progress,
+                'completed_lessons': participant.completed_lessons.count()
+            }
+        })
+
+
+# Webinar Registration Views
+class WebinarRegistrationViewSet(viewsets.ReadOnlyModelViewSet):
+    serializer_class = WebinarRegistrationSerializer
+    permission_classes = [IsAuthenticated]
+    filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
+    ordering_fields = ['registered_at', 'status']
+    
+    def get_queryset(self):
+        return WebinarRegistration.objects.filter(user=self.request.user).select_related('webinar')
+    
+    @action(detail=True, methods=['post'])
+    def cancel(self, request, pk=None):
+        """Cancel webinar registration."""
+        registration = self.get_object()
+        
+        # Check if already cancelled
+        if registration.status == 'CANCELLED':
+            return Response(
+                {'error': 'Registration is already cancelled'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Check if webinar hasn't started
+        if registration.webinar.status in ['LIVE', 'COMPLETED']:
+            return Response(
+                {'error': 'Cannot cancel registration for a webinar that has started or completed'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        registration.status = 'CANCELLED'
+        registration.save()
+        
+        return Response({
+            'message': 'Registration cancelled successfully',
+            'registration': WebinarRegistrationSerializer(registration).data
+        })
+
+
 # Integration with Zoom/Teams (simplified example)
 class ZoomIntegrationViewSet(viewsets.ViewSet):
     """
