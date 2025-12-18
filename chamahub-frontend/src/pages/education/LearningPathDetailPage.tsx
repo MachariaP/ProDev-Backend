@@ -19,7 +19,6 @@ import { Button } from '../../components/ui/button';
 import { Progress } from '../../components/ui/progress';
 import { educationService } from '../../services/apiService';
 import type { LearningPath, LearningPathEnrollment } from '../../types/api';
-import { toast } from 'sonner';
 
 export function LearningPathDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -54,7 +53,7 @@ export function LearningPathDetailPage() {
       }
     } catch (err) {
       console.error('Failed to fetch learning path:', err);
-      toast.error('Failed to load learning path');
+      alert('Failed to load learning path');
     } finally {
       setLoading(false);
     }
@@ -67,10 +66,10 @@ export function LearningPathDetailPage() {
       setEnrolling(true);
       const newEnrollment = await educationService.enrollInLearningPath(path.id);
       setEnrollment(newEnrollment);
-      toast.success('Successfully enrolled in learning path!');
+      alert('Successfully enrolled in learning path!');
     } catch (err) {
       console.error('Failed to enroll:', err);
-      toast.error('Failed to enroll in learning path');
+      alert('Failed to enroll in learning path');
     } finally {
       setEnrolling(false);
     }
@@ -207,7 +206,7 @@ export function LearningPathDetailPage() {
                       {enrollment.earned_points} points earned
                     </span>
                   </div>
-                  <Button onClick={() => toast.info('Continue learning feature coming soon!')}>
+                  <Button onClick={() => alert('Continue learning feature coming soon!')}>
                     Continue Learning
                   </Button>
                 </div>
