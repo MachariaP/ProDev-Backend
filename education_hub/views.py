@@ -59,7 +59,7 @@ from .filters import (
 )
 from .permissions import (
     IsContentAuthor, IsLearningPathOwner, IsChallengeCreator,
-    IsWebinarPresenter, IsEnrollmentOwner, IsChallengeParticipantOwner
+    IsWebinarPresenter
 )
 
 
