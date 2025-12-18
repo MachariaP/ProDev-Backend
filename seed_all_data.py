@@ -1090,7 +1090,7 @@ You've learned important concepts about {category.lower()}. Apply these principl
                     progress_pct = 100
                     num_completed = len(path_contents)
                 elif status == 'IN_PROGRESS':
-                    num_completed = random.randint(1, len(path_contents) - 1)
+                    num_completed = random.randint(1, max(1, len(path_contents) - 1))
                     current_content = path_contents[num_completed].content if num_completed < len(path_contents) else None
                     progress_pct = int((num_completed / len(path_contents)) * 100)
                 else:  # ENROLLED
@@ -1107,8 +1107,8 @@ You've learned important concepts about {category.lower()}. Apply these principl
                     enrolled_at=enrolled_at,
                     started_at=started_at,
                     completed_at=completed_at,
-                    total_time_spent_minutes=random.randint(30, path.total_duration_hours * 60),
-                    earned_points=random.randint(0, path.total_points)
+                    total_time_spent_minutes=random.randint(30, max(60, path.total_duration_hours * 60)),
+                    earned_points=random.randint(0, max(10, path.total_points))
                 )
                 enrollment_count += 1
                 
