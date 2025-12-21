@@ -128,10 +128,10 @@ class EducationalContentViewSet(viewsets.ModelViewSet):
             list: List of permission classes
         """
         if self.action in ['create', 'update', 'partial_update', 'destroy']:
-            return [IsAuthenticated, IsContentAuthor]
+            return [permissions.IsAuthenticated, IsContentAuthor]
         elif self.action in ['featured', 'recommended', 'popular', 'recent']:
             return [AllowAny]
-        return [IsAuthenticated]
+        return [permissions.IsAuthenticated]
     
     def get_queryset(self):
         """
@@ -563,10 +563,10 @@ class LearningPathViewSet(viewsets.ModelViewSet):
             list: List of permission classes
         """
         if self.action in ['create', 'update', 'partial_update', 'destroy']:
-            return [IsAuthenticated, IsAdminUser]
+            return [permissions.IsAuthenticated, permissions.IsAdminUser]
         elif self.action in ['enroll', 'start', 'progress']:
-            return [IsAuthenticated]
-        return [IsAuthenticated]
+            return [permissions.IsAuthenticated]
+        return [permissions.IsAuthenticated]
     
     def get_queryset(self):
         """
@@ -806,7 +806,7 @@ class UserProgressViewSet(viewsets.ModelViewSet):
     
     queryset = UserProgress.objects.select_related('user', 'content')
     serializer_class = UserProgressSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     search_fields = ['content__title']
     ordering_fields = ['created_at', 'updated_at', 'progress_percentage']
@@ -837,7 +837,7 @@ class LearningPathEnrollmentViewSet(viewsets.ModelViewSet):
     
     queryset = LearningPathEnrollment.objects.select_related('user', 'learning_path')
     serializer_class = LearningPathEnrollmentSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     search_fields = ['learning_path__title']
     ordering_fields = ['created_at', 'started_at', 'progress_percentage']
@@ -868,7 +868,7 @@ class SavingsChallengeViewSet(viewsets.ModelViewSet):
     
     queryset = SavingsChallenge.objects.select_related('created_by')
     serializer_class = SavingsChallengeSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_class = SavingsChallengeFilter
     search_fields = ['title', 'description']
@@ -904,7 +904,7 @@ class ChallengeParticipantViewSet(viewsets.ModelViewSet):
     
     queryset = ChallengeParticipant.objects.select_related('user', 'challenge')
     serializer_class = ChallengeParticipantSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     search_fields = ['challenge__title']
     ordering_fields = ['created_at', 'current_amount', 'progress_percentage']
@@ -935,7 +935,7 @@ class WebinarViewSet(viewsets.ModelViewSet):
     
     queryset = Webinar.objects.select_related('presenter')
     serializer_class = WebinarSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_class = WebinarFilter
     search_fields = ['title', 'description']
@@ -991,7 +991,7 @@ class WebinarRegistrationViewSet(viewsets.ModelViewSet):
     
     queryset = WebinarRegistration.objects.select_related('user', 'webinar')
     serializer_class = WebinarRegistrationSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     search_fields = ['webinar__title']
     ordering_fields = ['created_at', 'registered_at']
@@ -1011,7 +1011,7 @@ class CertificateViewSet(viewsets.ModelViewSet):
     
     queryset = Certificate.objects.select_related('user', 'learning_path')
     serializer_class = CertificateSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     search_fields = ['learning_path__title', 'certificate_id']
     ordering_fields = ['created_at', 'issued_at']
@@ -1065,7 +1065,7 @@ class AchievementViewSet(viewsets.ModelViewSet):
     
     queryset = Achievement.objects.all()
     serializer_class = AchievementSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     search_fields = ['name', 'description']
     ordering_fields = ['created_at', 'points_reward']
@@ -1090,7 +1090,7 @@ class UserAchievementViewSet(viewsets.ModelViewSet):
     
     queryset = UserAchievement.objects.select_related('user', 'achievement')
     serializer_class = UserAchievementSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     search_fields = ['achievement__name']
     ordering_fields = ['created_at', 'earned_at']
@@ -1110,7 +1110,7 @@ class ContentCompletionViewSet(viewsets.ModelViewSet):
     
     queryset = ContentCompletion.objects.select_related('user', 'content')
     serializer_class = ContentCompletionSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     search_fields = ['content__title']
     ordering_fields = ['created_at', 'completed_at']
@@ -1130,7 +1130,7 @@ class WebinarQnAViewSet(viewsets.ModelViewSet):
     
     queryset = WebinarQnA.objects.select_related('user', 'webinar')
     serializer_class = WebinarQnASerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     search_fields = ['question', 'answer']
     ordering_fields = ['created_at', 'answered_at']
@@ -1146,7 +1146,7 @@ class WebinarPollViewSet(viewsets.ModelViewSet):
     
     queryset = WebinarPoll.objects.select_related('webinar')
     serializer_class = WebinarPollSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     search_fields = ['question']
     ordering_fields = ['created_at']
@@ -1166,7 +1166,7 @@ class EducationDashboardViewSet(viewsets.ViewSet):
     - Community engagement
     """
     
-    permission_classes = [IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated]
     
     @action(detail=False, methods=['get'])
     def overview(self, request):
