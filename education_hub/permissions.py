@@ -50,30 +50,9 @@ class BaseEducationPermission(permissions.BasePermission):
     Provides:
     - Request context access
     - User authentication checks
-    - Object-level permission caching
     - Consistent error messages
     - Debug logging for permission failures
     """
-    
-    def __init__(self):
-        """Initialize permission cache."""
-        self._permission_cache = {}
-    
-    def get_cache_key(self, request, view, obj=None):
-        """
-        Generate cache key for permission checking.
-        
-        Args:
-            request: HTTP request object
-            view: View instance
-            obj: Object being accessed (optional)
-            
-        Returns:
-            str: Cache key
-        """
-        if obj:
-            return f"{request.user.id}_{view.__class__.__name__}_{obj.__class__.__name__}_{obj.id}"
-        return f"{request.user.id}_{view.__class__.__name__}"
     
     def has_permission(self, request, view):
         """
@@ -86,16 +65,8 @@ class BaseEducationPermission(permissions.BasePermission):
         Returns:
             bool: True if user has permission
         """
-        # Cache permission check
-        cache_key = self.get_cache_key(request, view)
-        if cache_key in self._permission_cache:
-            return self._permission_cache[cache_key]
-        
         # Default: allow authenticated users
-        has_perm = request.user.is_authenticated
-        self._permission_cache[cache_key] = has_perm
-        
-        return has_perm
+        return request.user.is_authenticated
     
     def has_object_permission(self, request, view, obj):
         """

@@ -128,10 +128,10 @@ class EducationalContentViewSet(viewsets.ModelViewSet):
             list: List of permission classes
         """
         if self.action in ['create', 'update', 'partial_update', 'destroy']:
-            return [IsAuthenticated, IsContentAuthor]
+            return [IsAuthenticated(), IsContentAuthor()]
         elif self.action in ['featured', 'recommended', 'popular', 'recent']:
-            return [AllowAny]
-        return [IsAuthenticated]
+            return [AllowAny()]
+        return [IsAuthenticated()]
     
     def get_queryset(self):
         """
@@ -563,10 +563,10 @@ class LearningPathViewSet(viewsets.ModelViewSet):
             list: List of permission classes
         """
         if self.action in ['create', 'update', 'partial_update', 'destroy']:
-            return [IsAuthenticated, IsAdminUser]
+            return [IsAuthenticated(), IsAdminUser()]
         elif self.action in ['enroll', 'start', 'progress']:
-            return [IsAuthenticated]
-        return [IsAuthenticated]
+            return [IsAuthenticated()]
+        return [IsAuthenticated()]
     
     def get_queryset(self):
         """
