@@ -60,19 +60,6 @@ export function LearningPathDetail() {
     }
   };
 
-  const getDifficultyGradient = (difficulty: string) => {
-    switch (difficulty) {
-      case 'BEGINNER':
-        return 'from-emerald-400 to-green-500';
-      case 'INTERMEDIATE':
-        return 'from-amber-400 to-orange-500';
-      case 'ADVANCED':
-        return 'from-rose-400 to-red-500';
-      default:
-        return 'from-gray-400 to-slate-500';
-    }
-  };
-
   const getCategoryColor = (category: string) => {
     switch (category) {
       case 'SAVINGS':
