@@ -9,7 +9,6 @@ from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from rest_framework_nested import routers
 
-from analytics_dashboard import views
 from .views import (
     EducationalContentViewSet,
     UserProgressViewSet,
@@ -67,7 +66,7 @@ urlpatterns = [
     path('', include(challenge_router.urls)),
     
     # Special endpoints
-    path('dashboard/stats/', views.EducationDashboardStats.as_view(), name='education-dashboard-stats'),
+    path('dashboard/stats/', EducationDashboardViewSet.as_view({'get': 'learning_stats'}), name='education-dashboard-stats'),
     path('my-progress/', UserProgressViewSet.as_view({'get': 'my_progress'}), name='my-progress'),
     path('my-enrollments/', LearningPathEnrollmentViewSet.as_view({'get': 'my_enrollments'}), name='my-enrollments'),
     path('my-challenges/', ChallengeParticipantViewSet.as_view({'get': 'my_challenges'}), name='my-challenges'),
@@ -86,8 +85,4 @@ urlpatterns = [
     path('quick-actions/start-learning/<int:content_id>/', EducationalContentViewSet.as_view({'post': 'start_progress'}), name='start-learning'),
     path('quick-actions/complete-content/<int:content_id>/', EducationalContentViewSet.as_view({'post': 'complete_content'}), name='complete-content'),
     path('quick-actions/bookmark/<int:content_id>/', EducationalContentViewSet.as_view({'post': 'bookmark'}), name='bookmark-content'),
-    
-    # Webhook endpoints (for future integrations)
-    path('webhooks/zoom/', WebinarViewSet.as_view({'post': 'zoom_webhook'}), name='zoom-webhook'),
-    path('webhooks/certificate-issued/', CertificateViewSet.as_view({'post': 'certificate_webhook'}), name='certificate-webhook'),
 ]
