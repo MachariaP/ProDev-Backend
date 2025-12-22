@@ -196,10 +196,10 @@ export function LearningPaths() {
 
                   {/* Action Button */}
                   <button
-                    onClick={() => navigate(`/education/learning-paths/${path.id}`)}
-                    className="w-full px-6 py-3 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors font-medium flex items-center justify-center gap-2"
+                    disabled
+                    className="w-full px-6 py-3 bg-gray-400 text-white rounded-lg cursor-not-allowed font-medium flex items-center justify-center gap-2"
                   >
-                    Start Learning
+                    View Details
                     <ArrowRight className="h-5 w-5" />
                   </button>
                 </CardContent>

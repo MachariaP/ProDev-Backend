@@ -255,8 +255,7 @@ export function ContentBrowse() {
             {contents.map((content) => (
               <Card
                 key={content.id}
-                className="cursor-pointer hover:shadow-xl transition-all overflow-hidden border border-gray-200"
-                onClick={() => navigate(`/education/content/${content.id}`)}
+                className="hover:shadow-xl transition-all overflow-hidden border border-gray-200"
               >
                 <div className="relative h-48 overflow-hidden bg-gray-200">
                   <img 
