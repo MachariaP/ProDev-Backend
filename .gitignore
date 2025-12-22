@@ -81,4 +81,4 @@ celery_config_old.py.bak
 .env.backup.20251216_131244
 .env10
 mpesa.sh
-
+.env.example01
