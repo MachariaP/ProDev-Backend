@@ -14,7 +14,6 @@ import {
   ThumbsUp,
   Download,
   ExternalLink,
-  BookOpen,
   Users,
   Calendar,
   Award,
@@ -30,7 +29,7 @@ import { mockEducationService, type EducationalContent } from '../../services/mo
 
 interface UserProgress {
   content_id: number;
-  status: 'NOT_STARTED' | 'IN_PROGRESS' | 'COMPLETED';
+  status: 'VIEWED' | 'COMPLETED';
   bookmarked: boolean;
   last_viewed_at?: string;
 }

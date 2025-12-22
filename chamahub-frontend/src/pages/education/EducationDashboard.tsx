@@ -9,14 +9,10 @@ import {
   Eye,
   Target,
   Sparkles,
-  Award,
   Rocket,
-  Users,
-  BarChart,
   CheckCircle,
   Star,
-  Zap,
-  TrendingDown
+  Zap
 } from 'lucide-react';
 import { Badge } from '../../components/ui/badge';
 import { Button } from '../../components/ui/button';
