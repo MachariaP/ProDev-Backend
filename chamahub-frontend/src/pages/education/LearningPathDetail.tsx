@@ -19,7 +19,9 @@ import {
   Unlock,
   BarChart,
   Download,
-  Share2
+  Share2,
+  Eye,
+  ExternalLink
 } from 'lucide-react';
 import { Badge } from '../../components/ui/badge';
 import { Button } from '../../components/ui/button';
