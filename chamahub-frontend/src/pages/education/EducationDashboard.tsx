@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import {
   BookOpen,
   GraduationCap,
@@ -206,10 +206,11 @@ export function EducationDashboard() {
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {stats.featured_content.slice(0, 6).map((content: EducationalContent) => (
-                <div
+                <Link
                   key={content.id}
-                  onClick={() => navigate(`/education/content/${content.id}`)}
-                  className="group cursor-pointer bg-white rounded-2xl shadow-lg border border-gray-100 hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 overflow-hidden"
+                  to={`/education/content/${content.id}`}
+                  className="group block bg-white rounded-2xl shadow-lg border border-gray-100 hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 overflow-hidden"
+                  aria-label={`View ${content.title} - ${content.description}`}
                 >
                   <div className="relative h-40 overflow-hidden">
                     <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent z-10"></div>
@@ -249,7 +250,7 @@ export function EducationDashboard() {
                       </div>
                     </div>
                   </div>
-                </div>
+                </Link>
               ))}
             </div>
           </section>
@@ -278,10 +279,11 @@ export function EducationDashboard() {
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {learningPaths.map((path) => (
-                <div
+                <Link
                   key={path.id}
-                  onClick={() => navigate(`/education/learning-paths/${path.id}`)}
-                  className="group cursor-pointer bg-white rounded-2xl shadow-lg border border-gray-100 hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 overflow-hidden"
+                  to={`/education/learning-paths/${path.id}`}
+                  className="group block bg-white rounded-2xl shadow-lg border border-gray-100 hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 overflow-hidden"
+                  aria-label={`View ${path.title} learning path with ${path.contents.length} lessons`}
                 >
                   <div className="p-6">
                     <div className="flex items-center justify-between mb-4">
@@ -319,13 +321,13 @@ export function EducationDashboard() {
                         ></div>
                       </div>
                       
-                      <button className="w-full px-4 py-3 bg-gradient-to-r from-emerald-500 to-green-500 text-white rounded-xl hover:from-emerald-600 hover:to-green-600 transition-all shadow-md hover:shadow-lg font-medium flex items-center justify-center gap-2">
+                      <div className="w-full px-4 py-3 bg-gradient-to-r from-emerald-500 to-green-500 text-white rounded-xl group-hover:from-emerald-600 group-hover:to-green-600 transition-all shadow-md group-hover:shadow-lg font-medium flex items-center justify-center gap-2">
                         <Rocket className="h-4 w-4" />
                         Start Learning
-                      </button>
+                      </div>
                     </div>
                   </div>
-                </div>
+                </Link>
               ))}
             </div>
           </section>
@@ -354,10 +356,11 @@ export function EducationDashboard() {
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {stats.recent_content.map((content: EducationalContent) => (
-                <div
+                <Link
                   key={content.id}
-                  onClick={() => navigate(`/education/content/${content.id}`)}
-                  className="group cursor-pointer bg-white rounded-xl shadow-sm border border-gray-100 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 p-4"
+                  to={`/education/content/${content.id}`}
+                  className="group block bg-white rounded-xl shadow-sm border border-gray-100 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 p-4"
+                  aria-label={`View ${content.title} - ${content.description.slice(0, 50)}...`}
                 >
                   <div className="flex items-start gap-3">
                     <div className="flex-shrink-0">
@@ -393,7 +396,7 @@ export function EducationDashboard() {
                       </div>
                     </div>
                   </div>
-                </div>
+                </Link>
               ))}
             </div>
           </section>
@@ -452,10 +455,11 @@ export function EducationDashboard() {
                 iconBg: 'bg-blue-100'
               },
             ].map((category) => (
-              <button
+              <Link
                 key={category.name}
-                onClick={() => navigate(`/education/content?category=${category.name}`)}
-                className={`group relative overflow-hidden rounded-2xl bg-gradient-to-br ${category.bgColor} p-6 text-left hover:shadow-2xl hover:-translate-y-1 transition-all duration-300`}
+                to={`/education/content?category=${category.name}`}
+                className={`group relative overflow-hidden rounded-2xl bg-gradient-to-br ${category.bgColor} p-6 text-left hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 block`}
+                aria-label={`Explore ${formatCategory(category.name)} content - ${category.desc}`}
               >
                 <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br ${category.color} opacity-10 rounded-full -translate-y-8 translate-x-8"></div>
                 <div className="relative z-10 space-y-4">
@@ -477,7 +481,7 @@ export function EducationDashboard() {
                     </div>
                   </div>
                 </div>
-              </button>
+              </Link>
             ))}
           </div>
         </section>

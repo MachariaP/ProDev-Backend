@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import {
   ArrowLeft,
   BookOpen,
@@ -23,6 +23,7 @@ export function ContentBrowse() {
   const [contents, setContents] = useState<EducationalContent[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [difficultyFilter, setDifficultyFilter] = useState('all');
   const [contentTypeFilter, setContentTypeFilter] = useState('all');
@@ -30,6 +31,15 @@ export function ContentBrowse() {
   const [currentPage, setCurrentPage] = useState(1);
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+
+  // Debounce search query
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchQuery(searchQuery);
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
 
   useEffect(() => {
     const category = searchParams.get('category');
@@ -45,9 +55,14 @@ export function ContentBrowse() {
     }
   }, [searchParams]);
 
+  // Reset page when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [categoryFilter, difficultyFilter, contentTypeFilter, debouncedSearchQuery]);
+
   useEffect(() => {
     fetchContents();
-  }, [categoryFilter, difficultyFilter, contentTypeFilter, searchQuery, currentPage]);
+  }, [categoryFilter, difficultyFilter, contentTypeFilter, debouncedSearchQuery, currentPage]);
 
   const fetchContents = async () => {
     try {
@@ -57,7 +72,7 @@ export function ContentBrowse() {
           category: categoryFilter !== 'all' ? categoryFilter : undefined,
           difficulty: difficultyFilter !== 'all' ? difficultyFilter : undefined,
           content_type: contentTypeFilter !== 'all' ? contentTypeFilter : undefined,
-          search: searchQuery || undefined,
+          search: debouncedSearchQuery || undefined,
         },
         currentPage,
         12
@@ -337,87 +352,86 @@ export function ContentBrowse() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {contents.map((content) => (
-              <div
+              <Link
                 key={content.id}
-                className="group cursor-pointer"
-                onClick={() => navigate(`/education/content/${content.id}`)}
+                to={`/education/content/${content.id}`}
+                className="group block relative overflow-hidden rounded-2xl bg-white shadow-lg border border-gray-100 hover:shadow-2xl hover:-translate-y-1 transition-all duration-300"
+                aria-label={`View ${content.title} - ${content.description.slice(0, 100)}...`}
               >
-                <div className="relative overflow-hidden rounded-2xl bg-white shadow-lg border border-gray-100 hover:shadow-2xl hover:-translate-y-1 transition-all duration-300">
-                  {/* Top Gradient Bar */}
-                  <div className={`h-1 w-full ${
-                    content.difficulty === 'BEGINNER' ? 'bg-gradient-to-r from-emerald-400 to-green-500' :
-                    content.difficulty === 'INTERMEDIATE' ? 'bg-gradient-to-r from-amber-400 to-orange-500' :
-                    'bg-gradient-to-r from-rose-400 to-red-500'
-                  }`}></div>
-                  
-                  {/* Thumbnail */}
-                  <div className="relative h-48 overflow-hidden">
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent z-10"></div>
-                    <img 
-                      src={content.thumbnail_url} 
-                      alt={content.title}
-                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                    />
-                    {content.content_type === 'VIDEO' && (
-                      <div className="absolute inset-0 flex items-center justify-center z-20">
-                        <div className="p-3 bg-white/20 backdrop-blur-sm rounded-full">
-                          <Video className="h-8 w-8 text-white" />
-                        </div>
+                {/* Top Gradient Bar */}
+                <div className={`h-1 w-full ${
+                  content.difficulty === 'BEGINNER' ? 'bg-gradient-to-r from-emerald-400 to-green-500' :
+                  content.difficulty === 'INTERMEDIATE' ? 'bg-gradient-to-r from-amber-400 to-orange-500' :
+                  'bg-gradient-to-r from-rose-400 to-red-500'
+                }`}></div>
+                
+                {/* Thumbnail */}
+                <div className="relative h-48 overflow-hidden">
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent z-10"></div>
+                  <img 
+                    src={content.thumbnail_url} 
+                    alt={content.title}
+                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                  />
+                  {content.content_type === 'VIDEO' && (
+                    <div className="absolute inset-0 flex items-center justify-center z-20">
+                      <div className="p-3 bg-white/20 backdrop-blur-sm rounded-full">
+                        <Video className="h-8 w-8 text-white" />
                       </div>
-                    )}
-                    {content.is_featured && (
-                      <div className="absolute top-3 right-3 z-20">
-                        <div className="flex items-center gap-1 bg-gradient-to-r from-amber-400 to-orange-500 text-white px-3 py-1.5 rounded-full text-xs font-semibold shadow-lg">
-                          <Star className="h-3 w-3 fill-white" />
-                          Featured
-                        </div>
+                    </div>
+                  )}
+                  {content.is_featured && (
+                    <div className="absolute top-3 right-3 z-20">
+                      <div className="flex items-center gap-1 bg-gradient-to-r from-amber-400 to-orange-500 text-white px-3 py-1.5 rounded-full text-xs font-semibold shadow-lg">
+                        <Star className="h-3 w-3 fill-white" />
+                        Featured
                       </div>
-                    )}
+                    </div>
+                  )}
+                </div>
+                
+                {/* Content */}
+                <div className="p-5">
+                  <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
+                    <Badge className={`${getCategoryColor(content.category)} font-medium px-3 py-1`}>
+                      <span className="mr-1.5">{categoryIcons[content.category]}</span>
+                      {formatCategory(content.category)}
+                    </Badge>
+                    <div className="flex items-center gap-2">
+                      <div className={`w-2.5 h-2.5 rounded-full ${getDifficultyColor(content.difficulty)} shadow-sm`} />
+                      <Badge variant="outline" className="text-xs bg-white border-gray-200">
+                        {content.content_type}
+                      </Badge>
+                    </div>
                   </div>
                   
-                  {/* Content */}
-                  <div className="p-5">
-                    <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
-                      <Badge className={`${getCategoryColor(content.category)} font-medium px-3 py-1`}>
-                        <span className="mr-1.5">{categoryIcons[content.category]}</span>
-                        {formatCategory(content.category)}
-                      </Badge>
-                      <div className="flex items-center gap-2">
-                        <div className={`w-2.5 h-2.5 rounded-full ${getDifficultyColor(content.difficulty)} shadow-sm`} />
-                        <Badge variant="outline" className="text-xs bg-white border-gray-200">
-                          {content.content_type}
-                        </Badge>
+                  <h3 className="text-lg font-bold text-gray-900 mb-2 line-clamp-2 group-hover:text-blue-600 transition-colors">
+                    {content.title}
+                  </h3>
+                  <p className="text-gray-600 text-sm mb-4 line-clamp-3">
+                    {content.description}
+                  </p>
+                  
+                  {/* Stats */}
+                  <div className="flex items-center justify-between pt-4 border-t border-gray-100">
+                    <div className="flex items-center gap-4">
+                      <div className="flex items-center gap-1.5 text-gray-600">
+                        <div className="p-1 bg-blue-50 rounded">
+                          <Clock className="h-3 w-3 text-blue-600" />
+                        </div>
+                        <span className="text-sm font-medium">{content.duration_minutes}m</span>
+                      </div>
+                      <div className="flex items-center gap-1.5 text-gray-600">
+                        <div className="p-1 bg-purple-50 rounded">
+                          <Eye className="h-3 w-3 text-purple-600" />
+                        </div>
+                        <span className="text-sm font-medium">{content.views_count}</span>
                       </div>
                     </div>
-                    
-                    <h3 className="text-lg font-bold text-gray-900 mb-2 line-clamp-2 group-hover:text-blue-600 transition-colors">
-                      {content.title}
-                    </h3>
-                    <p className="text-gray-600 text-sm mb-4 line-clamp-3">
-                      {content.description}
-                    </p>
-                    
-                    {/* Stats */}
-                    <div className="flex items-center justify-between pt-4 border-t border-gray-100">
-                      <div className="flex items-center gap-4">
-                        <div className="flex items-center gap-1.5 text-gray-600">
-                          <div className="p-1 bg-blue-50 rounded">
-                            <Clock className="h-3 w-3 text-blue-600" />
-                          </div>
-                          <span className="text-sm font-medium">{content.duration_minutes}m</span>
-                        </div>
-                        <div className="flex items-center gap-1.5 text-gray-600">
-                          <div className="p-1 bg-purple-50 rounded">
-                            <Eye className="h-3 w-3 text-purple-600" />
-                          </div>
-                          <span className="text-sm font-medium">{content.views_count}</span>
-                        </div>
-                      </div>
-                      <ChevronRight className="h-4 w-4 text-gray-400 group-hover:text-blue-500 group-hover:translate-x-1 transition-all" />
-                    </div>
+                    <ChevronRight className="h-4 w-4 text-gray-400 group-hover:text-blue-500 group-hover:translate-x-1 transition-all" />
                   </div>
                 </div>
-              </div>
+              </Link>
             ))}
           </div>
         )}

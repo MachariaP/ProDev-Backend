@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import {
   ArrowLeft,
   Clock,
@@ -309,10 +309,11 @@ export function ContentDetail() {
                 <h3 className="font-bold text-gray-900 text-lg mb-4">Related Content</h3>
                 <div className="space-y-3">
                   {relatedContent.map((related) => (
-                    <div
+                    <Link
                       key={related.id}
-                      onClick={() => navigate(`/education/content/${related.id}`)}
-                      className="group cursor-pointer p-3 bg-gray-50 rounded-lg hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 transition-all"
+                      to={`/education/content/${related.id}`}
+                      className="group block p-3 bg-gray-50 rounded-lg hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 transition-all"
+                      aria-label={`View related content: ${related.title}`}
                     >
                       <div className="flex items-start gap-3">
                         <img
@@ -331,7 +332,7 @@ export function ContentDetail() {
                         </div>
                         <ChevronRight className="h-4 w-4 text-gray-400 group-hover:text-blue-500 flex-shrink-0" />
                       </div>
-                    </div>
+                    </Link>
                   ))}
                 </div>
               </div>

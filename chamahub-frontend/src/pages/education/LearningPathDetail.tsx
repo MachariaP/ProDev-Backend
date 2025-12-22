@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import {
   ArrowLeft,
   BookOpen,
@@ -299,13 +299,16 @@ export function LearningPathDetail() {
                             </div>
                           </div>
 
-                          <button
-                            onClick={() => navigate(`/education/content/${content.id}`)}
-                            className="w-full px-6 py-3 bg-gradient-to-r from-emerald-500 to-green-500 text-white rounded-xl hover:from-emerald-600 hover:to-green-600 transition-all shadow-md hover:shadow-lg font-medium flex items-center justify-center gap-2"
+                          <Link
+                            to={`/education/content/${content.id}`}
+                            className="block w-full px-6 py-3 bg-gradient-to-r from-emerald-500 to-green-500 text-white rounded-xl hover:from-emerald-600 hover:to-green-600 transition-all shadow-md hover:shadow-lg font-medium text-center"
+                            aria-label={`Start lesson: ${content.title}`}
                           >
-                            <PlayCircle className="h-5 w-5" />
-                            Start Lesson
-                          </button>
+                            <span className="flex items-center justify-center gap-2">
+                              <PlayCircle className="h-5 w-5" />
+                              Start Lesson
+                            </span>
+                          </Link>
                         </div>
                       </div>
                     )}
@@ -364,17 +367,22 @@ export function LearningPathDetail() {
               <p className="text-white/90 text-sm mb-6">
                 Start your learning journey and gain valuable financial skills
               </p>
-              <button
-                onClick={() => {
-                  if (learningPath.contents.length > 0) {
-                    navigate(`/education/content/${learningPath.contents[0].id}`);
-                  }
-                }}
-                className="w-full px-6 py-3 bg-white text-emerald-600 rounded-xl hover:bg-gray-50 transition-all shadow-md hover:shadow-lg font-bold flex items-center justify-center gap-2"
-              >
-                <PlayCircle className="h-5 w-5" />
-                Start First Lesson
-              </button>
+              {learningPath.contents.length > 0 ? (
+                <Link
+                  to={`/education/content/${learningPath.contents[0].id}`}
+                  className="block w-full px-6 py-3 bg-white text-emerald-600 rounded-xl hover:bg-gray-50 transition-all shadow-md hover:shadow-lg font-bold text-center"
+                  aria-label={`Start first lesson: ${learningPath.contents[0].title}`}
+                >
+                  <span className="flex items-center justify-center gap-2">
+                    <PlayCircle className="h-5 w-5" />
+                    Start First Lesson
+                  </span>
+                </Link>
+              ) : (
+                <div className="text-center text-white/70 text-sm">
+                  No lessons available yet
+                </div>
+              )}
             </div>
           </div>
         </div>

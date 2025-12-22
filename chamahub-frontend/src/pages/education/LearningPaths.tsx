@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import {
   ArrowLeft,
   Target,
@@ -219,9 +219,10 @@ export function LearningPaths() {
         ) : (
           <div className="space-y-6">
             {learningPaths.map((path) => (
-              <div
+              <article
                 key={path.id}
                 className="group relative overflow-hidden bg-white rounded-2xl shadow-xl border border-gray-100 hover:shadow-2xl hover:-translate-y-1 transition-all duration-300"
+                aria-labelledby={`path-title-${path.id}`}
               >
                 {/* Top Gradient */}
                 <div className={`h-2 w-full bg-gradient-to-r ${getDifficultyGradient(path.difficulty)}`}></div>
@@ -243,7 +244,7 @@ export function LearningPaths() {
                               </Badge>
                             )}
                           </div>
-                          <h3 className="text-2xl font-bold text-gray-900 group-hover:text-emerald-600 transition-colors">
+                          <h3 id={`path-title-${path.id}`} className="text-2xl font-bold text-gray-900 group-hover:text-emerald-600 transition-colors">
                             {path.title}
                           </h3>
                           <p className="text-gray-600 text-lg">{path.description}</p>
@@ -334,13 +335,14 @@ export function LearningPaths() {
                       <div className="bg-gradient-to-br from-emerald-50 to-green-50 rounded-xl p-4 border border-emerald-100">
                         <h4 className="font-semibold text-gray-900 mb-3">Start Learning</h4>
                         <div className="space-y-3">
-                          <button
-                            onClick={() => navigate(`/education/learning-paths/${path.id}`)}
+                          <Link
+                            to={`/education/learning-paths/${path.id}`}
                             className="w-full px-4 py-3 bg-gradient-to-r from-emerald-500 to-green-500 text-white rounded-xl hover:from-emerald-600 hover:to-green-600 transition-all shadow-md hover:shadow-lg font-medium flex items-center justify-center gap-2"
+                            aria-label={`View details for ${path.title} learning path`}
                           >
                             <BookOpen className="h-4 w-4" />
                             View Details
-                          </button>
+                          </Link>
                           <div className="text-xs text-gray-600 text-center">
                             ⭐ 4.8 average rating
                           </div>
@@ -358,7 +360,7 @@ export function LearningPaths() {
                     </div>
                   </div>
                 </div>
-              </div>
+              </article>
             ))}
           </div>
         )}
