@@ -147,17 +147,17 @@ export function ContentBrowse() {
         <div className="flex items-center gap-4">
           <button
             onClick={() => navigate('/education')}
-            className="flex items-center gap-2 text-gray-600 hover:text-gray-800 transition-colors"
+            className="flex items-center gap-2 text-gray-600 hover:text-gray-900 font-medium transition-colors"
           >
             <ArrowLeft className="h-5 w-5" />
-            <span className="hidden sm:inline">Back</span>
+            <span className="hidden sm:inline">Back to Hub</span>
           </button>
           <div>
-            <h1 className="text-3xl md:text-4xl font-semibold text-gray-800 flex items-center gap-3">
+            <h1 className="text-3xl md:text-4xl font-bold text-gray-900 flex items-center gap-3">
               <BookOpen className="h-8 w-8 md:h-10 md:w-10 text-blue-600" />
               Browse Content
             </h1>
-            <p className="text-gray-600 mt-1">Explore our library of financial education resources</p>
+            <p className="text-gray-600 mt-1">Discover articles, videos, and resources to expand your financial knowledge</p>
           </div>
         </div>
 

@@ -102,12 +102,13 @@ export function EducationDashboard() {
         <div className="text-center">
           <div className="flex items-center justify-center gap-3 mb-4">
             <GraduationCap className="h-10 w-10 md:h-12 md:w-12 text-blue-600" />
-            <h1 className="text-3xl md:text-4xl lg:text-5xl font-semibold text-gray-800">
+            <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900">
               Financial Education Hub
             </h1>
           </div>
-          <p className="text-lg md:text-xl text-gray-600 max-w-2xl mx-auto">
-            Empower yourself with financial literacy for your chama journey
+          <p className="text-lg md:text-xl text-gray-600 max-w-3xl mx-auto">
+            Master financial literacy and elevate your chama's success. Access expert-curated content, 
+            structured learning paths, and practical insights to make informed financial decisions.
           </p>
         </div>
 
@@ -143,15 +144,15 @@ export function EducationDashboard() {
           <section>
             <div className="flex items-center justify-between mb-6">
               <div>
-                <h2 className="text-2xl md:text-3xl font-semibold text-gray-800 flex items-center gap-2">
+                <h2 className="text-2xl md:text-3xl font-bold text-gray-900 flex items-center gap-2">
                   <Sparkles className="h-6 w-6 md:h-7 md:w-7 text-blue-600" />
                   Featured Content
                 </h2>
-                <p className="text-gray-600 mt-1">Handpicked resources to boost your knowledge</p>
+                <p className="text-gray-600 mt-1">Expert-curated resources to accelerate your financial knowledge</p>
               </div>
               <button
                 onClick={() => navigate('/education/content?featured=true')}
-                className="flex items-center gap-2 text-blue-600 hover:text-blue-700 font-medium transition-colors"
+                className="flex items-center gap-2 text-blue-600 hover:text-blue-700 font-semibold transition-colors"
               >
                 View All
                 <ArrowRight className="h-4 w-4" />
@@ -204,15 +205,15 @@ export function EducationDashboard() {
           <section>
             <div className="flex items-center justify-between mb-6">
               <div>
-                <h2 className="text-2xl md:text-3xl font-semibold text-gray-800 flex items-center gap-2">
-                  <Target className="h-6 w-6 md:h-7 md:w-7 text-emerald-500" />
+                <h2 className="text-2xl md:text-3xl font-bold text-gray-900 flex items-center gap-2">
+                  <Target className="h-6 w-6 md:h-7 md:w-7 text-emerald-600" />
                   Learning Paths
                 </h2>
-                <p className="text-gray-600 mt-1">Structured courses to achieve your goals</p>
+                <p className="text-gray-600 mt-1">Structured courses designed to help you achieve specific financial goals</p>
               </div>
               <button
                 onClick={() => navigate('/education/learning-paths')}
-                className="flex items-center gap-2 text-emerald-600 hover:text-emerald-700 font-medium transition-colors"
+                className="flex items-center gap-2 text-emerald-600 hover:text-emerald-700 font-semibold transition-colors"
               >
                 View All
                 <ArrowRight className="h-4 w-4" />
@@ -259,15 +260,15 @@ export function EducationDashboard() {
           <section>
             <div className="flex items-center justify-between mb-6">
               <div>
-                <h2 className="text-2xl md:text-3xl font-semibold text-gray-800 flex items-center gap-2">
+                <h2 className="text-2xl md:text-3xl font-bold text-gray-900 flex items-center gap-2">
                   <TrendingUp className="h-6 w-6 md:h-7 md:w-7 text-purple-600" />
-                  Recent Content
+                  Latest Content
                 </h2>
-                <p className="text-gray-600 mt-1">Latest additions to our library</p>
+                <p className="text-gray-600 mt-1">Fresh insights and newly added resources to stay ahead</p>
               </div>
               <button
                 onClick={() => navigate('/education/content')}
-                className="flex items-center gap-2 text-purple-600 hover:text-purple-700 font-medium transition-colors"
+                className="flex items-center gap-2 text-purple-600 hover:text-purple-700 font-semibold transition-colors"
               >
                 Browse All
                 <ArrowRight className="h-4 w-4" />
@@ -315,24 +316,28 @@ export function EducationDashboard() {
 
         {/* Category Quick Links */}
         <section>
-          <h2 className="text-2xl md:text-3xl font-semibold text-gray-800 mb-6">
-            Browse by Category
+          <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-3">
+            Explore Topics
           </h2>
+          <p className="text-gray-600 mb-6">
+            Choose a category to discover relevant content tailored to your learning goals
+          </p>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
             {[
-              { name: 'SAVINGS', icon: '💰', color: 'from-green-500 to-emerald-600' },
-              { name: 'INVESTMENTS', icon: '📈', color: 'from-purple-500 to-purple-600' },
-              { name: 'LOANS', icon: '🏦', color: 'from-red-500 to-rose-600' },
-              { name: 'BUDGETING', icon: '📊', color: 'from-yellow-500 to-orange-600' },
-              { name: 'GROUP_MANAGEMENT', icon: '👥', color: 'from-blue-500 to-cyan-600' },
+              { name: 'SAVINGS', icon: '💰', color: 'from-green-500 to-emerald-600', desc: 'Build wealth' },
+              { name: 'INVESTMENTS', icon: '📈', color: 'from-purple-500 to-purple-600', desc: 'Grow assets' },
+              { name: 'LOANS', icon: '🏦', color: 'from-red-500 to-rose-600', desc: 'Manage debt' },
+              { name: 'BUDGETING', icon: '📊', color: 'from-yellow-500 to-orange-600', desc: 'Control spending' },
+              { name: 'GROUP_MANAGEMENT', icon: '👥', color: 'from-blue-500 to-cyan-600', desc: 'Lead teams' },
             ].map((category) => (
               <button
                 key={category.name}
                 onClick={() => navigate(`/education/content?category=${category.name}`)}
-                className={`p-6 rounded-xl bg-gradient-to-br ${category.color} text-white hover:shadow-lg transition-all`}
+                className={`p-6 rounded-xl bg-gradient-to-br ${category.color} text-white hover:shadow-xl hover:scale-105 transition-all duration-200`}
               >
                 <div className="text-4xl mb-2">{category.icon}</div>
-                <div className="font-medium text-sm">{formatCategory(category.name)}</div>
+                <div className="font-semibold text-sm mb-1">{formatCategory(category.name)}</div>
+                <div className="text-xs opacity-90">{category.desc}</div>
               </button>
             ))}
           </div>
