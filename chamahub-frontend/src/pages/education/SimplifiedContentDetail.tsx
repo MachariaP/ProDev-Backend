@@ -27,17 +27,19 @@ export function SimplifiedContentDetail() {
     if (id) {
       fetchContent();
       fetchProgress();
-      
-      // Auto-mark as viewed after 30 seconds
+    }
+  }, [id]);
+
+  useEffect(() => {
+    // Auto-mark as viewed after 30 seconds
+    if (!hasViewed) {
       const viewTimer = setTimeout(() => {
-        if (!hasViewed) {
-          handleTrackView();
-        }
+        handleTrackView();
       }, 30000);
 
       return () => clearTimeout(viewTimer);
     }
-  }, [id]);
+  }, [hasViewed]);
 
   const fetchContent = async () => {
     try {
