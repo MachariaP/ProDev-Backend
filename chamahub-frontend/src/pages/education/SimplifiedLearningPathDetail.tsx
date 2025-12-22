@@ -6,7 +6,6 @@ import {
   BookOpen,
   Clock,
   CheckCircle2,
-  Circle,
   Video,
   FileText,
   ChevronRight,

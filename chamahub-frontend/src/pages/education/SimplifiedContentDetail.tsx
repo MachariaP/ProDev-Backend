@@ -12,12 +12,11 @@ import {
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
 import { Badge } from '../../components/ui/badge';
-import { mockEducationService, type EducationalContent, type UserProgress } from '../../services/mockEducationService';
+import { mockEducationService, type EducationalContent } from '../../services/mockEducationService';
 
 export function SimplifiedContentDetail() {
   const { id } = useParams<{ id: string }>();
   const [content, setContent] = useState<EducationalContent | null>(null);
-  const [progress, setProgress] = useState<UserProgress | null>(null);
   const [relatedContent, setRelatedContent] = useState<EducationalContent[]>([]);
   const [loading, setLoading] = useState(true);
   const [isBookmarked, setIsBookmarked] = useState(false);
@@ -61,7 +60,6 @@ export function SimplifiedContentDetail() {
     try {
       const progressData = await mockEducationService.getProgressForContent(Number(id));
       if (progressData) {
-        setProgress(progressData);
         setIsBookmarked(progressData.bookmarked);
       }
     } catch (error) {
@@ -285,7 +283,7 @@ export function SimplifiedContentDetail() {
                   </div>
                   <CardHeader className="p-3">
                     <div className="flex items-center gap-2 mb-2">
-                      <Badge className={getCategoryColor(related.category)} variant="outline" className="text-xs">
+                      <Badge className={`${getCategoryColor(related.category)} text-xs`} variant="outline">
                         {formatCategory(related.category)}
                       </Badge>
                       {related.content_type === 'VIDEO' && (

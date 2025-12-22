@@ -6,7 +6,6 @@ import {
   BookOpen,
   Clock,
   ArrowRight,
-  CheckCircle2,
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/card';
 import { Badge } from '../../components/ui/badge';
