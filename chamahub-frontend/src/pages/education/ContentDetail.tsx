@@ -206,15 +206,15 @@ export function ContentDetail() {
             <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
               {content.content_type === 'VIDEO' && content.video_url ? (
                 <div className="relative" style={{ paddingBottom: '56.25%' }}>
+                  {/* SECURITY NOTE: In production, validate video_url against allowed domains before rendering.
+                      Consider using allow-same-origin only if required by the video provider.
+                      Current sandbox settings provide protection while allowing video playback. */}
                   <iframe
                     src={content.video_url}
                     className="absolute inset-0 w-full h-full"
                     allowFullScreen
                     title={content.title}
-                    sandbox="allow-scripts allow-same-origin allow-presentation"
-                    /* Note: In production, validate video_url against allowed domains (YouTube, Vimeo, etc.)
-                       before rendering. Consider implementing URL validation in mockEducationService.
-                    */
+                    sandbox="allow-scripts allow-presentation"
                   />
                 </div>
               ) : (
@@ -229,12 +229,13 @@ export function ContentDetail() {
             {/* Article Content */}
             {content.content_type === 'ARTICLE' && content.content && (
               <div className="bg-white rounded-2xl shadow-xl p-8">
+                {/* SECURITY WARNING: dangerouslySetInnerHTML without sanitization is a security risk.
+                    This is acceptable ONLY because we're using controlled mock data.
+                    In production, MUST use DOMPurify: dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(content.content) }}
+                    or implement server-side content sanitization. Never render untrusted HTML without sanitization. */}
                 <div 
                   className="prose prose-lg max-w-none"
                   dangerouslySetInnerHTML={{ __html: content.content }}
-                  /* Note: In production, use DOMPurify to sanitize HTML content:
-                     dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(content.content) }}
-                  */
                 />
               </div>
             )}
