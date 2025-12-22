@@ -11,7 +11,6 @@ import {
   Sparkles,
   Award,
   Rocket,
-  Users,
 } from 'lucide-react';
 import { Badge } from '../../components/ui/badge';
 import { mockEducationService, type DashboardStats, type EducationalContent, type LearningPath } from '../../services/mockEducationService';
