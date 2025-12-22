@@ -11,7 +11,6 @@ import {
   FileText,
   Video,
   ChevronRight,
-  TrendingUp,
   Users,
   Calendar,
   Sparkles,
@@ -103,15 +102,6 @@ export function LearningPathDetail() {
       ADVANCED: 'bg-gradient-to-r from-rose-100 to-red-100 text-rose-700 border-rose-200',
     };
     return colors[difficulty] || 'bg-gradient-to-r from-gray-100 to-slate-100 text-gray-700 border-gray-200';
-  };
-
-  const getDifficultyGradient = (difficulty: string) => {
-    const colors: Record<string, string> = {
-      BEGINNER: 'from-emerald-400 to-green-500',
-      INTERMEDIATE: 'from-amber-400 to-orange-500',
-      ADVANCED: 'from-rose-400 to-red-500',
-    };
-    return colors[difficulty] || 'from-gray-400 to-slate-500';
   };
 
   const getCategoryColor = (category: string) => {
@@ -206,8 +196,6 @@ export function LearningPathDetail() {
       </div>
     );
   }
-
-  const difficultyGradient = getDifficultyGradient(learningPath.difficulty);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-emerald-50/30 via-white to-blue-50/30">

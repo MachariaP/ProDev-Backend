@@ -12,7 +12,6 @@ import {
   TrendingUp,
   Flame,
   ChevronRight,
-  Bookmark,
   Users,
   Sparkles
 } from 'lucide-react';
