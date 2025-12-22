@@ -367,16 +367,22 @@ export function LearningPathDetail() {
               <p className="text-white/90 text-sm mb-6">
                 Start your learning journey and gain valuable financial skills
               </p>
-              <Link
-                to={learningPath.contents.length > 0 ? `/education/content/${learningPath.contents[0].id}` : '#'}
-                className="block w-full px-6 py-3 bg-white text-emerald-600 rounded-xl hover:bg-gray-50 transition-all shadow-md hover:shadow-lg font-bold text-center"
-                aria-label={`Start first lesson: ${learningPath.contents[0]?.title || 'learning path'}`}
-              >
-                <span className="flex items-center justify-center gap-2">
-                  <PlayCircle className="h-5 w-5" />
-                  Start First Lesson
-                </span>
-              </Link>
+              {learningPath.contents.length > 0 ? (
+                <Link
+                  to={`/education/content/${learningPath.contents[0].id}`}
+                  className="block w-full px-6 py-3 bg-white text-emerald-600 rounded-xl hover:bg-gray-50 transition-all shadow-md hover:shadow-lg font-bold text-center"
+                  aria-label={`Start first lesson: ${learningPath.contents[0].title}`}
+                >
+                  <span className="flex items-center justify-center gap-2">
+                    <PlayCircle className="h-5 w-5" />
+                    Start First Lesson
+                  </span>
+                </Link>
+              ) : (
+                <div className="text-center text-white/70 text-sm">
+                  No lessons available yet
+                </div>
+              )}
             </div>
           </div>
         </div>
