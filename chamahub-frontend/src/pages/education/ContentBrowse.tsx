@@ -13,7 +13,7 @@ import {
   Flame,
   ChevronRight
 } from 'lucide-react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/card';
+import { Card, CardContent } from '../../components/ui/card';
 import { Badge } from '../../components/ui/badge';
 import { Input } from '../../components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select';
@@ -327,29 +327,13 @@ export function ContentBrowse() {
 
         {/* Content Grid */}
         {contents.length === 0 ? (
-          <div className="bg-gradient-to-br from-white to-gray-50 rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
-            <div className="py-16 text-center">
-              <div className="relative w-24 h-24 mx-auto mb-6">
-                <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-purple-500 opacity-10 rounded-full"></div>
-                <BookOpen className="relative h-16 w-16 mx-auto text-gray-400" />
-              </div>
-              <h3 className="text-2xl font-bold text-gray-900 mb-3">No Content Found</h3>
-              <p className="text-gray-600 max-w-md mx-auto mb-8">
-                Try adjusting your filters or search for different terms
-              </p>
-              <button
-                onClick={() => {
-                  setCategoryFilter('all');
-                  setDifficultyFilter('all');
-                  setContentTypeFilter('all');
-                  setSearchQuery('');
-                }}
-                className="px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-lg hover:from-blue-600 hover:to-purple-600 transition-all shadow-lg hover:shadow-xl font-medium"
-              >
-                Reset Filters
-              </button>
-            </div>
-          </div>
+          <Card className="shadow-md">
+            <CardContent className="py-16 text-center">
+              <BookOpen className="h-16 w-16 mx-auto text-gray-400 mb-4" />
+              <h3 className="text-xl font-semibold mb-2">No Content Found</h3>
+              <p className="text-gray-600">Try adjusting your filters or search query</p>
+            </CardContent>
+          </Card>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {contents.map((content) => (

@@ -5,7 +5,6 @@ import {
   Target,
   BookOpen,
   Clock,
-  ArrowRight,
   TrendingUp,
   Award,
   ChevronRight,
@@ -14,7 +13,6 @@ import {
   CheckCircle,
   Star
 } from 'lucide-react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/card';
 import { Badge } from '../../components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select';
 import { mockEducationService, type LearningPath } from '../../services/mockEducationService';
@@ -146,7 +144,7 @@ export function LearningPaths() {
 
         {/* Enhanced Filter */}
         <div className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
-          <CardContent className="p-6">
+          <div className="p-6">
             <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
               <div className="space-y-2">
                 <div className="flex items-center gap-3">
@@ -195,7 +193,7 @@ export function LearningPaths() {
                 </Select>
               </div>
             </div>
-          </CardContent>
+          </div>
         </div>
 
         {/* Enhanced Learning Paths Grid */}

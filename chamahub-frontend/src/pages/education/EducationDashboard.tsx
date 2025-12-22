@@ -11,13 +11,8 @@ import {
   Sparkles,
   Award,
   Rocket,
-  Zap,
   Users,
-  TrendingDown,
-  Shield,
-  BarChart3
 } from 'lucide-react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/card';
 import { Badge } from '../../components/ui/badge';
 import { mockEducationService, type DashboardStats, type EducationalContent, type LearningPath } from '../../services/mockEducationService';
 
@@ -148,7 +143,7 @@ export function EducationDashboard() {
 
         {/* Enhanced Hero Stats */}
         {stats && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-2xl shadow-xl overflow-hidden">
               <div className="p-6">
                 <div className="flex items-center justify-between mb-4">
@@ -184,18 +179,6 @@ export function EducationDashboard() {
                 </div>
                 <div className="text-white/90">Total Views</div>
                 <div className="mt-4 text-sm text-white/80">Community learning</div>
-              </div>
-            </div>
-
-            <div className="bg-gradient-to-br from-amber-500 to-orange-600 text-white rounded-2xl shadow-xl overflow-hidden">
-              <div className="p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <Users className="h-8 w-8 text-white/80" />
-                  <div className="text-xs font-semibold bg-white/20 px-2 py-1 rounded-full">New</div>
-                </div>
-                <div className="text-3xl font-bold mb-1">{stats.completion_rate}%</div>
-                <div className="text-white/90">Completion Rate</div>
-                <div className="mt-4 text-sm text-white/80">Members engaged</div>
               </div>
             </div>
           </div>
