@@ -15,7 +15,7 @@ import { Input } from '../../components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select';
 import { mockEducationService, type EducationalContent } from '../../services/mockEducationService';
 
-export function SimplifiedContentBrowse() {
+export function ContentBrowse() {
   const [contents, setContents] = useState<EducationalContent[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');

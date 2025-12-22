@@ -12,7 +12,7 @@ import { Badge } from '../../components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select';
 import { mockEducationService, type LearningPath } from '../../services/mockEducationService';
 
-export function SimplifiedLearningPaths() {
+export function LearningPaths() {
   const [learningPaths, setLearningPaths] = useState<LearningPath[]>([]);
   const [loading, setLoading] = useState(true);
   const [difficultyFilter, setDifficultyFilter] = useState('all');

@@ -14,7 +14,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/ca
 import { Badge } from '../../components/ui/badge';
 import { mockEducationService, type EducationalContent } from '../../services/mockEducationService';
 
-export function SimplifiedContentDetail() {
+export function ContentDetail() {
   const { id } = useParams<{ id: string }>();
   const [content, setContent] = useState<EducationalContent | null>(null);
   const [relatedContent, setRelatedContent] = useState<EducationalContent[]>([]);

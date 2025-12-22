@@ -14,7 +14,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../..
 import { Badge } from '../../components/ui/badge';
 import { mockEducationService, type DashboardStats, type EducationalContent, type LearningPath } from '../../services/mockEducationService';
 
-export function SimplifiedEducationDashboard() {
+export function EducationDashboard() {
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [learningPaths, setLearningPaths] = useState<LearningPath[]>([]);
   const [loading, setLoading] = useState(true);

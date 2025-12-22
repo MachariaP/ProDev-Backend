@@ -61,22 +61,11 @@ import { AdminAuditLogsPage } from './pages/admin/AdminAuditLogsPage';
 import { AdminAnalyticsPage } from './pages/admin/AdminAnalyticsPage';
 import { AdminSettingsPage } from './pages/admin/AdminSettingsPage';
 // Education Hub pages
-import { EducationHubPage } from './pages/education/EducationHubPage';
-import { LearningPathsPage } from './pages/education/LearningPathsPage';
-import { LearningPathDetailPage } from './pages/education/LearningPathDetailPage';
-import { ContentBrowsePage } from './pages/education/ContentBrowsePage';
-import { ContentDetailPage } from './pages/education/ContentDetailPage';
-import { WebinarsPage } from './pages/education/WebinarsPage';
-import { WebinarDetailPage } from './pages/education/WebinarDetailPage';
-import { SavingsChallengesPage } from './pages/education/SavingsChallengesPage';
-import { ChallengeDetailPage } from './pages/education/ChallengeDetailPage';
-import { MyCertificatesPage } from './pages/education/MyCertificatesPage';
-// Simplified Education Hub pages (with mocked data)
-import { SimplifiedEducationDashboard } from './pages/education/SimplifiedEducationDashboard';
-import { SimplifiedContentBrowse } from './pages/education/SimplifiedContentBrowse';
-import { SimplifiedContentDetail } from './pages/education/SimplifiedContentDetail';
-import { SimplifiedLearningPaths } from './pages/education/SimplifiedLearningPaths';
-import { SimplifiedLearningPathDetail } from './pages/education/SimplifiedLearningPathDetail';
+import { EducationDashboard } from './pages/education/EducationDashboard';
+import { ContentBrowse } from './pages/education/ContentBrowse';
+import { ContentDetail } from './pages/education/ContentDetail';
+import { LearningPaths } from './pages/education/LearningPaths';
+import { LearningPathDetail } from './pages/education/LearningPathDetail';
 
 // Helper component to wrap authenticated routes with layout
 function AuthenticatedRoute({ children }: { children: React.ReactNode }) {
@@ -256,68 +245,26 @@ function App() {
           element={<AuthenticatedRoute><DocumentSharingPage /></AuthenticatedRoute>}
         />
         
-        {/* Education Hub routes - Simplified with Mocked Data */}
+        {/* Education Hub routes */}
         <Route
           path="/education"
-          element={<AuthenticatedRoute><SimplifiedEducationDashboard /></AuthenticatedRoute>}
+          element={<AuthenticatedRoute><EducationDashboard /></AuthenticatedRoute>}
         />
         <Route
           path="/education/content"
-          element={<AuthenticatedRoute><SimplifiedContentBrowse /></AuthenticatedRoute>}
+          element={<AuthenticatedRoute><ContentBrowse /></AuthenticatedRoute>}
         />
         <Route
           path="/education/content/:id"
-          element={<AuthenticatedRoute><SimplifiedContentDetail /></AuthenticatedRoute>}
+          element={<AuthenticatedRoute><ContentDetail /></AuthenticatedRoute>}
         />
         <Route
           path="/education/learning-paths"
-          element={<AuthenticatedRoute><SimplifiedLearningPaths /></AuthenticatedRoute>}
+          element={<AuthenticatedRoute><LearningPaths /></AuthenticatedRoute>}
         />
         <Route
           path="/education/learning-paths/:id"
-          element={<AuthenticatedRoute><SimplifiedLearningPathDetail /></AuthenticatedRoute>}
-        />
-        
-        {/* Legacy Education Hub routes (with real API integration) */}
-        <Route
-          path="/education-legacy"
-          element={<AuthenticatedRoute><EducationHubPage /></AuthenticatedRoute>}
-        />
-        <Route
-          path="/education-legacy/content"
-          element={<AuthenticatedRoute><ContentBrowsePage /></AuthenticatedRoute>}
-        />
-        <Route
-          path="/education-legacy/content/:id"
-          element={<AuthenticatedRoute><ContentDetailPage /></AuthenticatedRoute>}
-        />
-        <Route
-          path="/education-legacy/learning-paths"
-          element={<AuthenticatedRoute><LearningPathsPage /></AuthenticatedRoute>}
-        />
-        <Route
-          path="/education-legacy/learning-paths/:id"
-          element={<AuthenticatedRoute><LearningPathDetailPage /></AuthenticatedRoute>}
-        />
-        <Route
-          path="/education/webinars"
-          element={<AuthenticatedRoute><WebinarsPage /></AuthenticatedRoute>}
-        />
-        <Route
-          path="/education/webinars/:id"
-          element={<AuthenticatedRoute><WebinarDetailPage /></AuthenticatedRoute>}
-        />
-        <Route
-          path="/education/challenges"
-          element={<AuthenticatedRoute><SavingsChallengesPage /></AuthenticatedRoute>}
-        />
-        <Route
-          path="/education/challenges/:id"
-          element={<AuthenticatedRoute><ChallengeDetailPage /></AuthenticatedRoute>}
-        />
-        <Route
-          path="/education/certificates"
-          element={<AuthenticatedRoute><MyCertificatesPage /></AuthenticatedRoute>}
+          element={<AuthenticatedRoute><LearningPathDetail /></AuthenticatedRoute>}
         />
         
         {/* Admin routes */}

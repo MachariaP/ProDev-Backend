@@ -29,9 +29,8 @@ import {
   Smartphone,
   LineChart,
   GraduationCap,
-  Video,
+  BookOpen,
   Target,
-  Award,
 } from 'lucide-react';
 import type { User } from '../types';
 
@@ -95,11 +94,9 @@ const navigationSections: NavSection[] = [
   {
     title: 'Education Hub',
     items: [
-      { name: 'Education Hub', path: '/education', icon: GraduationCap },
+      { name: 'Dashboard', path: '/education', icon: GraduationCap },
+      { name: 'Browse Content', path: '/education/content', icon: BookOpen },
       { name: 'Learning Paths', path: '/education/learning-paths', icon: Target },
-      { name: 'Webinars', path: '/education/webinars', icon: Video },
-      { name: 'Challenges', path: '/education/challenges', icon: TrendingUp },
-      { name: 'My Certificates', path: '/education/certificates', icon: Award },
     ],
   },
   {

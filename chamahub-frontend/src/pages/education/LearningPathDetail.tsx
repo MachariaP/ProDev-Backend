@@ -15,7 +15,7 @@ import { Badge } from '../../components/ui/badge';
 import { Progress } from '../../components/ui/progress';
 import { mockEducationService, type LearningPath, type EducationalContent } from '../../services/mockEducationService';
 
-export function SimplifiedLearningPathDetail() {
+export function LearningPathDetail() {
   const { id } = useParams<{ id: string }>();
   const [learningPath, setLearningPath] = useState<LearningPath | null>(null);
   const [completedLessons, setCompletedLessons] = useState<Set<number>>(new Set());
