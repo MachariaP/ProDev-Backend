@@ -211,6 +211,10 @@ export function ContentDetail() {
                     className="absolute inset-0 w-full h-full"
                     allowFullScreen
                     title={content.title}
+                    sandbox="allow-scripts allow-same-origin allow-presentation"
+                    /* Note: In production, validate video_url against allowed domains (YouTube, Vimeo, etc.)
+                       before rendering. Consider implementing URL validation in mockEducationService.
+                    */
                   />
                 </div>
               ) : (
@@ -228,6 +232,9 @@ export function ContentDetail() {
                 <div 
                   className="prose prose-lg max-w-none"
                   dangerouslySetInnerHTML={{ __html: content.content }}
+                  /* Note: In production, use DOMPurify to sanitize HTML content:
+                     dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(content.content) }}
+                  */
                 />
               </div>
             )}

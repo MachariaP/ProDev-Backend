@@ -14,7 +14,7 @@ import {
   TrendingUp,
 } from 'lucide-react';
 import { Badge } from '../../components/ui/badge';
-import { mockEducationService, type LearningPath, type EducationalContent } from '../../services/mockEducationService';
+import { mockEducationService, type LearningPath, type EducationalContent, type UserProgress } from '../../services/mockEducationService';
 
 export function LearningPathDetail() {
   const { id } = useParams<{ id: string }>();
@@ -22,6 +22,7 @@ export function LearningPathDetail() {
   const [learningPath, setLearningPath] = useState<LearningPath | null>(null);
   const [loading, setLoading] = useState(true);
   const [expandedContent, setExpandedContent] = useState<number | null>(null);
+  const [userProgress, setUserProgress] = useState<UserProgress[]>([]);
 
   useEffect(() => {
     if (id) {
@@ -32,10 +33,14 @@ export function LearningPathDetail() {
   const fetchLearningPath = async (pathId: number) => {
     try {
       setLoading(true);
-      const pathData = await mockEducationService.getLearningPathById(pathId);
+      const [pathData, progressData] = await Promise.all([
+        mockEducationService.getLearningPathById(pathId),
+        mockEducationService.getUserProgress(),
+      ]);
       
       if (pathData) {
         setLearningPath(pathData);
+        setUserProgress(progressData);
       } else {
         navigate('/education/learning-paths');
       }
@@ -112,7 +117,11 @@ export function LearningPathDetail() {
     return null;
   }
 
-  const completedLessons = 0; // This would come from user progress in a real implementation
+  // Calculate completion from user progress
+  const completedLessons = userProgress.filter(
+    progress => progress.status === 'COMPLETED' && 
+    learningPath.contents.some(content => content.id === progress.content_id)
+  ).length;
   const progressPercentage = (completedLessons / learningPath.contents.length) * 100;
 
   return (
