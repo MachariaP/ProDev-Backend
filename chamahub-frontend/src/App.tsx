@@ -64,6 +64,8 @@ import { AdminSettingsPage } from './pages/admin/AdminSettingsPage';
 import { EducationDashboard } from './pages/education/EducationDashboard';
 import { ContentBrowse } from './pages/education/ContentBrowse';
 import { LearningPaths } from './pages/education/LearningPaths';
+import { ContentDetail } from './pages/education/ContentDetail';
+import { LearningPathDetail } from './pages/education/LearningPathDetail';
 
 // Helper component to wrap authenticated routes with layout
 function AuthenticatedRoute({ children }: { children: React.ReactNode }) {
@@ -253,8 +255,16 @@ function App() {
           element={<AuthenticatedRoute><ContentBrowse /></AuthenticatedRoute>}
         />
         <Route
+          path="/education/content/:id"
+          element={<AuthenticatedRoute><ContentDetail /></AuthenticatedRoute>}
+        />
+        <Route
           path="/education/learning-paths"
           element={<AuthenticatedRoute><LearningPaths /></AuthenticatedRoute>}
+        />
+        <Route
+          path="/education/learning-paths/:id"
+          element={<AuthenticatedRoute><LearningPathDetail /></AuthenticatedRoute>}
         />
         
         {/* Admin routes */}

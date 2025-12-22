@@ -335,8 +335,8 @@ export function LearningPaths() {
                         <h4 className="font-semibold text-gray-900 mb-3">Start Learning</h4>
                         <div className="space-y-3">
                           <button
-                            disabled
-                            className="w-full px-4 py-3 bg-gradient-to-r from-emerald-500 to-green-500 text-white rounded-xl hover:from-emerald-600 hover:to-green-600 transition-all shadow-md hover:shadow-lg font-medium flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                            onClick={() => navigate(`/education/learning-paths/${path.id}`)}
+                            className="w-full px-4 py-3 bg-gradient-to-r from-emerald-500 to-green-500 text-white rounded-xl hover:from-emerald-600 hover:to-green-600 transition-all shadow-md hover:shadow-lg font-medium flex items-center justify-center gap-2"
                           >
                             <BookOpen className="h-4 w-4" />
                             View Details
